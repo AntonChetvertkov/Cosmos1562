@@ -1,0 +1,64 @@
+h1 {
+    font-family: 'Orbitron', sans-serif;
+}
+
+body, label, input, button {
+    font-family: 'Audiowide', sans-serif;
+    font-weight: 400;    
+}
+
+/* body{
+    display: flex;
+    justify-content: flex;
+} */
+
+#login_form{
+    background-color:lightsteelblue;
+    font-family: 'Orbitron, sans-serif';
+    float: right;
+    width: 45%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    padding: 1rem;
+    transition: background-color 0.1s ease 0.1s;
+}   
+
+#login_form:hover{
+    background-color: rgb(133, 152, 175);
+}
+
+#login_form input,
+#login_form button {
+    margin: 0.5rem 0;
+}
+
+#login_form:autofill{
+    background-color: lightcyan;
+    font-family: 'Orbitron, sans-serif';
+}
+
+#about_sidebar_bg{
+    width: 45%;
+    float: left;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    padding: 1rem;
+    transition: background-color 0.1s ease 0.1s;
+}
+
+#email_field{
+    width:auto;
+}
+#email_fielsd{
+    width:fit-content;
+}
