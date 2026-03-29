@@ -13,7 +13,8 @@
     {
         "imports": {
             "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/",
+            "satellite.js": "https://cdn.jsdelivr.net/npm/satellite.js@7.0.0/dist/index.min.js"
         }
     }
     </script>
@@ -45,7 +46,9 @@
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import * as satellite from 'satellite.js';
 
+        var GMT = satellite.gstime(new Date());
 
         const cosmodromes = [
             { name: "Baikonur Cosmodrome",       lat: 45.9646,  lon: 63.3052   },
@@ -97,7 +100,7 @@
         scene.background = new THREE.Color('#060d18');
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 0, 5);
+        camera.position.set(0, 0, 2);
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
@@ -118,6 +121,48 @@
 
 
         const markers = [];
+        const sat_meshes = [];
+
+        function getGnssSatColour(name) {
+            if (name.includes('GPS'))     return 'blue';
+            if (name.includes('COSMOS')) return 'red';
+            if (name.includes('LUCH')) return 'red';
+            if (name.includes('BEIDOU'))  return 'yellow';
+            if (name.includes('GALILEO')) return 'cyan';
+            if (name.includes('NAVIC'))   return 'orange';
+            if (name.includes('QZSS'))    return 'purple';
+            return '#ffffff';
+        }
+
+        async function sats_init() {
+            const response = await fetch('dynamic/sats');
+            const sats_response = await response.json();
+            for (const sat_response of sats_response){
+                const satGeometry = new THREE.SphereGeometry(0.02, 8 ,4);
+
+
+                const satMaterial = new THREE.MeshBasicMaterial({color: getGnssSatColour(sat_response.OBJECT_NAME)});
+                const sat = new THREE.Mesh(satGeometry, satMaterial);
+
+                const sat_rec = satellite.json2satrec(sat_response);
+                const positionAndVelocity = satellite.propagate(sat_rec, new Date());
+                if (positionAndVelocity === null) {console.log('Error getting satellite data')}
+                const positionECI = positionAndVelocity.position;
+                const velocityECI = positionAndVelocity.velocity;
+                const geoPos = satellite.eciToGeodetic(positionECI, GMT);
+                const latRad = geoPos.latitude;
+                const lonRad = geoPos.longitude;
+                const sat_height = geoPos.height;
+                const x = (Math.cos(latRad) * Math.cos(lonRad))*(1+(sat_height/6371));
+                const y = (Math.sin(latRad))*(1+(sat_height/6371));
+                const z = -(Math.cos(latRad) * Math.sin(lonRad))*(1+(sat_height/6371));
+                sat.position.set(x, y, z);
+                scene.add(sat);
+                sat_meshes.push({satrec: sat_rec, mesh: sat, satheight: sat_height, satlongRAD: lonRad, satlatRAD: latRad});
+            }
+            animate();
+        }
+        sats_init();
 
         for (const cosmodrome of cosmodromes) {
             const latRad = cosmodrome.lat * (Math.PI / 180);
@@ -203,14 +248,28 @@
             }
         });
 
-
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
+            GMT = satellite.gstime(new Date());
+
+            for (const { satrec, mesh } of sat_meshes) {
+                const positionAndVelocity = satellite.propagate(satrec, new Date());
+                if (positionAndVelocity === null) continue;
+                const positionECI = positionAndVelocity.position;
+                const geoPos = satellite.eciToGeodetic(positionECI, GMT);
+                const latRad = geoPos.latitude;
+                const lonRad = geoPos.longitude;
+                const sat_height = geoPos.height;
+                const scale = 1 + (sat_height / 6371);
+                const x = Math.cos(latRad) * Math.cos(lonRad) * scale;
+                const y = Math.sin(latRad) * scale;
+                const z = -Math.cos(latRad) * Math.sin(lonRad) * scale;
+                mesh.position.set(x, y, z);
+            }
+
             renderer.render(scene, camera);
         }
-
-        animate();
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
