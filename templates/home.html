@@ -1,1 +1,89 @@
-<p>authorised</p>
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>Cosmos1562</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/css/home.css">
+</head>
+<body>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <div id="sidebar">
+        <button class="sidebar-btn">
+            <span class="btn-icon">⊙</span>
+            <span class="btn-label">Account</span>
+        </button>
+        <button class="sidebar-btn">
+            <span class="btn-icon">◈</span>
+            <span class="btn-label">Constellations</span>
+        </button>
+        <button class="sidebar-btn">
+            <span class="btn-icon">⊟</span>
+            <span class="btn-label">Filters</span>
+        </button>
+        <div class="sidebar-divider"></div>
+        <button class="sidebar-btn">
+            <span class="btn-icon">⚙</span>
+            <span class="btn-label">Settings</span>
+        </button>
+    </div>
+
+    <!-- <div id="map-placeholder">
+        <span class="cosmos-title">Cosmos 1562</span>
+    </div> -->
+
+    <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#060d18');
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.enableZoom = true;
+    controls.minDistance = 1.5;
+    // document.addEventListener( 'mousewheel', (event) => {
+    //     camera.position.z +=event.deltaY/500;
+    // });
+    const geometry = new THREE.SphereGeometry(1, 64, 32);
+    const loader = new THREE.TextureLoader();
+    const texture = loader.load('/static/img/country-outlines-4k.png');
+    const material = new THREE.MeshBasicMaterial({ map: texture });
+    const sphere = new THREE.Mesh(geometry, material);
+    scene.add(sphere);
+    const light = new THREE.PointLight('white', 1);
+    light.position.set(5, 5, 5);
+    scene.add(light);
+    camera.position.set(0, 0, 5);
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+    window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    );
+
+    </script>
+
+
+   
+
+</body>

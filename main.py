@@ -18,8 +18,16 @@ def index():
 def home():
     return render_template('home.html')
 
-@app.route('/register')
+@app.route('/register', methods=['GET', 'POST'])
 def register():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        password_repeat = request.form.get('password_repeat')
+        if password != password_repeat:
+            return render_template('register.html', error="Passwords don't match!")
+        else:
+            return redirect('/')
     return render_template('register.html')
 
 if __name__ == '__main__':
