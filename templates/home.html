@@ -21,10 +21,6 @@
 
     <div id="sidebar">
         <button class="sidebar-btn">
-            <span class="btn-icon">⊙</span>
-            <span class="btn-label">Account</span>
-        </button>
-        <button class="sidebar-btn">
             <span class="btn-icon">◈</span>
             <span class="btn-label">Constellations</span>
         </button>
@@ -32,7 +28,7 @@
             <span class="btn-icon">⊟</span>
             <span class="btn-label">Filters</span>
         </button>
-        <button class="sidebar-btn">
+        <button class="sidebar-btn"  id="marker-btn">
             <span class="btn-icon">⌖</span>
             <span class="btn-label">Markers</span>
         </button>
@@ -45,9 +41,13 @@
             <span class="btn-icon">⚙</span>
             <span class="btn-label">Settings</span>
         </button>
+        <button class="sidebar-btn">
+            <span class="btn-icon">⊙</span>
+            <span class="btn-label">Account</span>
+        </button>
     </div>
 
-    <div id="key-modal" style="
+    <div id="key-panel" style="
         display: none;
         position: fixed;
         top: 50%;
@@ -92,17 +92,161 @@
             Close
         </div>
     </div>
+        <div id="markers-panel" style="
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #0a1628;
+        border: 1px solid #1a4a6b;
+        border-radius: 10px;
+        padding: 24px 32px;
+        z-index: 200;
+        font-family: 'Orbitron', sans-serif;
+        color: #00c8ff;
+        min-width: 300px;
+    ">
+        <div style="font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:16px; border-bottom:1px solid #1a4a6b; padding-bottom:10px;">
+            City Markers
+        </div>
+
+        <input id="city-search" type="text" placeholder="Search city..." style="
+            width: 100%;
+            background: #060d18;
+            border: 1px solid #1a4a6b;
+            color: #00c8ff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.6rem;
+            letter-spacing: 0.1em;
+            padding: 8px 10px;
+            border-radius: 4px;
+            box-sizing: border-box;
+            outline: none;
+        ">
+
+        <ul id="city-results" style="
+            list-style: none;
+            margin: 8px 0 0 0;
+            padding: 0;
+            max-height: 180px;
+            overflow-y: auto;
+            font-size: 0.58rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        "></ul>
+
+        <div id="added-cities-section" style="margin-top:16px; border-top:1px solid #1a4a6b; padding-top:12px;">
+            <div style="font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:8px; color:#1a6a8b;">
+                Added Markers
+            </div>
+            <ul id="added-cities" style="
+                list-style: none;
+                margin: 0;
+                padding: 0;
+                font-size: 0.55rem;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                max-height: 120px;
+                overflow-y: auto;
+            "></ul>
+        </div>
+
+        <div id="markers-close" style="
+            margin-top:18px;
+            border-top:1px solid #1a4a6b;
+            padding-top:10px;
+            font-size:0.55rem;
+            letter-spacing:0.12em;
+            text-transform:uppercase;
+            color:#1a6a8b;
+            cursor:pointer;
+        ">Close</div>
+    </div>
 
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import * as satellite from 'satellite.js';
+        
+        let CITIES = [];
+        const customMarkers = [];
+        fetch('/static/cities/world-cities.json').then(r => r.json()).then(d => CITIES = d);
+        function searchCities(q) {
+            q = q.toLowerCase().trim();
+            if (q.length < 2) return [];
+            const starts = CITIES.filter(c => c.name.toLowerCase().startsWith(q));
+            const contains = CITIES.filter(c => !c.name.toLowerCase().startsWith(q) && c.name.toLowerCase().includes(q));
+            return [...starts, ...contains].slice(0, 10);
+        }
+
+        function addCityMarker(city) {
+            const addedList = document.getElementById('added-cities');
+            const li = document.createElement('li');
+            li.textContent = city.name;
+            li.style.cssText = `
+                padding: 6px 8px;
+                color: #00c8ff;
+                border-radius: 4px;
+            `;
+            addedList.appendChild(li);
+
+            const latRad = city.lat * (Math.PI / 180);
+            const lonRad = city.lon * (Math.PI / 180);
+            const x = Math.cos(latRad) * Math.cos(lonRad);
+            const y = Math.sin(latRad);
+            const z = -Math.cos(latRad) * Math.sin(lonRad);
+
+            const markerGeometry = new THREE.SphereGeometry(0.005, 16, 8);
+            const markerMaterial = new THREE.MeshBasicMaterial({ color: 'green' });
+            const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+            marker.position.set(x, y, z);
+            scene.add(marker);
+
+            const glowGeometry = new THREE.SphereGeometry(0.015, 16, 8);
+            const glowMaterial = new THREE.MeshBasicMaterial({ color: 'green', transparent: true, opacity: 0.2 });
+            const glowMarker = new THREE.Mesh(glowGeometry, glowMaterial);
+            glowMarker.position.set(x, y, z);
+            glowMarker.userData.name = city.name;
+            scene.add(glowMarker);
+            markers.push(glowMarker);
+        }
+
+        let debounceTimer;
+
+        document.getElementById('city-search').addEventListener('input', e => {
+            clearTimeout(debounceTimer);
+
+            debounceTimer = setTimeout(() => {
+                const ul = document.getElementById('city-results');
+                ul.innerHTML = '';
+
+                const results = searchCities(e.target.value);
+
+                for (const city of results) {
+                    const li = document.createElement('li');
+                    li.textContent = city.name;
+                    li.style.cssText = 'padding:7px 8px; cursor:pointer; color:#00c8ff; border-radius:4px;';
+                    li.addEventListener('mouseenter', () => li.style.background = '#0d2040');
+                    li.addEventListener('mouseleave', () => li.style.background = 'transparent');
+                    li.addEventListener('click', () => addCityMarker(city));
+                    ul.appendChild(li);
+                }
+            }, 300);
+        });
 
         document.getElementById('key-btn').addEventListener('click', () => {
-            document.getElementById('key-modal').style.display = 'block';
+            document.getElementById('key-panel').style.display = 'block';
         });
         document.getElementById('key-close').addEventListener('click', () => {
-            document.getElementById('key-modal').style.display = 'none';
+            document.getElementById('key-panel').style.display = 'none';
+        });
+
+        document.getElementById('marker-btn').addEventListener('click', () => {
+            document.getElementById('markers-panel').style.display = 'block';
+        });
+        document.getElementById('markers-close').addEventListener('click', () => {
+            document.getElementById('markers-panel').style.display = 'none';
         });
 
         var GMT = satellite.gstime(new Date());
@@ -232,6 +376,28 @@
             animate();
         }
         sats_init();
+
+        // for (const customMarker of customMarkers) {
+        //     const latRad = customMarker.lat * (Math.PI / 180);
+        //     const lonRad = customMarker.lon * (Math.PI / 180);
+        //     const x = Math.cos(latRad) * Math.cos(lonRad);
+        //     const y = Math.sin(latRad);
+        //     const z = -Math.cos(latRad) * Math.sin(lonRad);
+
+        //     const markerGeometry = new THREE.SphereGeometry(0.005, 16, 8);
+        //     const markerMaterial = new THREE.MeshBasicMaterial({ color: 'green' });
+        //     const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+        //     marker.position.set(x, y, z);
+        //     scene.add(marker);
+
+        //     const glowGeometry = new THREE.SphereGeometry(0.015, 16, 8);
+        //     const glowMaterial = new THREE.MeshBasicMaterial({ color: 'green', transparent: true, opacity: 0.2 });
+        //     const glowMarker = new THREE.Mesh(glowGeometry, glowMaterial);
+        //     glowMarker.position.set(x, y, z);
+        //     glowMarker.userData.name = customMarker.name;
+        //     scene.add(glowMarker);
+        //     markers.push(glowMarker);
+        // }
 
         for (const cosmodrome of cosmodromes) {
             const latRad = cosmodrome.lat * (Math.PI / 180);
