@@ -28,7 +28,7 @@
             <span class="btn-icon">⊟</span>
             <span class="btn-label">Filters</span>
         </button>
-        <button class="sidebar-btn"  id="marker-btn">
+        <button class="sidebar-btn" id="marker-btn">
             <span class="btn-icon">⌖</span>
             <span class="btn-label">Markers</span>
         </button>
@@ -85,7 +85,7 @@
                 <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:purple;"></span> QZSS — Japan
             </div>
             <div style="display:flex; align-items:center; gap:12px;">
-                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background: #00ff88;"></span> International
+                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#00ff88;"></span> International
             </div>
             <div style="display:flex; align-items:center; gap:12px;">
                 <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#ffffff;"></span> Unknown
@@ -95,6 +95,7 @@
             Close
         </div>
     </div>
+
     <div id="markers-panel" style="
         display: none;
         position: fixed;
@@ -113,7 +114,6 @@
         <div style="font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:16px; border-bottom:1px solid #1a4a6b; padding-bottom:10px;">
             City Markers
         </div>
-
         <input id="city-search" type="text" placeholder="Search city..." style="
             width: 100%;
             background: #060d18;
@@ -127,7 +127,6 @@
             box-sizing: border-box;
             outline: none;
         ">
-
         <ul id="city-results" style="
             list-style: none;
             margin: 8px 0 0 0;
@@ -138,7 +137,6 @@
             letter-spacing: 0.1em;
             text-transform: uppercase;
         "></ul>
-
         <div id="added-cities-section" style="margin-top:16px; border-top:1px solid #1a4a6b; padding-top:12px;">
             <div style="font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:8px; color:#1a6a8b;">
                 Added Markers
@@ -154,7 +152,6 @@
                 overflow-y: auto;
             "></ul>
         </div>
-
         <div id="markers-close" style="
             margin-top:18px;
             border-top:1px solid #1a4a6b;
@@ -171,10 +168,10 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import * as satellite from 'satellite.js';
-        
+
         let CITIES = [];
-        const customMarkers = [];
         fetch('/static/cities/world-cities.json').then(r => r.json()).then(d => CITIES = d);
+
         function searchCities(q) {
             q = q.toLowerCase().trim();
             if (q.length < 2) return [];
@@ -187,11 +184,7 @@
             const addedList = document.getElementById('added-cities');
             const li = document.createElement('li');
             li.textContent = city.name;
-            li.style.cssText = `
-                padding: 6px 8px;
-                color: #00c8ff;
-                border-radius: 4px;
-            `;
+            li.style.cssText = 'padding: 6px 8px; color: #00c8ff; border-radius: 4px;';
             addedList.appendChild(li);
 
             const latRad = city.lat * (Math.PI / 180);
@@ -216,16 +209,12 @@
         }
 
         let debounceTimer;
-
         document.getElementById('city-search').addEventListener('input', e => {
             clearTimeout(debounceTimer);
-
             debounceTimer = setTimeout(() => {
                 const ul = document.getElementById('city-results');
                 ul.innerHTML = '';
-
                 const results = searchCities(e.target.value);
-
                 for (const city of results) {
                     const li = document.createElement('li');
                     li.textContent = city.name;
@@ -244,7 +233,6 @@
         document.getElementById('key-close').addEventListener('click', () => {
             document.getElementById('key-panel').style.display = 'none';
         });
-
         document.getElementById('marker-btn').addEventListener('click', () => {
             document.getElementById('markers-panel').style.display = 'block';
         });
@@ -325,6 +313,59 @@
 
         const markers = [];
         const sat_meshes = [];
+        let activeTrackEntry = null;
+
+        const TRACK_STEP_SECONDS = 30;
+        const TRACK_SURFACE_OFFSET = 1.001;
+
+        function getOrbitalPeriodMinutes(satrec) {
+            return (1 / satrec.no) * 2 * Math.PI * 60;
+        }
+
+        function buildGroundTrack(satrec) {
+            const durationSeconds = 1440 * 60;
+            const steps = Math.ceil(durationSeconds / TRACK_STEP_SECONDS);
+            const now = new Date();
+            const points = [];
+            const colors = [];
+            const startColor = new THREE.Color('#ff4444');
+            const endColor = new THREE.Color('#00ff88');
+            const lerpedColor = new THREE.Color();
+
+            for (let i = 0; i <= steps; i++) {
+                const t = new Date(now.getTime() + i * TRACK_STEP_SECONDS * 1000);
+                const gmt = satellite.gstime(t);
+                const pv = satellite.propagate(satrec, t);
+                if (!pv || !pv.position) continue;
+                const gd = satellite.eciToGeodetic(pv.position, gmt);
+                const lat = gd.latitude;
+                const lon = gd.longitude;
+                const x = Math.cos(lat) * Math.cos(lon) * TRACK_SURFACE_OFFSET;
+                const y = Math.sin(lat) * TRACK_SURFACE_OFFSET;
+                const z = -Math.cos(lat) * Math.sin(lon) * TRACK_SURFACE_OFFSET;
+                points.push(new THREE.Vector3(x, y, z));
+                lerpedColor.lerpColors(startColor, endColor, i / steps);
+                colors.push(lerpedColor.r, lerpedColor.g, lerpedColor.b);
+            }
+
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            const mat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.7 });
+            const line = new THREE.Line(geo, mat);
+            scene.add(line);
+            return [line];
+        }
+
+        function createTrackLines(segments) {
+            return segments;
+        }
+
+        function removeTrackLines(lines) {
+            for (const line of lines) {
+                scene.remove(line);
+                line.geometry.dispose();
+            }
+        }
 
         function getGnssSatColour(name) {
             if (name.includes('GPS'))     return 'blue';
@@ -336,18 +377,19 @@
             if (name.includes('IRNSS'))   return 'orange';
             if (name.includes('QZSS'))    return 'purple';
             return '#ffffff';
-        };
+        }
+
         function getGnssSatOperator(name) {
             if (name.includes('GPS'))     return 'USA';
             if (name.includes('COSMOS'))  return 'Russia';
             if (name.includes('LUCH'))    return 'Russia';
             if (name.includes('BEIDOU'))  return 'China';
-            if (name.includes('CSS'))  return 'China';
+            if (name.includes('CSS'))     return 'China';
             if (name.includes('GALILEO')) return 'Europe';
             if (name.includes('NAVIC'))   return 'India';
             if (name.includes('IRNSS'))   return 'India';
             if (name.includes('QZSS'))    return 'Japan';
-            if (name.includes('ISS'))  return 'International';
+            if (name.includes('ISS'))     return 'International';
             return 'Unknown';
         }
 
@@ -375,7 +417,7 @@
                 sat.userData.name = sat_response.OBJECT_NAME;
                 sat.userData.type = 'sat';
                 scene.add(sat);
-                sat_meshes.push({ satrec: sat_rec, mesh: sat });
+                sat_meshes.push({ satrec: sat_rec, mesh: sat, trackLines: [] });
             }
             animate();
         }
@@ -413,7 +455,7 @@
                 sat.userData.name = sat_response.OBJECT_NAME;
                 sat.userData.type = 'sat';
                 scene.add(sat);
-                sat_meshes.push({ satrec: sat_rec, mesh: sat });
+                sat_meshes.push({ satrec: sat_rec, mesh: sat, trackLines: [] });
             }
             animate();
         }
@@ -478,7 +520,7 @@
             text-transform: uppercase;
             padding: 8px 12px;
             border-radius: 6px;
-            pointer-events: none;
+            pointer-events: auto;
             display: none;
         `;
         document.body.appendChild(popup);
@@ -492,16 +534,32 @@
             const sat_mesh_objects = sat_meshes.map(s => s.mesh);
             const sat_hits = raycaster.intersectObjects(sat_mesh_objects);
 
-            if (marker_hits.length > 0) {
-                popup.textContent = marker_hits[0].object.userData.name;
-                popup.style.display = 'block';
-                popup.style.left = e.clientX + 12 + 'px';
-                popup.style.top = e.clientY + 12 + 'px';
+        if (marker_hits.length > 0) {
+            popup.innerHTML = `
+                <div>${marker_hits[0].object.userData.name}</div>
+                <div id="popup-close" style="margin-top:6px; color:#1a6a8b; cursor:pointer; font-size:0.5rem;">✕ CLOSE</div>
+            `;
+            popup.style.display = 'block';
+            popup.style.left = e.clientX + 12 + 'px';
+            popup.style.top = e.clientY + 12 + 'px';
+            document.getElementById('popup-close').addEventListener('click', () => {
+                popup.style.display = 'none';
+            });
             } else if (sat_hits.length > 0) {
                 const s = sat_hits[0].object.userData;
-                const { satrec } = sat_meshes.find(m => m.mesh === sat_hits[0].object);
-                const pv = satellite.propagate(satrec, new Date());
+                const entry = sat_meshes.find(m => m.mesh === sat_hits[0].object);
+                const pv = satellite.propagate(entry.satrec, new Date());
                 const gd = satellite.eciToGeodetic(pv.position, GMT);
+
+                if (activeTrackEntry && activeTrackEntry !== entry) {
+                    removeTrackLines(activeTrackEntry.trackLines);
+                    activeTrackEntry.trackLines = [];
+                }
+                if (activeTrackEntry !== entry) {
+                    entry.trackLines = createTrackLines(buildGroundTrack(entry.satrec));
+                    activeTrackEntry = entry;
+                }
+
                 popup.style.display = 'block';
                 popup.style.left = e.clientX + 12 + 'px';
                 popup.style.top = e.clientY + 12 + 'px';
@@ -511,22 +569,25 @@
                     <div>LON: ${satellite.degreesLong(gd.longitude).toFixed(2)}°</div>
                     <div>ALT: ${gd.height.toFixed(0)} km</div>
                     <div>OPERATOR: ${getGnssSatOperator(s.name)}</div>
+                    <div id="popup-close" style="margin-top:6px; color:#1a6a8b; cursor:pointer; font-size:0.5rem;">✕ CLOSE</div>
                 `;
-            } else {
-                popup.style.display = 'none';
+                document.getElementById('popup-close').addEventListener('click', () => {
+                    removeTrackLines(activeTrackEntry.trackLines);
+                    activeTrackEntry.trackLines = [];
+                    activeTrackEntry = null;
+                    popup.style.display = 'none';
+                });
             }
         });
-
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
             GMT = satellite.gstime(new Date());
 
-            for (const { satrec, mesh } of sat_meshes) {
-                const positionAndVelocity = satellite.propagate(satrec, new Date());
-                if (positionAndVelocity === null) continue;
-                const positionECI = positionAndVelocity.position;
-                const geoPos = satellite.eciToGeodetic(positionECI, GMT);
+            for (const entry of sat_meshes) {
+                const pv = satellite.propagate(entry.satrec, new Date());
+                if (!pv || !pv.position) continue;
+                const geoPos = satellite.eciToGeodetic(pv.position, GMT);
                 const latRad = geoPos.latitude;
                 const lonRad = geoPos.longitude;
                 const sat_height = geoPos.height;
@@ -534,7 +595,7 @@
                 const x = Math.cos(latRad) * Math.cos(lonRad) * scale;
                 const y = Math.sin(latRad) * scale;
                 const z = -Math.cos(latRad) * Math.sin(lonRad) * scale;
-                mesh.position.set(x, y, z);
+                entry.mesh.position.set(x, y, z);
             }
 
             renderer.render(scene, camera);
