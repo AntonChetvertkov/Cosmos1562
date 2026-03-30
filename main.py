@@ -7,9 +7,11 @@ import time
 app = Flask(__name__)
 
 GNSS_CACHE_PATH = "dynamic/sats/gnss_sats.json"
+CUBESATS_CACHE_PATH = "dynamic/sats/cube_sats.json"
 STATIONS_CACHE_PATH = "dynamic/sats/stations.json"
 CACHE_MAX_AGE = 7200
 CELESTRAK_GNSS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=gnss&FORMAT=json"
+CELESTRAK_CUBESAT_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=cubesat&FORMAT=json"
 CELESTRAK_STATIONS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json"
 
 def get_satellite_data(PATH, URL):
@@ -19,11 +21,12 @@ def get_satellite_data(PATH, URL):
             with open(PATH, "r") as f:
                 return json.load(f)
 
-    response = requests.get(URL)
+    response = requests.get(URL, headers={'User-Agent': 'Mozilla/5.0'})
+    print(response.status_code, response.text[:200])
     response.raise_for_status()
     data = response.json()
 
-    os.makedirs(os.path.dirname(GNSS_CACHE_PATH), exist_ok=True)
+    os.makedirs(os.path.dirname(PATH), exist_ok=True)
 
     with open(PATH, "w") as f:
         json.dump(data, f, indent=4, sort_keys=True)
@@ -65,6 +68,11 @@ def gnss_sats():
 @app.route('/dynamic/stations')
 def stations():
     return jsonify(get_satellite_data(STATIONS_CACHE_PATH, CELESTRAK_STATIONS_URL))
+
+@app.route('/dynamic/cubesats')
+def cubesats():
+    return jsonify(get_satellite_data(CUBESATS_CACHE_PATH, CELESTRAK_CUBESAT_URL))
+
 
 
 if __name__ == '__main__':
