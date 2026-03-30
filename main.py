@@ -6,23 +6,26 @@ import time
 
 app = Flask(__name__)
 
-CACHE_PATH = "dynamic/sats/sats.json"
+GNSS_CACHE_PATH = "dynamic/sats/gnss_sats.json"
+STATIONS_CACHE_PATH = "dynamic/sats/stations.json"
 CACHE_MAX_AGE = 7200
-CELESTRAK_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=gnss&FORMAT=json"
-def get_satellite_data():
-    if os.path.exists(CACHE_PATH):
-        age = time.time() - os.path.getmtime(CACHE_PATH)
+CELESTRAK_GNSS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=gnss&FORMAT=json"
+CELESTRAK_STATIONS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json"
+
+def get_satellite_data(PATH, URL):
+    if os.path.exists(PATH):
+        age = time.time() - os.path.getmtime(PATH)
         if age < CACHE_MAX_AGE:
-            with open(CACHE_PATH, "r") as f:
+            with open(PATH, "r") as f:
                 return json.load(f)
 
-    response = requests.get(CELESTRAK_URL)
+    response = requests.get(URL)
     response.raise_for_status()
     data = response.json()
 
-    os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
+    os.makedirs(os.path.dirname(GNSS_CACHE_PATH), exist_ok=True)
 
-    with open(CACHE_PATH, "w") as f:
+    with open(PATH, "w") as f:
         json.dump(data, f, indent=4, sort_keys=True)
 
     return data
@@ -55,9 +58,14 @@ def register():
             return redirect('/')
     return render_template('register.html')
 
-@app.route('/dynamic/sats')
-def sats():
-    return jsonify(get_satellite_data())
+@app.route('/dynamic/gnss_sats')
+def gnss_sats():
+    return jsonify(get_satellite_data(GNSS_CACHE_PATH, CELESTRAK_GNSS_URL))
+
+@app.route('/dynamic/stations')
+def stations():
+    return jsonify(get_satellite_data(STATIONS_CACHE_PATH, CELESTRAK_STATIONS_URL))
+
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -85,6 +85,9 @@
                 <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:purple;"></span> QZSS — Japan
             </div>
             <div style="display:flex; align-items:center; gap:12px;">
+                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background: #00ff88;"></span> International
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
                 <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#ffffff;"></span> Unknown
             </div>
         </div>
@@ -92,7 +95,7 @@
             Close
         </div>
     </div>
-        <div id="markers-panel" style="
+    <div id="markers-panel" style="
         display: none;
         position: fixed;
         top: 50%;
@@ -333,22 +336,23 @@
             if (name.includes('IRNSS'))   return 'orange';
             if (name.includes('QZSS'))    return 'purple';
             return '#ffffff';
-        }
-
+        };
         function getGnssSatOperator(name) {
             if (name.includes('GPS'))     return 'USA';
             if (name.includes('COSMOS'))  return 'Russia';
             if (name.includes('LUCH'))    return 'Russia';
             if (name.includes('BEIDOU'))  return 'China';
+            if (name.includes('CSS'))  return 'China';
             if (name.includes('GALILEO')) return 'Europe';
             if (name.includes('NAVIC'))   return 'India';
             if (name.includes('IRNSS'))   return 'India';
             if (name.includes('QZSS'))    return 'Japan';
+            if (name.includes('ISS'))  return 'International';
             return 'Unknown';
         }
 
-        async function sats_init() {
-            const response = await fetch('dynamic/sats');
+        async function gnss_sats_init() {
+            const response = await fetch('dynamic/gnss_sats');
             const sats_response = await response.json();
             for (const sat_response of sats_response) {
                 const satGeometry = new THREE.SphereGeometry(0.02, 8, 4);
@@ -375,29 +379,45 @@
             }
             animate();
         }
-        sats_init();
+        gnss_sats_init();
 
-        // for (const customMarker of customMarkers) {
-        //     const latRad = customMarker.lat * (Math.PI / 180);
-        //     const lonRad = customMarker.lon * (Math.PI / 180);
-        //     const x = Math.cos(latRad) * Math.cos(lonRad);
-        //     const y = Math.sin(latRad);
-        //     const z = -Math.cos(latRad) * Math.sin(lonRad);
+        async function stations_init() {
+            const response = await fetch('dynamic/stations');
+            const sats_response = await response.json();
+            const allowed = (name) => {
+                if (name === 'ISS (ZARYA)') return true;
+                if (name.startsWith('CSS')) return true;
+                return false;
+            };
+            for (const sat_response of sats_response) {
+                if (!allowed(sat_response.OBJECT_NAME)) continue;
+                const satGeometry = new THREE.SphereGeometry(0.02, 8, 4);
+                const satMaterial = new THREE.MeshBasicMaterial({
+                    color: sat_response.OBJECT_NAME.startsWith('CSS') ? 'yellow' : '#00ff88'
+                });
+                const sat = new THREE.Mesh(satGeometry, satMaterial);
 
-        //     const markerGeometry = new THREE.SphereGeometry(0.005, 16, 8);
-        //     const markerMaterial = new THREE.MeshBasicMaterial({ color: 'green' });
-        //     const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-        //     marker.position.set(x, y, z);
-        //     scene.add(marker);
-
-        //     const glowGeometry = new THREE.SphereGeometry(0.015, 16, 8);
-        //     const glowMaterial = new THREE.MeshBasicMaterial({ color: 'green', transparent: true, opacity: 0.2 });
-        //     const glowMarker = new THREE.Mesh(glowGeometry, glowMaterial);
-        //     glowMarker.position.set(x, y, z);
-        //     glowMarker.userData.name = customMarker.name;
-        //     scene.add(glowMarker);
-        //     markers.push(glowMarker);
-        // }
+                const sat_rec = satellite.json2satrec(sat_response);
+                const positionAndVelocity = satellite.propagate(sat_rec, new Date());
+                if (positionAndVelocity === null) continue;
+                const positionECI = positionAndVelocity.position;
+                const geoPos = satellite.eciToGeodetic(positionECI, GMT);
+                const latRad = geoPos.latitude;
+                const lonRad = geoPos.longitude;
+                const sat_height = geoPos.height;
+                const scale = 1 + (sat_height / 6371);
+                const x = Math.cos(latRad) * Math.cos(lonRad) * scale;
+                const y = Math.sin(latRad) * scale;
+                const z = -Math.cos(latRad) * Math.sin(lonRad) * scale;
+                sat.position.set(x, y, z);
+                sat.userData.name = sat_response.OBJECT_NAME;
+                sat.userData.type = 'sat';
+                scene.add(sat);
+                sat_meshes.push({ satrec: sat_rec, mesh: sat });
+            }
+            animate();
+        }
+        stations_init();
 
         for (const cosmodrome of cosmodromes) {
             const latRad = cosmodrome.lat * (Math.PI / 180);
