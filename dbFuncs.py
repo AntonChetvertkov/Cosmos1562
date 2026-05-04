@@ -34,11 +34,17 @@ def add_user(email, password):
     hashedPassword = generate_password_hash(password)
     conn = db_connect()
     cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO users (email, password) VALUES (?, ?)
-    ''', (email, hashedPassword))
+    try:
+        cursor.execute('''
+            INSERT INTO users (email, password) VALUES (?, ?)
+        ''', (email, hashedPassword))
+    except sqlite3.IntegrityError as e:
+        conn.commit()
+        conn.close()
+        return False
     conn.commit()
     conn.close()
+    return True
 
 
 def get_all_users():

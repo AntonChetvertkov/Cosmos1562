@@ -26,36 +26,33 @@ def get_satellite_data(PATH, URL):
         if age < CACHE_MAX_AGE:
             with open(PATH, "r") as f:
                 return json.load(f)
+    try:
+        response = requests.get(URL, headers={'User-Agent': 'Mozilla/5.0'})
+        print(response.status_code, response.text[:200])
+        response.raise_for_status()
+        data = response.json()
 
-    response = requests.get(URL, headers={'User-Agent': 'Mozilla/5.0'})
-    print(response.status_code, response.text[:200])
-    response.raise_for_status()
-    data = response.json()
+        os.makedirs(os.path.dirname(PATH), exist_ok=True)
 
-    os.makedirs(os.path.dirname(PATH), exist_ok=True)
+        with open(PATH, "w") as f:
+            json.dump(data, f, indent=4, sort_keys=True)
 
-    with open(PATH, "w") as f:
-        json.dump(data, f, indent=4, sort_keys=True)
-
-    return data
+        return data
+    except:
+        with open(PATH, "r") as f:
+            return json.load(f)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        all_users = get_all_users()
-
-        if email in [user['email'] for user in all_users]:
-
-            if check_password_hash([user['password'] for user in all_users if user['email'] == email][0], password):
-                session['authenticated'] = True
-                return render_template('home.html')
-            else:
-                return render_template('welcome.html', error="Invalid password")
-        
+        user = get_user_by_email(email)
+        if user and check_password_hash(user['password'], password):
+            session['authenticated'] = True
+            return redirect('/home')
         else:
-            return render_template('welcome.html', error="Email not registered.")
+            return render_template('welcome.html', error="Invalid email or password")
     return render_template('welcome.html')
 
 
@@ -71,11 +68,16 @@ def register():
         email = request.form.get('email')
         password = request.form.get('password')
         password_repeat = request.form.get('password_repeat')
-        if password != password_repeat:
+        if len(password)<8:
+            return render_template('register.html', error='Password must be at least 8 symbols')
+        elif password != password_repeat:
             return render_template('register.html', error="Passwords don't match!")
         else:
-            add_user(email, password)
-            return redirect('/')
+            tryAdd = add_user(email, password)
+            if tryAdd:
+                return redirect('/')
+            else:
+                return render_template('register.html', error='Email already exists')
     return render_template('register.html')
 
 @app.route('/dynamic/gnss_sats')
@@ -90,6 +92,10 @@ def stations():
 def cubesats():
     return jsonify(get_satellite_data(CUBESATS_CACHE_PATH, CELESTRAK_CUBESAT_URL))
 
+@app.route('/logout')
+def logout():
+    session.pop('authenticated', None)
+    return redirect('/')
 
 
 if __name__ == '__main__':
