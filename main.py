@@ -1,4 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session, current_app, g
+from dbFuncs import init_db, add_test_user, get_all_users
+import sqlite3
 import requests
 import json
 import os
@@ -38,10 +40,17 @@ def index():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        if email == 'admin@admin.com' and password == 'admin':
-            return redirect('/home')
+        all_users = get_all_users()
+
+        if email in [user['email'] for user in all_users]:
+
+            if password == [user['password'] for user in all_users if user['email'] == email][0]:
+                return render_template('home.html')
+            else:
+                return render_template('welcome.html', error="Invalid password")
+        
         else:
-            return render_template('welcome.html', error="Invalid login")
+            return render_template('welcome.html', error="Email not registered.")
     return render_template('welcome.html')
 
 
@@ -77,4 +86,5 @@ def cubesats():
 
 if __name__ == '__main__':
     app.run(debug=True)
+    init_db()
     
