@@ -1,690 +1,692 @@
 <!DOCTYPE html>
-<head>
-    <meta charset="UTF-8">
-    <title>Cosmos1562</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="static/css/home.css">
-</head>
-<body>
 
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/",
-            "satellite.js": "https://cdn.jsdelivr.net/npm/satellite.js@7.0.0/dist/index.min.js"
-        }
-    }
-    </script>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Cosmos1562</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="static/css/home.css">
+    </head>
+    <body>
 
-    <div id="sidebar">
-        <button class="sidebar-btn">
-            <span class="btn-icon">◈</span>
-            <span class="btn-label">Constellations</span>
-        </button>
-        <button class="sidebar-btn">
-            <span class="btn-icon">⊟</span>
-            <span class="btn-label">Filters</span>
-        </button>
-        <button class="sidebar-btn" id="marker-btn">
-            <span class="btn-icon">⌖</span>
-            <span class="btn-label">Markers</span>
-        </button>
-        <button class="sidebar-btn" id="key-btn">
-            <span class="btn-icon">◉</span>
-            <span class="btn-label">Key</span>
-        </button>
-        <div class="sidebar-divider"></div>
-        <button class="sidebar-btn">
-            <span class="btn-icon">⚙</span>
-            <span class="btn-label">Settings</span>
-        </button>
-        <button class="sidebar-btn">
-            <span class="btn-icon">⊙</span>
-            <span class="btn-label">Account</span>
-        </button>
-        <button class="sidebar-btn" onclick="window.location.href='/logout'">
-            <span class="btn-icon">⇦</span>
-            <span class="btn-label">Logout</span>
-        </button>
-    </div>
-
-    <div id="key-panel" style="
-        display: none;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #0a1628;
-        border: 1px solid #1a4a6b;
-        border-radius: 10px;
-        padding: 24px 32px;
-        z-index: 200;
-        font-family: 'Orbitron', sans-serif;
-        color: #00c8ff;
-        min-width: 260px;
-    ">
-        <div style="font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:16px; border-bottom:1px solid #1a4a6b; padding-bottom:10px;">
-            Satellite Key
-        </div>
-        <div style="display:flex; flex-direction:column; gap:10px; font-size:0.58rem; letter-spacing:0.12em; text-transform:uppercase;">
-            <div style="display:flex; align-items:center; gap:12px;">
-                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:red;"></span> GLONASS / COSMOS / LUCH — Russia
-            </div>
-            <div style="display:flex; align-items:center; gap:12px;">
-                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:blue;"></span> GPS — USA
-            </div>
-            <div style="display:flex; align-items:center; gap:12px;">
-                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:yellow;"></span> BeiDou — China
-            </div>
-            <div style="display:flex; align-items:center; gap:12px;">
-                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:cyan;"></span> Galileo — Europe
-            </div>
-            <div style="display:flex; align-items:center; gap:12px;">
-                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:orange;"></span> NavIC / IRNSS — India
-            </div>
-            <div style="display:flex; align-items:center; gap:12px;">
-                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:purple;"></span> QZSS — Japan
-            </div>
-            <div style="display:flex; align-items:center; gap:12px;">
-                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#00ff88;"></span> International
-            </div>
-            <div style="display:flex; align-items:center; gap:12px;">
-                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#ffffff;"></span> Unknown
-            </div>
-        </div>
-        <div style="margin-top:18px; border-top:1px solid #1a4a6b; padding-top:10px; font-size:0.55rem; letter-spacing:0.12em; text-transform:uppercase; color:#1a6a8b; cursor:pointer;" id="key-close">
-            Close
-        </div>
-    </div>
-
-    <div id="markers-panel" style="
-        display: none;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #0a1628;
-        border: 1px solid #1a4a6b;
-        border-radius: 10px;
-        padding: 24px 32px;
-        z-index: 200;
-        font-family: 'Orbitron', sans-serif;
-        color: #00c8ff;
-        min-width: 300px;
-    ">
-        <div style="font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:16px; border-bottom:1px solid #1a4a6b; padding-bottom:10px;">
-            City Markers
-        </div>
-        <input id="city-search" type="text" placeholder="Search city..." style="
-            width: 100%;
-            background: #060d18;
-            border: 1px solid #1a4a6b;
-            color: #00c8ff;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.6rem;
-            letter-spacing: 0.1em;
-            padding: 8px 10px;
-            border-radius: 4px;
-            box-sizing: border-box;
-            outline: none;
-        ">
-        <ul id="city-results" style="
-            list-style: none;
-            margin: 8px 0 0 0;
-            padding: 0;
-            max-height: 180px;
-            overflow-y: auto;
-            font-size: 0.58rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        "></ul>
-        <div id="added-cities-section" style="margin-top:16px; border-top:1px solid #1a4a6b; padding-top:12px;">
-            <div style="font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:8px; color:#1a6a8b;">
-                Added Markers
-            </div>
-            <ul id="added-cities" style="
-                list-style: none;
-                margin: 0;
-                padding: 0;
-                font-size: 0.55rem;
-                letter-spacing: 0.1em;
-                text-transform: uppercase;
-                max-height: 120px;
-                overflow-y: auto;
-            "></ul>
-        </div>
-        <div id="markers-close" style="
-            margin-top:18px;
-            border-top:1px solid #1a4a6b;
-            padding-top:10px;
-            font-size:0.55rem;
-            letter-spacing:0.12em;
-            text-transform:uppercase;
-            color:#1a6a8b;
-            cursor:pointer;
-        ">Close</div>
-    </div>
-
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import * as satellite from 'satellite.js';
-
-        let CITIES = [];
-        fetch('/static/cities/world-cities.json').then(r => r.json()).then(d => CITIES = d);
-
-        function searchCities(q) {
-            q = q.toLowerCase().trim();
-            if (q.length < 2) return [];
-            const starts = CITIES.filter(c => c.name.toLowerCase().startsWith(q));
-            const contains = CITIES.filter(c => !c.name.toLowerCase().startsWith(q) && c.name.toLowerCase().includes(q));
-            return [...starts, ...contains].slice(0, 10);
-        }
-
-        function addCityMarker(city) {
-            const addedList = document.getElementById('added-cities');
-            const li = document.createElement('li');
-            li.textContent = city.name;
-            li.style.cssText = 'padding: 6px 8px; color: #00c8ff; border-radius: 4px;';
-            addedList.appendChild(li);
-
-            const latRad = city.lat * (Math.PI / 180);
-            const lonRad = city.lon * (Math.PI / 180);
-            const x = Math.cos(latRad) * Math.cos(lonRad);
-            const y = Math.sin(latRad);
-            const z = -Math.cos(latRad) * Math.sin(lonRad);
-
-            const markerGeometry = new THREE.SphereGeometry(0.005, 16, 8);
-            const markerMaterial = new THREE.MeshBasicMaterial({ color: 'green' });
-            const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-            marker.position.set(x, y, z);
-            scene.add(marker);
-
-            const glowGeometry = new THREE.SphereGeometry(0.015, 16, 8);
-            const glowMaterial = new THREE.MeshBasicMaterial({ color: 'green', transparent: true, opacity: 0.2 });
-            const glowMarker = new THREE.Mesh(glowGeometry, glowMaterial);
-            glowMarker.position.set(x, y, z);
-            glowMarker.userData.name = city.name;
-            scene.add(glowMarker);
-            markers.push(glowMarker);
-        }
-
-        let debounceTimer;
-        document.getElementById('city-search').addEventListener('input', e => {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                const ul = document.getElementById('city-results');
-                ul.innerHTML = '';
-                const results = searchCities(e.target.value);
-                for (const city of results) {
-                    const li = document.createElement('li');
-                    li.textContent = city.name;
-                    li.style.cssText = 'padding:7px 8px; cursor:pointer; color:#00c8ff; border-radius:4px;';
-                    li.addEventListener('mouseenter', () => li.style.background = '#0d2040');
-                    li.addEventListener('mouseleave', () => li.style.background = 'transparent');
-                    li.addEventListener('click', () => addCityMarker(city));
-                    ul.appendChild(li);
-                }
-            }, 300);
-        });
-
-        document.getElementById('key-btn').addEventListener('click', () => {
-            document.getElementById('key-panel').style.display = 'block';
-        });
-        document.getElementById('key-close').addEventListener('click', () => {
-            document.getElementById('key-panel').style.display = 'none';
-        });
-        document.getElementById('marker-btn').addEventListener('click', () => {
-            document.getElementById('markers-panel').style.display = 'block';
-        });
-        document.getElementById('markers-close').addEventListener('click', () => {
-            document.getElementById('markers-panel').style.display = 'none';
-        });
-
-        var GMT = satellite.gstime(new Date());
-
-        const cosmodromes = [
-            { name: "Baikonur Cosmodrome",       lat: 45.9646,  lon: 63.3052   },
-            { name: "Kennedy Space Center",      lat: 28.5728,  lon: -80.6490  },
-            { name: "Cape Canaveral SFS",        lat: 28.4889,  lon: -80.5778  },
-            { name: "Vandenberg SFB",            lat: 34.7420,  lon: -120.5724 },
-            { name: "Starbase (SpaceX)",         lat: 25.9969,  lon: -97.1571  },
-            { name: "Wallops Flight Facility",   lat: 37.8402,  lon: -75.4778  },
-            { name: "Plesetsk Cosmodrome",       lat: 62.9271,  lon: 40.5777   },
-            { name: "Vostochny Cosmodrome",      lat: 51.8746,  lon: 128.3551  },
-            { name: "Kapustin Yar",              lat: 48.5735,  lon: 46.2558   },
-            { name: "Kourou / CSG",              lat: 5.2390,   lon: -52.7685  },
-            { name: "Satish Dhawan (ISRO)",      lat: 13.7199,  lon: 80.2304   },
-            { name: "Jiuquan (CNSA)",            lat: 40.9608,  lon: 100.2983  },
-            { name: "Xichang (CNSA)",            lat: 28.2460,  lon: 102.0270  },
-            { name: "Wenchang (CNSA)",           lat: 19.6145,  lon: 110.9513  },
-            { name: "Taiyuan (CNSA)",            lat: 38.8490,  lon: 111.6083  },
-            { name: "Tanegashima (JAXA)",        lat: 30.4012,  lon: 130.9685  },
-            { name: "Uchinoura (JAXA)",          lat: 31.2514,  lon: 131.0814  },
-            { name: "Naro (KARI)",               lat: 34.4322,  lon: 127.5350  },
-            { name: "Mahia Peninsula (RocketLab)", lat: -39.2596, lon: 177.8644 },
-            { name: "Imam Khomeini (Iran)",      lat: 35.2344,  lon: 53.9211   },
-            { name: "Shahroud (Iran)",           lat: 36.2070,  lon: 55.4670   },
-            { name: "Alcântara (Brazil)",        lat: -2.3729,  lon: -44.3964  },
-            { name: "Palmachim (Israel)",        lat: 31.8964,  lon: 34.6903   },
-            { name: "Sutherland (UK)",           lat: 58.5200,  lon: -4.4200   },
-        ];
-
-        const capitals = [
-            { name: "Astana",         lat: 51.1801,  lon: 71.4460  },
-            { name: "Washington D.C", lat: 38.8951,  lon: -77.0369 },
-            { name: "Moscow",         lat: 55.7558,  lon: 37.6173  },
-            { name: "Paris",          lat: 48.8566,  lon: 2.3522   },
-            { name: "New Delhi",      lat: 28.6139,  lon: 77.2090  },
-            { name: "Beijing",        lat: 39.9042,  lon: 116.4074 },
-            { name: "Tokyo",          lat: 35.6762,  lon: 139.6503 },
-            { name: "Seoul",          lat: 37.5665,  lon: 126.9780 },
-            { name: "Wellington",     lat: -41.2866, lon: 174.7756 },
-            { name: "Tehran",         lat: 35.6892,  lon: 51.3890  },
-            { name: "Brasília",       lat: -15.7975, lon: -47.8919 },
-            { name: "Jerusalem",      lat: 31.7683,  lon: 35.2137  },
-            { name: "London",         lat: 51.5074,  lon: -0.1278  },
-        ];
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
-
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color('#060d18');
-
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 0, 2);
-
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.enableZoom = true;
-        controls.minDistance = 1.5;
-
-        const geometry = new THREE.SphereGeometry(1, 64, 32);
-        const loader = new THREE.TextureLoader();
-        const texture = loader.load('/static/img/country-outlines-4k.png');
-        const material = new THREE.MeshBasicMaterial({ map: texture });
-        const sphere = new THREE.Mesh(geometry, material);
-        scene.add(sphere);
-
-        const light = new THREE.PointLight('white', 1);
-        light.position.set(5, 5, 5);
-        scene.add(light);
-
-        const markers = [];
-        const sat_meshes = [];
-        let activeTrackEntry = null;
-
-        const TRACK_STEP_SECONDS = 30;
-        const TRACK_SURFACE_OFFSET = 1.001;
-
-        function getOrbitalPeriodMinutes(satrec) {
-            return (1 / satrec.no) * 2 * Math.PI * 60;
-        }
-
-
-        function buildGroundTrack(satrec) {
-            const durationSeconds = 1440 * 60;
-            const steps = Math.ceil(durationSeconds / TRACK_STEP_SECONDS);
-            const now = new Date();
-            const points = [];
-            const colors = [];
-            const startColor = new THREE.Color('#ff4444');
-            const endColor = new THREE.Color('#00ff88');
-            const lerpedColor = new THREE.Color();
-
-            for (let i = 0; i <= steps; i++) {
-                const t = new Date(now.getTime() + i * TRACK_STEP_SECONDS * 1000);
-                const gmt = satellite.gstime(t);
-                const pv = satellite.propagate(satrec, t);
-                if (!pv || !pv.position) continue;
-                const gd = satellite.eciToGeodetic(pv.position, gmt);
-                const lat = gd.latitude;
-                const lon = gd.longitude;
-                const x = Math.cos(lat) * Math.cos(lon) * TRACK_SURFACE_OFFSET;
-                const y = Math.sin(lat) * TRACK_SURFACE_OFFSET;
-                const z = -Math.cos(lat) * Math.sin(lon) * TRACK_SURFACE_OFFSET;
-                points.push(new THREE.Vector3(x, y, z));
-                lerpedColor.lerpColors(startColor, endColor, i / steps);
-                colors.push(lerpedColor.r, lerpedColor.g, lerpedColor.b);
-            }
-
-            const geo = new THREE.BufferGeometry().setFromPoints(points);
-            geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-            const mat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.7 });
-            const line = new THREE.Line(geo, mat);
-            scene.add(line);
-            return [line];
-        }
-
-        function createTrackLines(segments) {
-            return segments;
-        }
-
-        function removeTrackLines(lines) {
-            for (const line of lines) {
-                scene.remove(line);
-                line.geometry.dispose();
+        <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/",
+                "satellite.js": "https://cdn.jsdelivr.net/npm/satellite.js@7.0.0/dist/index.min.js"
             }
         }
+        </script>
 
-        function getGnssSatColour(name) {
-            if (name.includes('GPS'))     return 'blue';
-            if (name.includes('COSMOS'))  return 'red';
-            if (name.includes('LUCH'))    return 'red';
-            if (name.includes('BEIDOU'))  return 'yellow';
-            if (name.includes('GALILEO')) return 'cyan';
-            if (name.includes('NAVIC'))   return 'orange';
-            if (name.includes('IRNSS'))   return 'orange';
-            if (name.includes('QZSS'))    return 'purple';
+        <div id="sidebar">
+            <button class="sidebar-btn">
+                <span class="btn-icon">◈</span>
+                <span class="btn-label">Constellations</span>
+            </button>
+            <button class="sidebar-btn">
+                <span class="btn-icon">⊟</span>
+                <span class="btn-label">Filters</span>
+            </button>
+            <button class="sidebar-btn" id="marker-btn">
+                <span class="btn-icon">⌖</span>
+                <span class="btn-label">Markers</span>
+            </button>
+            <button class="sidebar-btn" id="key-btn">
+                <span class="btn-icon">◉</span>
+                <span class="btn-label">Key</span>
+            </button>
+            <div class="sidebar-divider"></div>
+            <button class="sidebar-btn">
+                <span class="btn-icon">⚙</span>
+                <span class="btn-label">Settings</span>
+            </button>
+            <button class="sidebar-btn">
+                <span class="btn-icon">⊙</span>
+                <span class="btn-label">Account</span>
+            </button>
+            <button class="sidebar-btn" onclick="window.location.href='/logout'">
+                <span class="btn-icon">⇦</span>
+                <span class="btn-label">Logout</span>
+            </button>
+        </div>
 
-            if (name.includes('AEROCUBE')) return 'blue';
-
-            if (name.includes('PERSEUS'))  return 'red';
-            if (name.includes('POLYITAN')) return 'red';
-            if (name.includes('SITRO')) return 'red';
-
-            if (name.includes('QB50'))     return 'cyan';
-            if (name.includes('GOMX'))     return 'cyan';
-            if (name.includes('TRITON'))   return 'cyan';
-            if (name.includes('STRAND'))   return 'cyan';
-            if (name.includes('UWE'))      return 'cyan';
-            if (name.includes('BEESAT'))   return 'cyan';
-            if (name.includes('FUNCUBE'))  return 'cyan';
-
-            if (name.includes('SEEDS'))    return 'purple';
-            if (name.includes('WNISAT'))   return 'purple';
-            if (name.includes('CUTE'))     return 'purple';
-            if (name.includes('POPACS'))   return 'purple';
-
-            return '#ffffff';
-        }
-
-        function getGnssSatOperator(name) {
-            if (name.includes('GPS'))     return 'USA';
-            if (name.includes('COSMOS'))  return 'Russia';
-            if (name.includes('LUCH'))    return 'Russia';
-            if (name.includes('BEIDOU'))  return 'China';
-            if (name.includes('CSS'))     return 'China';
-            if (name.includes('GALILEO')) return 'Europe';
-            if (name.includes('NAVIC'))   return 'India';
-            if (name.includes('IRNSS'))   return 'India';
-            if (name.includes('QZSS'))    return 'Japan';
-            if (name.includes('ISS'))     return 'International';
-
-            if (name.includes('AEROCUBE')) return 'USA';
-
-            if (name.includes('PERSEUS'))  return 'Russia';
-            if (name.includes('POLYITAN')) return 'Russia';
-
-            if (name.includes('QB50'))     return 'Europe';
-            if (name.includes('GOMX'))     return 'Denmark';
-            if (name.includes('TRITON'))   return 'Denmark';
-            if (name.includes('STRAND'))   return 'UK';
-            if (name.includes('UWE'))      return 'Germany';
-            if (name.includes('BEESAT'))   return 'Germany';
-            if (name.includes('FUNCUBE'))  return 'UK';
-
-            if (name.includes('SEEDS'))    return 'Japan';
-            if (name.includes('WNISAT'))   return 'Japan';
-            if (name.includes('CUTE'))     return 'Japan';
-            if (name.includes('POPACS'))   return 'Japan';
-
-            if (name.includes('SITRO'))    return 'Unknown';
-            if (name.includes('LASARSAT')) return 'Unknown';
-
-            return 'Unknown';
-        }
-
-        async function gnss_sats_init() {
-            const response = await fetch('dynamic/gnss_sats');
-            const sats_response = await response.json();
-            for (const sat_response of sats_response) {
-                const satGeometry = new THREE.SphereGeometry(0.02, 8, 4);
-                const satMaterial = new THREE.MeshBasicMaterial({ color: getGnssSatColour(sat_response.OBJECT_NAME) });
-                const sat = new THREE.Mesh(satGeometry, satMaterial);
-
-                const sat_rec = satellite.json2satrec(sat_response);
-                const positionAndVelocity = satellite.propagate(sat_rec, new Date());
-                if (positionAndVelocity === null) continue;
-                const positionECI = positionAndVelocity.position;
-                const geoPos = satellite.eciToGeodetic(positionECI, GMT);
-                const latRad = geoPos.latitude;
-                const lonRad = geoPos.longitude;
-                const sat_height = geoPos.height;
-                const scale = 1 + (sat_height / 6371);
-                const x = Math.cos(latRad) * Math.cos(lonRad) * scale;
-                const y = Math.sin(latRad) * scale;
-                const z = -Math.cos(latRad) * Math.sin(lonRad) * scale;
-                sat.position.set(x, y, z);
-                sat.userData.name = sat_response.OBJECT_NAME;
-                sat.userData.type = 'sat';
-                scene.add(sat);
-                sat_meshes.push({ satrec: sat_rec, mesh: sat, trackLines: [] });
-            }
-            animate();
-        }
-        gnss_sats_init();
-
-        async function cube_sats_init() {
-            const response = await fetch('dynamic/cubesats');
-            const sats_response = await response.json();
-            for (const sat_response of sats_response) {
-                const satGeometry = new THREE.SphereGeometry(0.02, 8, 4);
-                const satMaterial = new THREE.MeshBasicMaterial({ color: getGnssSatColour(sat_response.OBJECT_NAME) });
-                const sat = new THREE.Mesh(satGeometry, satMaterial);
-
-                const sat_rec = satellite.json2satrec(sat_response);
-                const positionAndVelocity = satellite.propagate(sat_rec, new Date());
-                if (positionAndVelocity === null) continue;
-                const positionECI = positionAndVelocity.position;
-                const geoPos = satellite.eciToGeodetic(positionECI, GMT);
-                const latRad = geoPos.latitude;
-                const lonRad = geoPos.longitude;
-                const sat_height = geoPos.height;
-                const scale = 1 + (sat_height / 6371);
-                const x = Math.cos(latRad) * Math.cos(lonRad) * scale;
-                const y = Math.sin(latRad) * scale;
-                const z = -Math.cos(latRad) * Math.sin(lonRad) * scale;
-                sat.position.set(x, y, z);
-                sat.userData.name = sat_response.OBJECT_NAME;
-                sat.userData.type = 'sat';
-                scene.add(sat);
-                sat_meshes.push({ satrec: sat_rec, mesh: sat, trackLines: [] });
-            }
-            animate();
-        }
-
-        cube_sats_init();
-
-        async function stations_init() {
-            const response = await fetch('dynamic/stations');
-            const sats_response = await response.json();
-            const allowed = (name) => {
-                if (name === 'ISS (ZARYA)') return true;
-                if (name.startsWith('CSS')) return true;
-                return false;
-            };
-            for (const sat_response of sats_response) {
-                if (!allowed(sat_response.OBJECT_NAME)) continue;
-                const satGeometry = new THREE.SphereGeometry(0.02, 8, 4);
-                const satMaterial = new THREE.MeshBasicMaterial({
-                    color: sat_response.OBJECT_NAME.startsWith('CSS') ? 'yellow' : '#00ff88'
-                });
-                const sat = new THREE.Mesh(satGeometry, satMaterial);
-
-                const sat_rec = satellite.json2satrec(sat_response);
-                const positionAndVelocity = satellite.propagate(sat_rec, new Date());
-                if (positionAndVelocity === null) continue;
-                const positionECI = positionAndVelocity.position;
-                const geoPos = satellite.eciToGeodetic(positionECI, GMT);
-                const latRad = geoPos.latitude;
-                const lonRad = geoPos.longitude;
-                const sat_height = geoPos.height;
-                const scale = 1 + (sat_height / 6371);
-                const x = Math.cos(latRad) * Math.cos(lonRad) * scale;
-                const y = Math.sin(latRad) * scale;
-                const z = -Math.cos(latRad) * Math.sin(lonRad) * scale;
-                sat.position.set(x, y, z);
-                sat.userData.name = sat_response.OBJECT_NAME;
-                sat.userData.type = 'sat';
-                scene.add(sat);
-                sat_meshes.push({ satrec: sat_rec, mesh: sat, trackLines: [] });
-            }
-            animate();
-        }
-        stations_init();
-
-        for (const cosmodrome of cosmodromes) {
-            const latRad = cosmodrome.lat * (Math.PI / 180);
-            const lonRad = cosmodrome.lon * (Math.PI / 180);
-            const x = Math.cos(latRad) * Math.cos(lonRad);
-            const y = Math.sin(latRad);
-            const z = -Math.cos(latRad) * Math.sin(lonRad);
-
-            const markerGeometry = new THREE.SphereGeometry(0.005, 16, 8);
-            const markerMaterial = new THREE.MeshBasicMaterial({ color: 'cyan' });
-            const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-            marker.position.set(x, y, z);
-            scene.add(marker);
-
-            const glowGeometry = new THREE.SphereGeometry(0.015, 16, 8);
-            const glowMaterial = new THREE.MeshBasicMaterial({ color: 'cyan', transparent: true, opacity: 0.2 });
-            const glowMarker = new THREE.Mesh(glowGeometry, glowMaterial);
-            glowMarker.position.set(x, y, z);
-            glowMarker.userData.name = cosmodrome.name;
-            scene.add(glowMarker);
-            markers.push(glowMarker);
-        }
-
-        for (const capital of capitals) {
-            const latRad = capital.lat * (Math.PI / 180);
-            const lonRad = capital.lon * (Math.PI / 180);
-            const x = Math.cos(latRad) * Math.cos(lonRad);
-            const y = Math.sin(latRad);
-            const z = -Math.cos(latRad) * Math.sin(lonRad);
-
-            const markerGeometry = new THREE.SphereGeometry(0.005, 16, 8);
-            const markerMaterial = new THREE.MeshBasicMaterial({ color: 'red' });
-            const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-            marker.position.set(x, y, z);
-            scene.add(marker);
-
-            const glowGeometry = new THREE.SphereGeometry(0.015, 16, 8);
-            const glowMaterial = new THREE.MeshBasicMaterial({ color: 'red', transparent: true, opacity: 0.2 });
-            const glowMarker = new THREE.Mesh(glowGeometry, glowMaterial);
-            glowMarker.position.set(x, y, z);
-            glowMarker.userData.name = capital.name;
-            scene.add(glowMarker);
-            markers.push(glowMarker);
-        }
-
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-
-        const popup = document.createElement('div');
-        popup.style.cssText = `
+        <div id="key-panel" style="
+            display: none;
             position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             background: #0a1628;
             border: 1px solid #1a4a6b;
-            color: #00c8ff;
+            border-radius: 10px;
+            padding: 24px 32px;
+            z-index: 200;
             font-family: 'Orbitron', sans-serif;
-            font-size: 0.6rem;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            padding: 8px 12px;
-            border-radius: 6px;
-            pointer-events: auto;
+            color: #00c8ff;
+            min-width: 260px;
+        ">
+            <div style="font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:16px; border-bottom:1px solid #1a4a6b; padding-bottom:10px;">
+                Satellite Key
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px; font-size:0.58rem; letter-spacing:0.12em; text-transform:uppercase;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:red;"></span> GLONASS / COSMOS / LUCH — Russia
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:blue;"></span> GPS — USA
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:yellow;"></span> BeiDou — China
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:cyan;"></span> Galileo — Europe
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:orange;"></span> NavIC / IRNSS — India
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:purple;"></span> QZSS — Japan
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#00ff88;"></span> International
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#ffffff;"></span> Unknown
+                </div>
+            </div>
+            <div style="margin-top:18px; border-top:1px solid #1a4a6b; padding-top:10px; font-size:0.55rem; letter-spacing:0.12em; text-transform:uppercase; color:#1a6a8b; cursor:pointer;" id="key-close">
+                Close
+            </div>
+        </div>
+
+        <div id="markers-panel" style="
             display: none;
-        `;
-        document.body.appendChild(popup);
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #0a1628;
+            border: 1px solid #1a4a6b;
+            border-radius: 10px;
+            padding: 24px 32px;
+            z-index: 200;
+            font-family: 'Orbitron', sans-serif;
+            color: #00c8ff;
+            min-width: 300px;
+        ">
+            <div style="font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:16px; border-bottom:1px solid #1a4a6b; padding-bottom:10px;">
+                City Markers
+            </div>
+            <input id="city-search" type="text" placeholder="Search city..." style="
+                width: 100%;
+                background: #060d18;
+                border: 1px solid #1a4a6b;
+                color: #00c8ff;
+                font-family: 'Orbitron', sans-serif;
+                font-size: 0.6rem;
+                letter-spacing: 0.1em;
+                padding: 8px 10px;
+                border-radius: 4px;
+                box-sizing: border-box;
+                outline: none;
+            ">
+            <ul id="city-results" style="
+                list-style: none;
+                margin: 8px 0 0 0;
+                padding: 0;
+                max-height: 180px;
+                overflow-y: auto;
+                font-size: 0.58rem;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            "></ul>
+            <div id="added-cities-section" style="margin-top:16px; border-top:1px solid #1a4a6b; padding-top:12px;">
+                <div style="font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:8px; color:#1a6a8b;">
+                    Added Markers
+                </div>
+                <ul id="added-cities" style="
+                    list-style: none;
+                    margin: 0;
+                    padding: 0;
+                    font-size: 0.55rem;
+                    letter-spacing: 0.1em;
+                    text-transform: uppercase;
+                    max-height: 120px;
+                    overflow-y: auto;
+                "></ul>
+            </div>
+            <div id="markers-close" style="
+                margin-top:18px;
+                border-top:1px solid #1a4a6b;
+                padding-top:10px;
+                font-size:0.55rem;
+                letter-spacing:0.12em;
+                text-transform:uppercase;
+                color:#1a6a8b;
+                cursor:pointer;
+            ">Close</div>
+        </div>
 
-        renderer.domElement.addEventListener('click', (e) => {
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        <script type="module">
+            import * as THREE from 'three';
+            import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+            import * as satellite from 'satellite.js';
 
-            raycaster.setFromCamera(mouse, camera);
-            const marker_hits = raycaster.intersectObjects(markers);
-            const sat_mesh_objects = sat_meshes.map(s => s.mesh);
-            const sat_hits = raycaster.intersectObjects(sat_mesh_objects);
+            let CITIES = [];
+            fetch('/static/cities/world-cities.json').then(r => r.json()).then(d => CITIES = d);
 
-        if (marker_hits.length > 0) {
-            popup.innerHTML = `
-                <div>${marker_hits[0].object.userData.name}</div>
-                <div id="popup-close" style="margin-top:6px; color:#1a6a8b; cursor:pointer; font-size:0.5rem;">✕ CLOSE</div>
-            `;
-            popup.style.display = 'block';
-            popup.style.left = e.clientX + 12 + 'px';
-            popup.style.top = e.clientY + 12 + 'px';
-            document.getElementById('popup-close').addEventListener('click', () => {
-                popup.style.display = 'none';
+            function searchCities(q) {
+                q = q.toLowerCase().trim();
+                if (q.length < 2) return [];
+                const starts = CITIES.filter(c => c.name.toLowerCase().startsWith(q));
+                const contains = CITIES.filter(c => !c.name.toLowerCase().startsWith(q) && c.name.toLowerCase().includes(q));
+                return [...starts, ...contains].slice(0, 10);
+            }
+
+            function addCityMarker(city) {
+                const addedList = document.getElementById('added-cities');
+                const li = document.createElement('li');
+                li.textContent = city.name;
+                li.style.cssText = 'padding: 6px 8px; color: #00c8ff; border-radius: 4px;';
+                addedList.appendChild(li);
+
+                const latRad = city.lat * (Math.PI / 180);
+                const lonRad = city.lon * (Math.PI / 180);
+                const x = Math.cos(latRad) * Math.cos(lonRad);
+                const y = Math.sin(latRad);
+                const z = -Math.cos(latRad) * Math.sin(lonRad);
+
+                const markerGeometry = new THREE.SphereGeometry(0.005, 16, 8);
+                const markerMaterial = new THREE.MeshBasicMaterial({ color: 'green' });
+                const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+                marker.position.set(x, y, z);
+                scene.add(marker);
+
+                const glowGeometry = new THREE.SphereGeometry(0.015, 16, 8);
+                const glowMaterial = new THREE.MeshBasicMaterial({ color: 'green', transparent: true, opacity: 0.2 });
+                const glowMarker = new THREE.Mesh(glowGeometry, glowMaterial);
+                glowMarker.position.set(x, y, z);
+                glowMarker.userData.name = city.name;
+                scene.add(glowMarker);
+                markers.push(glowMarker);
+            }
+
+            let debounceTimer;
+            document.getElementById('city-search').addEventListener('input', e => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    const ul = document.getElementById('city-results');
+                    ul.innerHTML = '';
+                    const results = searchCities(e.target.value);
+                    for (const city of results) {
+                        const li = document.createElement('li');
+                        li.textContent = city.name;
+                        li.style.cssText = 'padding:7px 8px; cursor:pointer; color:#00c8ff; border-radius:4px;';
+                        li.addEventListener('mouseenter', () => li.style.background = '#0d2040');
+                        li.addEventListener('mouseleave', () => li.style.background = 'transparent');
+                        li.addEventListener('click', () => addCityMarker(city));
+                        ul.appendChild(li);
+                    }
+                }, 300);
             });
-            } else if (sat_hits.length > 0) {
-                const s = sat_hits[0].object.userData;
-                const entry = sat_meshes.find(m => m.mesh === sat_hits[0].object);
-                const pv = satellite.propagate(entry.satrec, new Date());
-                const gd = satellite.eciToGeodetic(pv.position, GMT);
 
-                if (activeTrackEntry && activeTrackEntry !== entry) {
-                    removeTrackLines(activeTrackEntry.trackLines);
-                    activeTrackEntry.trackLines = [];
-                }
-                if (activeTrackEntry !== entry) {
-                    entry.trackLines = createTrackLines(buildGroundTrack(entry.satrec));
-                    activeTrackEntry = entry;
+            document.getElementById('key-btn').addEventListener('click', () => {
+                document.getElementById('key-panel').style.display = 'block';
+            });
+            document.getElementById('key-close').addEventListener('click', () => {
+                document.getElementById('key-panel').style.display = 'none';
+            });
+            document.getElementById('marker-btn').addEventListener('click', () => {
+                document.getElementById('markers-panel').style.display = 'block';
+            });
+            document.getElementById('markers-close').addEventListener('click', () => {
+                document.getElementById('markers-panel').style.display = 'none';
+            });
+
+            var GMT = satellite.gstime(new Date());
+
+            const cosmodromes = [
+                { name: "Baikonur Cosmodrome",       lat: 45.9646,  lon: 63.3052   },
+                { name: "Kennedy Space Center",      lat: 28.5728,  lon: -80.6490  },
+                { name: "Cape Canaveral SFS",        lat: 28.4889,  lon: -80.5778  },
+                { name: "Vandenberg SFB",            lat: 34.7420,  lon: -120.5724 },
+                { name: "Starbase (SpaceX)",         lat: 25.9969,  lon: -97.1571  },
+                { name: "Wallops Flight Facility",   lat: 37.8402,  lon: -75.4778  },
+                { name: "Plesetsk Cosmodrome",       lat: 62.9271,  lon: 40.5777   },
+                { name: "Vostochny Cosmodrome",      lat: 51.8746,  lon: 128.3551  },
+                { name: "Kapustin Yar",              lat: 48.5735,  lon: 46.2558   },
+                { name: "Kourou / CSG",              lat: 5.2390,   lon: -52.7685  },
+                { name: "Satish Dhawan (ISRO)",      lat: 13.7199,  lon: 80.2304   },
+                { name: "Jiuquan (CNSA)",            lat: 40.9608,  lon: 100.2983  },
+                { name: "Xichang (CNSA)",            lat: 28.2460,  lon: 102.0270  },
+                { name: "Wenchang (CNSA)",           lat: 19.6145,  lon: 110.9513  },
+                { name: "Taiyuan (CNSA)",            lat: 38.8490,  lon: 111.6083  },
+                { name: "Tanegashima (JAXA)",        lat: 30.4012,  lon: 130.9685  },
+                { name: "Uchinoura (JAXA)",          lat: 31.2514,  lon: 131.0814  },
+                { name: "Naro (KARI)",               lat: 34.4322,  lon: 127.5350  },
+                { name: "Mahia Peninsula (RocketLab)", lat: -39.2596, lon: 177.8644 },
+                { name: "Imam Khomeini (Iran)",      lat: 35.2344,  lon: 53.9211   },
+                { name: "Shahroud (Iran)",           lat: 36.2070,  lon: 55.4670   },
+                { name: "Alcântara (Brazil)",        lat: -2.3729,  lon: -44.3964  },
+                { name: "Palmachim (Israel)",        lat: 31.8964,  lon: 34.6903   },
+                { name: "Sutherland (UK)",           lat: 58.5200,  lon: -4.4200   },
+            ];
+
+            const capitals = [
+                { name: "Astana",         lat: 51.1801,  lon: 71.4460  },
+                { name: "Washington D.C", lat: 38.8951,  lon: -77.0369 },
+                { name: "Moscow",         lat: 55.7558,  lon: 37.6173  },
+                { name: "Paris",          lat: 48.8566,  lon: 2.3522   },
+                { name: "New Delhi",      lat: 28.6139,  lon: 77.2090  },
+                { name: "Beijing",        lat: 39.9042,  lon: 116.4074 },
+                { name: "Tokyo",          lat: 35.6762,  lon: 139.6503 },
+                { name: "Seoul",          lat: 37.5665,  lon: 126.9780 },
+                { name: "Wellington",     lat: -41.2866, lon: 174.7756 },
+                { name: "Tehran",         lat: 35.6892,  lon: 51.3890  },
+                { name: "Brasília",       lat: -15.7975, lon: -47.8919 },
+                { name: "Jerusalem",      lat: 31.7683,  lon: 35.2137  },
+                { name: "London",         lat: 51.5074,  lon: -0.1278  },
+            ];
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color('#060d18');
+
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 2);
+
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.enableZoom = true;
+            controls.minDistance = 1.5;
+
+            const geometry = new THREE.SphereGeometry(1, 64, 32);
+            const loader = new THREE.TextureLoader();
+            const texture = loader.load('/static/img/country-outlines-4k.png');
+            const material = new THREE.MeshBasicMaterial({ map: texture });
+            const sphere = new THREE.Mesh(geometry, material);
+            scene.add(sphere);
+
+            const light = new THREE.PointLight('white', 1);
+            light.position.set(5, 5, 5);
+            scene.add(light);
+
+            const markers = [];
+            const sat_meshes = [];
+            let activeTrackEntry = null;
+
+            const TRACK_STEP_SECONDS = 30;
+            const TRACK_SURFACE_OFFSET = 1.001;
+
+            function getOrbitalPeriodMinutes(satrec) {
+                return (1 / satrec.no) * 2 * Math.PI * 60;
+            }
+
+
+            function buildGroundTrack(satrec) {
+                const durationSeconds = 1440 * 60;
+                const steps = Math.ceil(durationSeconds / TRACK_STEP_SECONDS);
+                const now = new Date();
+                const points = [];
+                const colors = [];
+                const startColor = new THREE.Color('#ff4444');
+                const endColor = new THREE.Color('#00ff88');
+                const lerpedColor = new THREE.Color();
+
+                for (let i = 0; i <= steps; i++) {
+                    const t = new Date(now.getTime() + i * TRACK_STEP_SECONDS * 1000);
+                    const gmt = satellite.gstime(t);
+                    const pv = satellite.propagate(satrec, t);
+                    if (!pv || !pv.position) continue;
+                    const gd = satellite.eciToGeodetic(pv.position, gmt);
+                    const lat = gd.latitude;
+                    const lon = gd.longitude;
+                    const x = Math.cos(lat) * Math.cos(lon) * TRACK_SURFACE_OFFSET;
+                    const y = Math.sin(lat) * TRACK_SURFACE_OFFSET;
+                    const z = -Math.cos(lat) * Math.sin(lon) * TRACK_SURFACE_OFFSET;
+                    points.push(new THREE.Vector3(x, y, z));
+                    lerpedColor.lerpColors(startColor, endColor, i / steps);
+                    colors.push(lerpedColor.r, lerpedColor.g, lerpedColor.b);
                 }
 
+                const geo = new THREE.BufferGeometry().setFromPoints(points);
+                geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+                const mat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.7 });
+                const line = new THREE.Line(geo, mat);
+                scene.add(line);
+                return [line];
+            }
+
+            function createTrackLines(segments) {
+                return segments;
+            }
+
+            function removeTrackLines(lines) {
+                for (const line of lines) {
+                    scene.remove(line);
+                    line.geometry.dispose();
+                }
+            }
+
+            function getGnssSatColour(name) {
+                if (name.includes('GPS'))     return 'blue';
+                if (name.includes('COSMOS'))  return 'red';
+                if (name.includes('LUCH'))    return 'red';
+                if (name.includes('BEIDOU'))  return 'yellow';
+                if (name.includes('GALILEO')) return 'cyan';
+                if (name.includes('NAVIC'))   return 'orange';
+                if (name.includes('IRNSS'))   return 'orange';
+                if (name.includes('QZSS'))    return 'purple';
+
+                if (name.includes('AEROCUBE')) return 'blue';
+
+                if (name.includes('PERSEUS'))  return 'red';
+                if (name.includes('POLYITAN')) return 'red';
+                if (name.includes('SITRO')) return 'red';
+
+                if (name.includes('QB50'))     return 'cyan';
+                if (name.includes('GOMX'))     return 'cyan';
+                if (name.includes('TRITON'))   return 'cyan';
+                if (name.includes('STRAND'))   return 'cyan';
+                if (name.includes('UWE'))      return 'cyan';
+                if (name.includes('BEESAT'))   return 'cyan';
+                if (name.includes('FUNCUBE'))  return 'cyan';
+
+                if (name.includes('SEEDS'))    return 'purple';
+                if (name.includes('WNISAT'))   return 'purple';
+                if (name.includes('CUTE'))     return 'purple';
+                if (name.includes('POPACS'))   return 'purple';
+
+                return '#ffffff';
+            }
+
+            function getGnssSatOperator(name) {
+                if (name.includes('GPS'))     return 'USA';
+                if (name.includes('COSMOS'))  return 'Russia';
+                if (name.includes('LUCH'))    return 'Russia';
+                if (name.includes('BEIDOU'))  return 'China';
+                if (name.includes('CSS'))     return 'China';
+                if (name.includes('GALILEO')) return 'Europe';
+                if (name.includes('NAVIC'))   return 'India';
+                if (name.includes('IRNSS'))   return 'India';
+                if (name.includes('QZSS'))    return 'Japan';
+                if (name.includes('ISS'))     return 'International';
+
+                if (name.includes('AEROCUBE')) return 'USA';
+
+                if (name.includes('PERSEUS'))  return 'Russia';
+                if (name.includes('POLYITAN')) return 'Russia';
+
+                if (name.includes('QB50'))     return 'Europe';
+                if (name.includes('GOMX'))     return 'Denmark';
+                if (name.includes('TRITON'))   return 'Denmark';
+                if (name.includes('STRAND'))   return 'UK';
+                if (name.includes('UWE'))      return 'Germany';
+                if (name.includes('BEESAT'))   return 'Germany';
+                if (name.includes('FUNCUBE'))  return 'UK';
+
+                if (name.includes('SEEDS'))    return 'Japan';
+                if (name.includes('WNISAT'))   return 'Japan';
+                if (name.includes('CUTE'))     return 'Japan';
+                if (name.includes('POPACS'))   return 'Japan';
+
+                if (name.includes('SITRO'))    return 'Unknown';
+                if (name.includes('LASARSAT')) return 'Unknown';
+
+                return 'Unknown';
+            }
+
+            async function gnss_sats_init() {
+                const response = await fetch('dynamic/gnss_sats');
+                const sats_response = await response.json();
+                for (const sat_response of sats_response) {
+                    const satGeometry = new THREE.SphereGeometry(0.02, 8, 4);
+                    const satMaterial = new THREE.MeshBasicMaterial({ color: getGnssSatColour(sat_response.OBJECT_NAME) });
+                    const sat = new THREE.Mesh(satGeometry, satMaterial);
+
+                    const sat_rec = satellite.json2satrec(sat_response);
+                    const positionAndVelocity = satellite.propagate(sat_rec, new Date());
+                    if (positionAndVelocity === null) continue;
+                    const positionECI = positionAndVelocity.position;
+                    const geoPos = satellite.eciToGeodetic(positionECI, GMT);
+                    const latRad = geoPos.latitude;
+                    const lonRad = geoPos.longitude;
+                    const sat_height = geoPos.height;
+                    const scale = 1 + (sat_height / 6371);
+                    const x = Math.cos(latRad) * Math.cos(lonRad) * scale;
+                    const y = Math.sin(latRad) * scale;
+                    const z = -Math.cos(latRad) * Math.sin(lonRad) * scale;
+                    sat.position.set(x, y, z);
+                    sat.userData.name = sat_response.OBJECT_NAME;
+                    sat.userData.type = 'sat';
+                    scene.add(sat);
+                    sat_meshes.push({ satrec: sat_rec, mesh: sat, trackLines: [] });
+                }
+            }
+            gnss_sats_init();
+
+            async function cube_sats_init() {
+                const response = await fetch('dynamic/cubesats');
+                const sats_response = await response.json();
+                for (const sat_response of sats_response) {
+                    const satGeometry = new THREE.SphereGeometry(0.02, 8, 4);
+                    const satMaterial = new THREE.MeshBasicMaterial({ color: getGnssSatColour(sat_response.OBJECT_NAME) });
+                    const sat = new THREE.Mesh(satGeometry, satMaterial);
+
+                    const sat_rec = satellite.json2satrec(sat_response);
+                    const positionAndVelocity = satellite.propagate(sat_rec, new Date());
+                    if (positionAndVelocity === null) continue;
+                    const positionECI = positionAndVelocity.position;
+                    const geoPos = satellite.eciToGeodetic(positionECI, GMT);
+                    const latRad = geoPos.latitude;
+                    const lonRad = geoPos.longitude;
+                    const sat_height = geoPos.height;
+                    const scale = 1 + (sat_height / 6371);
+                    const x = Math.cos(latRad) * Math.cos(lonRad) * scale;
+                    const y = Math.sin(latRad) * scale;
+                    const z = -Math.cos(latRad) * Math.sin(lonRad) * scale;
+                    sat.position.set(x, y, z);
+                    sat.userData.name = sat_response.OBJECT_NAME;
+                    sat.userData.type = 'sat';
+                    scene.add(sat);
+                    sat_meshes.push({ satrec: sat_rec, mesh: sat, trackLines: [] });
+                }
+            }
+
+            cube_sats_init();
+
+            async function stations_init() {
+                const response = await fetch('dynamic/stations');
+                const sats_response = await response.json();
+                const allowed = (name) => {
+                    if (name === 'ISS (ZARYA)') return true;
+                    if (name.startsWith('CSS')) return true;
+                    return false;
+                };
+                for (const sat_response of sats_response) {
+                    if (!allowed(sat_response.OBJECT_NAME)) continue;
+                    const satGeometry = new THREE.SphereGeometry(0.02, 8, 4);
+                    const satMaterial = new THREE.MeshBasicMaterial({
+                        color: sat_response.OBJECT_NAME.startsWith('CSS') ? 'yellow' : '#00ff88'
+                    });
+                    const sat = new THREE.Mesh(satGeometry, satMaterial);
+
+                    const sat_rec = satellite.json2satrec(sat_response);
+                    const positionAndVelocity = satellite.propagate(sat_rec, new Date());
+                    if (positionAndVelocity === null) continue;
+                    const positionECI = positionAndVelocity.position;
+                    const geoPos = satellite.eciToGeodetic(positionECI, GMT);
+                    const latRad = geoPos.latitude;
+                    const lonRad = geoPos.longitude;
+                    const sat_height = geoPos.height;
+                    const scale = 1 + (sat_height / 6371);
+                    const x = Math.cos(latRad) * Math.cos(lonRad) * scale;
+                    const y = Math.sin(latRad) * scale;
+                    const z = -Math.cos(latRad) * Math.sin(lonRad) * scale;
+                    sat.position.set(x, y, z);
+                    sat.userData.name = sat_response.OBJECT_NAME;
+                    sat.userData.type = 'sat';
+                    scene.add(sat);
+                    sat_meshes.push({ satrec: sat_rec, mesh: sat, trackLines: [] });
+                }
+            }
+            stations_init();
+
+            for (const cosmodrome of cosmodromes) {
+                const latRad = cosmodrome.lat * (Math.PI / 180);
+                const lonRad = cosmodrome.lon * (Math.PI / 180);
+                const x = Math.cos(latRad) * Math.cos(lonRad);
+                const y = Math.sin(latRad);
+                const z = -Math.cos(latRad) * Math.sin(lonRad);
+
+                const markerGeometry = new THREE.SphereGeometry(0.005, 16, 8);
+                const markerMaterial = new THREE.MeshBasicMaterial({ color: 'cyan' });
+                const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+                marker.position.set(x, y, z);
+                scene.add(marker);
+
+                const glowGeometry = new THREE.SphereGeometry(0.015, 16, 8);
+                const glowMaterial = new THREE.MeshBasicMaterial({ color: 'cyan', transparent: true, opacity: 0.2 });
+                const glowMarker = new THREE.Mesh(glowGeometry, glowMaterial);
+                glowMarker.position.set(x, y, z);
+                glowMarker.userData.name = cosmodrome.name;
+                scene.add(glowMarker);
+                markers.push(glowMarker);
+            }
+
+            for (const capital of capitals) {
+                const latRad = capital.lat * (Math.PI / 180);
+                const lonRad = capital.lon * (Math.PI / 180);
+                const x = Math.cos(latRad) * Math.cos(lonRad);
+                const y = Math.sin(latRad);
+                const z = -Math.cos(latRad) * Math.sin(lonRad);
+
+                const markerGeometry = new THREE.SphereGeometry(0.005, 16, 8);
+                const markerMaterial = new THREE.MeshBasicMaterial({ color: 'red' });
+                const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+                marker.position.set(x, y, z);
+                scene.add(marker);
+
+                const glowGeometry = new THREE.SphereGeometry(0.015, 16, 8);
+                const glowMaterial = new THREE.MeshBasicMaterial({ color: 'red', transparent: true, opacity: 0.2 });
+                const glowMarker = new THREE.Mesh(glowGeometry, glowMaterial);
+                glowMarker.position.set(x, y, z);
+                glowMarker.userData.name = capital.name;
+                scene.add(glowMarker);
+                markers.push(glowMarker);
+            }
+
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+
+            const popup = document.createElement('div');
+            popup.style.cssText = `
+                position: fixed;
+                background: #0a1628;
+                border: 1px solid #1a4a6b;
+                color: #00c8ff;
+                font-family: 'Orbitron', sans-serif;
+                font-size: 0.6rem;
+                letter-spacing: 0.15em;
+                text-transform: uppercase;
+                padding: 8px 12px;
+                border-radius: 6px;
+                pointer-events: auto;
+                display: none;
+            `;
+            document.body.appendChild(popup);
+
+            renderer.domElement.addEventListener('click', (e) => {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const marker_hits = raycaster.intersectObjects(markers);
+                const sat_mesh_objects = sat_meshes.map(s => s.mesh);
+                const sat_hits = raycaster.intersectObjects(sat_mesh_objects);
+
+            if (marker_hits.length > 0) {
+                popup.innerHTML = `
+                    <div>${marker_hits[0].object.userData.name}</div>
+                    <div id="popup-close" style="margin-top:6px; color:#1a6a8b; cursor:pointer; font-size:0.5rem;">✕ CLOSE</div>
+                `;
                 popup.style.display = 'block';
                 popup.style.left = e.clientX + 12 + 'px';
                 popup.style.top = e.clientY + 12 + 'px';
-                popup.innerHTML = `
-                    <div>${s.name}</div>
-                    <div>LAT: ${satellite.degreesLat(gd.latitude).toFixed(2)}°</div>
-                    <div>LON: ${satellite.degreesLong(gd.longitude).toFixed(2)}°</div>
-                    <div>ALT: ${gd.height.toFixed(0)} km</div>
-                    <div>OPERATOR: ${getGnssSatOperator(s.name)}</div>
-                    <div id="popup-close" style="margin-top:6px; color:#1a6a8b; cursor:pointer; font-size:0.5rem;">✕ CLOSE</div>
-                `;
                 document.getElementById('popup-close').addEventListener('click', () => {
-                    removeTrackLines(activeTrackEntry.trackLines);
-                    activeTrackEntry.trackLines = [];
-                    activeTrackEntry = null;
                     popup.style.display = 'none';
                 });
+                } else if (sat_hits.length > 0) {
+                    const s = sat_hits[0].object.userData;
+                    const entry = sat_meshes.find(m => m.mesh === sat_hits[0].object);
+                    const pv = satellite.propagate(entry.satrec, new Date());
+                    const gd = satellite.eciToGeodetic(pv.position, GMT);
+
+                    if (activeTrackEntry && activeTrackEntry !== entry) {
+                        removeTrackLines(activeTrackEntry.trackLines);
+                        activeTrackEntry.trackLines = [];
+                    }
+                    if (activeTrackEntry !== entry) {
+                        entry.trackLines = createTrackLines(buildGroundTrack(entry.satrec));
+                        activeTrackEntry = entry;
+                    }
+
+                    popup.style.display = 'block';
+                    popup.style.left = e.clientX + 12 + 'px';
+                    popup.style.top = e.clientY + 12 + 'px';
+                    popup.innerHTML = `
+                        <div>${s.name}</div>
+                        <div>LAT: ${satellite.degreesLat(gd.latitude).toFixed(2)}°</div>
+                        <div>LON: ${satellite.degreesLong(gd.longitude).toFixed(2)}°</div>
+                        <div>ALT: ${gd.height.toFixed(0)} km</div>
+                        <div>OPERATOR: ${getGnssSatOperator(s.name)}</div>
+                        <div id="popup-close" style="margin-top:6px; color:#1a6a8b; cursor:pointer; font-size:0.5rem;">✕ CLOSE</div>
+                    `;
+                    document.getElementById('popup-close').addEventListener('click', () => {
+                        removeTrackLines(activeTrackEntry.trackLines);
+                        activeTrackEntry.trackLines = [];
+                        activeTrackEntry = null;
+                        popup.style.display = 'none';
+                    });
+                }
+            });
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                GMT = satellite.gstime(new Date());
+
+                for (const entry of sat_meshes) {
+                    const pv = satellite.propagate(entry.satrec, new Date());
+                    if (!pv || !pv.position) continue;
+                    const geoPos = satellite.eciToGeodetic(pv.position, GMT);
+                    const latRad = geoPos.latitude;
+                    const lonRad = geoPos.longitude;
+                    const sat_height = geoPos.height;
+                    const scale = 1 + (sat_height / 6371);
+                    const x = Math.cos(latRad) * Math.cos(lonRad) * scale;
+                    const y = Math.sin(latRad) * scale;
+                    const z = -Math.cos(latRad) * Math.sin(lonRad) * scale;
+                    entry.mesh.position.set(x, y, z);
+                }
+
+                renderer.render(scene, camera);
             }
-        });
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            GMT = satellite.gstime(new Date());
 
-            for (const entry of sat_meshes) {
-                const pv = satellite.propagate(entry.satrec, new Date());
-                if (!pv || !pv.position) continue;
-                const geoPos = satellite.eciToGeodetic(pv.position, GMT);
-                const latRad = geoPos.latitude;
-                const lonRad = geoPos.longitude;
-                const sat_height = geoPos.height;
-                const scale = 1 + (sat_height / 6371);
-                const x = Math.cos(latRad) * Math.cos(lonRad) * scale;
-                const y = Math.sin(latRad) * scale;
-                const z = -Math.cos(latRad) * Math.sin(lonRad) * scale;
-                entry.mesh.position.set(x, y, z);
-            }
+            animate();
 
-            renderer.render(scene, camera);
-        }
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        </script>
 
-    </script>
-
-</body>
+    </body>
+</html>

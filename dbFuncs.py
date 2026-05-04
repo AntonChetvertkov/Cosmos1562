@@ -10,6 +10,7 @@ def db_connect():
     conn.row_factory = sqlite3.Row
     return conn
 
+
 def init_db():
     conn = db_connect()
     cursor = conn.cursor()
@@ -17,12 +18,49 @@ def init_db():
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
+            password TEXT,
+            google_id TEXT UNIQUE,
+            yandex_id TEXT UNIQUE,
+            name TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     conn.commit()
     conn.close()
+
+def get_or_create_user_oauth(email, provider_id, name, provider):
+    conn = db_connect()
+    cursor = conn.cursor()
+    
+    user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
+    
+    if user:
+        if provider == 'google':
+            cursor.execute('UPDATE users SET google_id = ? WHERE email = ?', (provider_id, email))
+        elif provider == 'yandex':
+            cursor.execute('UPDATE users SET yandex_id = ? WHERE email = ?', (provider_id, email))
+        cursor.execute('UPDATE users SET name = ? WHERE email = ?', (name, email))
+        conn.commit()
+    else:
+        try:
+            if provider == 'google':
+                cursor.execute(
+                    'INSERT INTO users (email, google_id, name) VALUES (?, ?, ?)',
+                    (email, provider_id, name)
+                )
+            elif provider == 'yandex':
+                cursor.execute(
+                    'INSERT INTO users (email, yandex_id, name) VALUES (?, ?, ?)',
+                    (email, provider_id, name)
+                )
+            conn.commit()
+        except sqlite3.IntegrityError:
+            conn.close()
+            return None
+    
+    user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
+    conn.close()
+    return user
 
 def get_user_by_email(email):
     conn = db_connect()
@@ -36,8 +74,8 @@ def add_user(email, password):
     cursor = conn.cursor()
     try:
         cursor.execute('''
-            INSERT INTO users (email, password) VALUES (?, ?)
-        ''', (email, hashedPassword))
+            INSERT INTO users (email, password, acc_type) VALUES (?, ?, ?)
+        ''', (email, hashedPassword, 'BASIC'))
     except sqlite3.IntegrityError as e:
         conn.commit()
         conn.close()

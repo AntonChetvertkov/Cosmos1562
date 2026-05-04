@@ -1,32 +1,37 @@
 <!DOCTYPE html>
-<head>
-    <meta charset="UTF-8">
-    <title>Cosmos1562</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Cosmos1562</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="static/css/register.css">
-</head>
-<body>
-    <div id="register_form">
-        <form id="register", method="post">
-            <label for="email">Email</label>
-            <input type="email" id="email_field" name="email" placeholder="Enter your email" required >
-            <br>
-            <label for="password">Password</label>
-            <input type="password" id="password_field" name="password" placeholder="Enter your password" required>
-            <br>
-            <label for="password">Repeat Password</label>
-            <input type="password" id="password_repeat" name="password_repeat" placeholder="Repeat your password" required>
-            <br>
-            {% if error %}
-            {{ error }}
-            {% endif %}
-            <button type="submit">Register</button>
-            
-        </form>
-    </div>
-</body>
+    <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="static/css/register.css">
+    </head>
+    <body>
+        <div id="register_form">
+            <form id="register", method="post">
+                <label for="email">Email</label>
+                <input type="email" id="email_field" name="email" placeholder="Enter your email" required >
+                <br>
+                <label for="password">Password</label>
+                <input type="password" id="password_field" name="password" placeholder="Enter your password" required>
+                <br>
+                <label for="password">Repeat Password</label>
+                <input type="password" id="password_repeat" name="password_repeat" placeholder="Repeat your password" required>
+                <br>
+                {% if error %}
+                    <div class="error-message">{{ error }}</div>
+                {% endif %}
+                <button type="submit">Register</button>
+                <p style="margin-top: 20px; font-size: 0.9rem;">
+                    Already have an account? <a href="/" style="color: #00c8ff; text-decoration: none;">Login here</a>
+                </p>
+                
+            </form>
+        </div>
+    </body>
+</html>

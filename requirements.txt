@@ -4,3 +4,5 @@ Werkzeug>=2.3.7
 itsdangerous>=2.1.2
 click>=8.1.6
 requests>=2.31.0
+authlib>=1.2.0
+python-dotenv>=1.0.0

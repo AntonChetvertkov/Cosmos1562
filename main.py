@@ -1,14 +1,43 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, session, current_app, g
+from flask import Flask, render_template, request, redirect, jsonify, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
-from dbFuncs import init_db, add_user, get_all_users, get_user_by_email
+from dbFuncs import init_db, add_user, get_all_users, get_user_by_email, get_or_create_user_oauth
 import sqlite3
 import requests
 import json
 import os
 import time
+from dotenv import load_dotenv
+from authlib.integrations.flask_client import OAuth
+
+load_dotenv()
+
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
+YANDEX_CLIENT_ID = os.getenv('YANDEX_CLIENT_ID')
+YANDEX_CLIENT_SECRET = os.getenv('YANDEX_CLIENT_SECRET')
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24).hex()
+
+oauth = OAuth(app)
+
+google = oauth.register(
+    name='google',
+    client_id=os.getenv('GOOGLE_CLIENT_ID'),
+    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'}
+)
+
+yandex = oauth.register(
+    name='yandex',
+    client_id=os.getenv('YANDEX_CLIENT_ID'),
+    client_secret=os.getenv('YANDEX_CLIENT_SECRET'),
+    authorize_url='https://oauth.yandex.com/authorize',
+    access_token_url='https://oauth.yandex.com/token',
+    userinfo_endpoint='https://login.yandex.ru/info',
+    client_kwargs={'scope': 'login:email'}
+)
 
 GNSS_CACHE_PATH = "dynamic/sats/gnss_sats.json"
 CUBESATS_CACHE_PATH = "dynamic/sats/cube_sats.json"
@@ -27,8 +56,7 @@ def get_satellite_data(PATH, URL):
             with open(PATH, "r") as f:
                 return json.load(f)
     try:
-        response = requests.get(URL, headers={'User-Agent': 'Mozilla/5.0'})
-        print(response.status_code, response.text[:200])
+        response = requests.get(URL, headers={'User-Agent': 'Mozilla/5.0'}, timeout=20)
         response.raise_for_status()
         data = response.json()
 
@@ -96,6 +124,63 @@ def cubesats():
 def logout():
     session.pop('authenticated', None)
     return redirect('/')
+
+@app.route('/auth/login/google')
+def login_google():
+    redirect_uri = url_for('auth_callback_google', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/auth/login/yandex')
+def login_yandex():
+    redirect_uri = url_for('auth_callback_yandex', _external=True)
+    return yandex.authorize_redirect(redirect_uri)
+
+@app.route('/auth/callback/google')
+def auth_callback_google():
+    token = google.authorize_access_token()
+    user = token.get('userinfo')
+    
+    if not user:
+        return redirect('/?error=Failed to get user info from Google')
+    
+    email = user.get('email')
+    name = user.get('name', 'Unknown')
+    google_id = user.get('sub')
+    
+    db_user = get_or_create_user_oauth(email, google_id, name, 'google')
+    
+    if db_user:
+        session['authenticated'] = True
+        session['user_email'] = email
+        session['user_name'] = name
+        return redirect('/home')
+    else:
+        return redirect('/?error=Failed to create user account')
+
+@app.route('/auth/callback/yandex')
+def auth_callback_yandex():
+    token = yandex.authorize_access_token()
+    import requests
+    headers = {'Authorization': f'OAuth {token["access_token"]}'}
+    resp = requests.get('https://login.yandex.ru/info', headers=headers)
+    user = resp.json()
+    
+    if not user:
+        return redirect('/?error=Failed to get user info from Yandex')
+    
+    email = user.get('default_email')
+    name = user.get('real_name', 'Unknown')
+    yandex_id = user.get('id')
+    
+    db_user = get_or_create_user_oauth(email, yandex_id, name, 'yandex')
+    
+    if db_user:
+        session['authenticated'] = True
+        session['user_email'] = email
+        session['user_name'] = name
+        return redirect('/home')
+    else:
+        return redirect('/?error=Failed to create user account')
 
 
 if __name__ == '__main__':

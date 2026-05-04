@@ -5,10 +5,7 @@
     <title>Cosmos1562</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="static/css/welcome.css">
 </head>
 <body>
@@ -22,8 +19,17 @@
             <br>
             <button type="submit">Log in</button>
             <a href="/register" class="register-btn">Register</a>
+            <div class="oauth-buttons">
+                <a href="/auth/login/yandex" class="oauth-btn oauth-yandex">
+                    <img src="{{ url_for('static', filename='img/Yandex.png') }}" class="oauth-icon">
+                </a>
+                <br>
+                <a href="/auth/login/google" class="oauth-btn oauth-google">
+                    <img src="{{ url_for('static', filename='img/Google.png') }}" class="oauth-icon">
+                </a>
+            </div>
             {% if error %}
-            {{ error }}
+                <div class="error-message">{{ error }}</div>
             {% endif %}
 
         </form>
