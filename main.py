@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, current_app, g
 from werkzeug.security import generate_password_hash, check_password_hash
-from dbFuncs import init_db, add_user, get_all_users
+from dbFuncs import init_db, add_user, get_all_users, get_user_by_email
 import sqlite3
 import requests
 import json
@@ -8,6 +8,7 @@ import os
 import time
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24).hex()
 
 GNSS_CACHE_PATH = "dynamic/sats/gnss_sats.json"
 CUBESATS_CACHE_PATH = "dynamic/sats/cube_sats.json"
@@ -48,6 +49,7 @@ def index():
         if email in [user['email'] for user in all_users]:
 
             if check_password_hash([user['password'] for user in all_users if user['email'] == email][0], password):
+                session['authenticated'] = True
                 return render_template('home.html')
             else:
                 return render_template('welcome.html', error="Invalid password")
@@ -59,6 +61,8 @@ def index():
 
 @app.route('/home')
 def home():
+    if 'authenticated' not in session:
+        return redirect('/')
     return render_template('home.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -70,6 +74,7 @@ def register():
         if password != password_repeat:
             return render_template('register.html', error="Passwords don't match!")
         else:
+            add_user(email, password)
             return redirect('/')
     return render_template('register.html')
 
@@ -88,6 +93,6 @@ def cubesats():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
     init_db()
+    app.run(debug=True)
     

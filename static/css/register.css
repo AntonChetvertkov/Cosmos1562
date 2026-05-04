@@ -1,64 +1,152 @@
-h1 {
+:root {
+    --bg: #060d18;
+    --cyan: #00c8ff;
+    --cyan-dim: #0d3a52;
+    --cyan-glow: rgba(0, 200, 255, 0.08);
+    --text: #a8d4e8;
+    --text-muted: #2e5f7a;
+    --panel-bg: rgba(8, 15, 30, 0.85);
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: var(--bg);
     font-family: 'Orbitron', sans-serif;
-}
-
-body, label, input, button {
-    font-family: 'Audiowide', sans-serif;
-    font-weight: 400;    
-}
-
-/* body{
+    min-height: 100vh;
     display: flex;
-    justify-content: flex;
-} */
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+}
 
-#register_form{
-    background-color:lightsteelblue;
-    font-family: 'Orbitron, sans-serif';
-    float: middle;
-    width: 45%;
-    height: 100vh;
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(0, 200, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 200, 255, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+#register_form {
+    position: relative;
+    z-index: 1;
+    background: var(--panel-bg);
+    border: 1px solid var(--cyan-dim);
+    border-radius: 10px;
+    padding: 2.5rem 2rem;
+    width: min(420px, 90vw);
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    padding: 1rem;
-    transition: background-color 0.1s ease 0.1s;
-}   
-
-#register_form:hover{
-    background-color: rgb(133, 152, 175);
+    box-shadow:
+        0 0 40px rgba(0, 0, 0, 0.8),
+        0 0 0 1px rgba(0, 200, 255, 0.04),
+        inset 0 1px 0 rgba(0, 200, 255, 0.06);
+    transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
 }
 
-#register_form input,
-#register_form button {
-    margin: 0.5rem 0;
+#register_form:hover {
+    border-color: rgba(0, 200, 255, 0.35);
+    box-shadow:
+        0 0 60px rgba(0, 0, 0, 0.9),
+        0 0 20px rgba(0, 200, 255, 0.06),
+        inset 0 1px 0 rgba(0, 200, 255, 0.1);
 }
 
-#register_form:autofill{
-    background-color: lightcyan;
-    font-family: 'Orbitron, sans-serif';
+#register_form h1 {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 2rem;
+    text-shadow: 0 0 20px rgba(0, 200, 255, 0.4);
 }
 
-#about_sidebar_bg{
-    width: 45%;
-    float: left;
-    height: 100vh;
+#register_form form {
+    width: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    padding: 1rem;
-    transition: background-color 0.1s ease 0.1s;
 }
 
-#email_field{
-    width:auto;
+label {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+    display: block;
 }
-#email_fielsd{
-    width:fit-content;
+
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+    width: 100%;
+    background: rgba(0, 200, 255, 0.04);
+    border: 1px solid var(--cyan-dim);
+    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+    color: var(--text);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+    outline: none;
+    transition: border-color 0.25s var(--ease), background 0.25s var(--ease), box-shadow 0.25s var(--ease);
+    margin-bottom: 1rem;
+}
+
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="text"]:focus {
+    border-color: var(--cyan);
+    background: var(--cyan-glow);
+    box-shadow: 0 0 0 2px rgba(0, 200, 255, 0.1);
+}
+
+input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+
+button[type="submit"] {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.65rem 1rem;
+    background: transparent;
+    border: 1px solid var(--cyan-dim);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.25s var(--ease), background 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+
+button[type="submit"]:hover {
+    color: var(--cyan);
+    background: var(--cyan-glow);
+    border-color: var(--cyan);
+    box-shadow: 0 0 12px rgba(0, 200, 255, 0.15);
+}
+
+.error-msg {
+    margin-top: 0.75rem;
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    color: #ff4d6d;
+    text-align: center;
 }

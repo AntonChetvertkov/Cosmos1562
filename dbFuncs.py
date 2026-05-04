@@ -24,11 +24,17 @@ def init_db():
     conn.commit()
     conn.close()
 
+def get_user_by_email(email):
+    conn = db_connect()
+    user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
+    conn.close()
+    return user
+
 def add_user(email, password):
     hashedPassword = generate_password_hash(password)
     conn = db_connect()
     cursor = conn.cursor()
-    cursor.execute(f'''
+    cursor.execute('''
         INSERT INTO users (email, password) VALUES (?, ?)
     ''', (email, hashedPassword))
     conn.commit()
