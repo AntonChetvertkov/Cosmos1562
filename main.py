@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, current_app, g
-from dbFuncs import init_db, add_test_user, get_all_users
+from werkzeug.security import generate_password_hash, check_password_hash
+from dbFuncs import init_db, add_user, get_all_users
 import sqlite3
 import requests
 import json
@@ -15,6 +16,8 @@ CACHE_MAX_AGE = 7200
 CELESTRAK_GNSS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=gnss&FORMAT=json"
 CELESTRAK_CUBESAT_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=cubesat&FORMAT=json"
 CELESTRAK_STATIONS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json"
+
+
 
 def get_satellite_data(PATH, URL):
     if os.path.exists(PATH):
@@ -44,7 +47,7 @@ def index():
 
         if email in [user['email'] for user in all_users]:
 
-            if password == [user['password'] for user in all_users if user['email'] == email][0]:
+            if check_password_hash([user['password'] for user in all_users if user['email'] == email][0], password):
                 return render_template('home.html')
             else:
                 return render_template('welcome.html', error="Invalid password")

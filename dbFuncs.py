@@ -1,5 +1,6 @@
 import sqlite3
 from pathlib import Path
+from werkzeug.security import generate_password_hash, check_password_hash
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "DBs" / "userTable.db"
@@ -23,14 +24,16 @@ def init_db():
     conn.commit()
     conn.close()
 
-def add_test_user():
+def add_user(email, password):
+    hashedPassword = generate_password_hash(password)
     conn = db_connect()
     cursor = conn.cursor()
-    cursor.execute('''
+    cursor.execute(f'''
         INSERT INTO users (email, password) VALUES (?, ?)
-    ''', ("antonchetvertkov@gmail.com", "SECURE_PASSWORD"))
+    ''', (email, hashedPassword))
     conn.commit()
     conn.close()
+
 
 def get_all_users():
     conn = db_connect()
@@ -40,6 +43,3 @@ def get_all_users():
 
 if __name__ == "__main__":
     init_db()
-    add_test_user()
-    users = get_all_users()
-    print(users)
