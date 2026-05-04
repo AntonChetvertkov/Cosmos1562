@@ -22,6 +22,8 @@ def init_db():
             google_id TEXT UNIQUE,
             yandex_id TEXT UNIQUE,
             name TEXT,
+            surname TEXT,
+            acc_type TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -45,13 +47,13 @@ def get_or_create_user_oauth(email, provider_id, name, provider):
         try:
             if provider == 'google':
                 cursor.execute(
-                    'INSERT INTO users (email, google_id, name) VALUES (?, ?, ?)',
-                    (email, provider_id, name)
+                    'INSERT INTO users (email, google_id, name, acc_type) VALUES (?, ?, ?, ?)',
+                    (email, provider_id, name, 'BASIC')
                 )
             elif provider == 'yandex':
                 cursor.execute(
-                    'INSERT INTO users (email, yandex_id, name) VALUES (?, ?, ?)',
-                    (email, provider_id, name)
+                    'INSERT INTO users (email, yandex_id, name, acc_type) VALUES (?, ?, ?, ?)',
+                    (email, provider_id, name, 'BASIC')
                 )
             conn.commit()
         except sqlite3.IntegrityError:
