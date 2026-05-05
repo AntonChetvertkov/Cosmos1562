@@ -229,6 +229,7 @@ button[type="submit"]:hover {
     align-items: center;
     justify-content: center;
     gap: 6px;
+    
 }
 
 .oauth-icon {
@@ -236,7 +237,8 @@ button[type="submit"]:hover {
     height: auto !important;
     max-width: 60px !important;
     display: block;
-    border-radius: 15px;
+    border-radius: 30px;
+    
 }
 
 a.register-btn {
@@ -251,6 +253,7 @@ a.register-btn {
     color: var(--text-muted);
     font-family: 'Orbitron', sans-serif;
     font-size: 0.55rem;
+    border: 1px solid var(--cyan-dim);
     font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;

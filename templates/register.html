@@ -27,6 +27,17 @@
                     <div class="error-message">{{ error }}</div>
                 {% endif %}
                 <button type="submit">Register</button>
+                <br>
+                <div class="oauth-buttons">
+                    <a href="/auth/login/yandex" class="oauth-btn oauth-yandex">
+                        <img src="{{ url_for('static', filename='img/Yandex.png') }}" class="oauth-icon">
+                    </a>
+                    <br>
+                    <a href="/auth/login/google" class="oauth-btn oauth-google">
+                        <img src="{{ url_for('static', filename='img/Google.png') }}" class="oauth-icon">
+                    </a>
+                </div>
+                <br>
                 <p style="margin-top: 20px; font-size: 0.9rem;">
                     Already have an account? <a href="/" style="color: #00c8ff; text-decoration: none;">Login here</a>
                 </p>
