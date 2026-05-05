@@ -13,22 +13,19 @@ export const CONSTELLATION_COLORS = {
     CSS: { color: 'yellow', operator: 'China' },
 };
 
-export const GNSS_CONSTELLATIONS = [
+export const CONSTELLATIONS = [
     'GPS',
     'GLONASS',
     'BEIDOU',
     'GALILEO',
     'NAVIC',
     'QZSS',
-];
-
-export const STATIONS = [
     'ISS',
     'CSS',
 ];
 
 export function getConstellationName(satName) {
-    for (const const_name of GNSS_CONSTELLATIONS) {
+    for (const const_name of CONSTELLATIONS) {
         if (satName.includes(const_name)) return const_name;
     }
     if (satName.includes('COSMOS') || satName.includes('LUCH')) return 'GLONASS';
@@ -123,7 +120,7 @@ export function createConstellationPanel() {
     toggleAllRow.appendChild(toggleAllSwitch);
     container.appendChild(toggleAllRow);
 
-    for (const const_name of GNSS_CONSTELLATIONS) {
+    for (const const_name of CONSTELLATIONS) {
         const row = document.createElement('div');
         row.style.cssText = 'display: flex; align-items: center; gap: 12px; justify-content: space-between;';
         
