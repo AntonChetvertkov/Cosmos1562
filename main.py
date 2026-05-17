@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, jsonify, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from dbFuncs import init_db, add_user, get_all_users, get_user_by_email, get_or_create_user_oauth
+from antiTunneling import checkIpTunneling, getUserIp
 import sqlite3
 import requests
 import json
@@ -87,23 +88,36 @@ def get_satellite_data(PATH, URL):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        user = get_user_by_email(email)
-        if user and check_password_hash(user['password'], password):
-            session['authenticated'] = True
-            session['user_email'] = email
-            return redirect('/home')
-        else:
-            return render_template('welcome.html', error="Invalid email or password")
-    return render_template('welcome.html')
+    IP = getUserIp()
+    tunnelling = checkIpTunneling(IP)
+    if tunnelling:
+        return redirect('/error451')
+    else:   
+        if request.method == 'POST':
+            email = request.form.get('email')
+            password = request.form.get('password')
+            user = get_user_by_email(email)
+            if user and check_password_hash(user['password'], password):
+                session['authenticated'] = True
+                session['user_email'] = email
+                return redirect('/home')
+            else:
+                return render_template('welcome.html', error="Invalid email or password")
+        return render_template('welcome.html')
 
 @app.route('/home')
 def home():
     if 'authenticated' not in session:
         return redirect('/')
     return render_template('home.html')
+
+@app.route('/AUP')
+def AUP():
+    return render_template('AUP.html')
+
+@app.route('/error451')
+def error451():
+    return render_template('error451.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
