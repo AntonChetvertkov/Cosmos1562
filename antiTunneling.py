@@ -12,7 +12,7 @@ from authlib.integrations.flask_client import OAuth
 
 dotenv.load_dotenv()
 BASE_URL = 'https://ip-intelligence.abstractapi.com/v1?'
-key = os.environ.get('ABSTRACT-IP')
+key = os.environ.get('ABSTRACT_IP')
 
 def checkIpTunneling(IP):
     url = BASE_URL + 'api_key='+key+'&ip_address='+IP
