@@ -14,7 +14,7 @@ export const sat_meshes = [];
 export let activeTrackEntry = null;
 
 const visibleConstellations = new Set([
-    'GPS', 'GLONASS', 'BEIDOU', 'GALILEO', 'NAVIC', 'QZSS', 'ISS', 'CSS'
+    'GPS', 'GLONASS', 'BEIDOU', 'GALILEO', 'NAVIC', 'QZSS', 'ISS', 'CSS', 'CUBESAT'
 ]);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -138,6 +138,12 @@ async function stations_init() {
     }
 }
 
+async function starlink_init() {
+    const response = await fetch('/dynamic/starlink');
+    const data = await response.json();
+    for (const sat of data) placeSatMesh(sat, getSatColour(sat.OBJECT_NAME));
+}
+
 function placeGroundMarker(lat, lon, colour, name, size = 0.005) {
     const latRad = lat * (Math.PI / 180);
     const lonRad = lon * (Math.PI / 180);
@@ -183,6 +189,7 @@ for (const c of capitals)    placeGroundMarker(c.lat, c.lon, 'red',  c.name);
 gnss_sats_init();
 cube_sats_init();
 stations_init();
+starlink_init();
 
 const popup = document.createElement('div');
 popup.style.cssText = `
@@ -210,7 +217,11 @@ renderer.domElement.addEventListener('click', (e) => {
     raycaster.setFromCamera(mouse, camera);
 
     const marker_hits = raycaster.intersectObjects(markers);
-    const sat_hits = raycaster.intersectObjects(sat_meshes.map(s => s.mesh));
+    const sat_hits = raycaster.intersectObjects(
+        sat_meshes
+            .map(s => s.mesh)
+            .filter(m => m.visible)
+    );
 
     if (marker_hits.length > 0) {
         popup.innerHTML = `
