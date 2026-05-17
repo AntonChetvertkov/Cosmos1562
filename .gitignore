@@ -20,9 +20,9 @@ env/
 # -----------------------------
 # Database files (IMPORTANT)
 # -----------------------------
-# DBs/
-# userTable.db
-# *.sqlite3
+DBs/
+*.db
+*.sqlite3
 
 # -----------------------------
 # Logs
