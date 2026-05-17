@@ -21,7 +21,7 @@ env/
 # Database files (IMPORTANT)
 # -----------------------------
 DBs/
-*.db
+userTable.db
 *.sqlite3
 
 # -----------------------------
