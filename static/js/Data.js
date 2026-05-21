@@ -89,6 +89,23 @@ export function getSatColour(name) {
     if (name.includes('KRYSAOR'))   return 'green';
     if (name.includes('GREENCUBE')) return 'green';
     if (name.includes('STARLINK')) return '#66ff66';
+    if (name.includes('DMSP'))       return 'blue';
+    if (name.includes('NOAA'))       return 'blue';
+    if (name.includes('JPSS'))       return 'blue';
+    if (name.includes('GOES'))       return 'blue';
+    if (name.includes('SUOMI'))      return 'blue';
+    if (name.includes('CYGFM'))      return 'blue';
+    if (name.includes('FENGYUN'))    return 'yellow';
+    if (name.includes('TIANMU'))     return 'yellow';
+    if (name.includes('METEOSAT'))   return 'cyan';
+    if (name.includes('METOP'))      return 'cyan';
+    if (name.includes('METEOR'))     return 'red';
+    if (name.includes('ELEKTRO'))    return 'red';
+    if (name.includes('ARKTIKA'))    return 'red';
+    if (name.includes('INSAT'))      return 'orange';
+    if (name.includes('HIMAWARI'))   return 'purple';
+    if (name.includes('COMS'))       return 'green';
+    if (name.includes('GEO-KOMPSAT'))return 'green';
     return '#ffffff';
 }
 
@@ -137,6 +154,23 @@ export function getSatOperator(name) {
     if (name.includes('POPACS'))    return 'Japan';
     if (name.includes('HORYU'))     return 'Japan';
     if (name.includes('OPTICUBE'))  return 'Japan';
+    if (name.includes('DMSP'))       return 'USA';
+    if (name.includes('NOAA'))       return 'USA';
+    if (name.includes('JPSS'))       return 'USA';
+    if (name.includes('GOES'))       return 'USA';
+    if (name.includes('SUOMI'))      return 'USA';
+    if (name.includes('CYGFM'))      return 'USA';
+    if (name.includes('FENGYUN'))    return 'China';
+    if (name.includes('TIANMU'))     return 'China';
+    if (name.includes('METEOSAT'))   return 'Europe';
+    if (name.includes('METOP'))      return 'Europe';
+    if (name.includes('METEOR'))     return 'Russia';
+    if (name.includes('ELEKTRO'))    return 'Russia';
+    if (name.includes('ARKTIKA'))    return 'Russia';
+    if (name.includes('INSAT'))      return 'India';
+    if (name.includes('HIMAWARI'))   return 'Japan';
+    if (name.includes('COMS'))       return 'South Korea';
+    if (name.includes('GEO-KOMPSAT'))return 'South Korea';
     if (name.includes('NANOSAT'))   return 'Unknown';
     if (name.includes('ZACUBE'))    return 'Unknown';
     if (name.includes('DUCHIFAT'))  return 'Unknown';

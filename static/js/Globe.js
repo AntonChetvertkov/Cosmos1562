@@ -144,6 +144,13 @@ async function starlink_init() {
     for (const sat of data) placeSatMesh(sat, getSatColour(sat.OBJECT_NAME));
 }
 
+async function weather_init(){
+    const response = await fetch('/dynamic/weather');
+    const data = await response.json();
+    for (const sat of data) placeSatMesh(sat, getSatColour(sat.OBJECT_NAME));
+
+}
+
 function placeGroundMarker(lat, lon, colour, name, size = 0.005) {
     const latRad = lat * (Math.PI / 180);
     const lonRad = lon * (Math.PI / 180);
@@ -190,6 +197,7 @@ gnss_sats_init();
 cube_sats_init();
 stations_init();
 starlink_init();
+weather_init();
 
 const popup = document.createElement('div');
 popup.style.cssText = `

@@ -3,7 +3,6 @@ from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import check_password_hash
 from dbFuncs import init_db, add_user, get_user_by_email, get_or_create_user_oauth
 from antiTunneling import checkIpTunneling, getUserIp
-import sqlite3
 import requests
 import json
 import os
@@ -46,12 +45,14 @@ GNSS_CACHE_PATH = "dynamic/sats/gnss_sats.json"
 CUBESATS_CACHE_PATH = "dynamic/sats/cube_sats.json"
 STATIONS_CACHE_PATH = "dynamic/sats/stations.json"
 STARLINK_CACHE_PATH = "dynamic/sats/starlink.json"
+WEATHER_CACHE_PATH = "dynamic/sats/weather.json"
 CACHE_MAX_AGE = 72 * 3600
 
 CELESTRAK_GNSS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=gnss&FORMAT=json"
 CELESTRAK_CUBESAT_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=cubesat&FORMAT=json"
 CELESTRAK_STATIONS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json"
 CELESTRAK_STARLINK_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=json"
+CELESTRACK_WEATHER_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=weather&FORMAT=json"
 
 def get_satellite_data(PATH, URL):
     if os.path.exists(PATH) and os.path.getsize(PATH) > 0:
@@ -154,6 +155,10 @@ def cubesats():
 @app.route('/dynamic/starlink')
 def starlink():
     return jsonify(get_satellite_data(STARLINK_CACHE_PATH, CELESTRAK_STARLINK_URL))
+
+@app.route('/dynamic/weather')
+def weather():
+    return jsonify(get_satellite_data(WEATHER_CACHE_PATH, CELESTRACK_WEATHER_URL))
 
 @app.route('/logout', methods = ['POST'])
 def logout():
