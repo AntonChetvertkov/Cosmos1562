@@ -27,12 +27,9 @@ export const STATIONS = [
     'CSS',
 ];
 
-export const CUBESATS = [
-    'CUBESAT',
-];
-
-export const STARLINK = [
+export const MISC = [
     'STARLINK',
+    'CUBESAT',
 ];
 
 export function getConstellationName(satName) {
@@ -159,7 +156,7 @@ export function createConstellationPanel() {
     toggleAllRow.appendChild(toggleAllSwitch);
     container.appendChild(toggleAllRow);
 
-    const createSectionToggle = (items, sectionName, override = false) => {
+    const createSectionToggle = (items, sectionName, override = false, override2 = false) => {
         const section = document.createElement('div');
         section.className = 'constellation-section';
         
@@ -170,7 +167,7 @@ export function createConstellationPanel() {
         
         const itemsContainer = document.createElement('div');
         itemsContainer.className = 'section-items';
-        
+        var counter = 0;
         for (const const_name of items) {
             const row = document.createElement('div');
             row.style.cssText = 'display: flex; align-items: center; gap: 12px; justify-content: space-between;';
@@ -185,8 +182,9 @@ export function createConstellationPanel() {
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.id = `toggle-${const_name}`;
-            if (!override) {checkbox.checked = true;}
-            else {checkbox.checked=false;}
+            if ((override && counter == 0)) {checkbox.checked = false;}
+            else if (override2 && counter == 1) {checkbox.checked = false;}
+            else {checkbox.checked=true;}
             checkbox.dataset.constellation = const_name;
             
             const slider = document.createElement('span');
@@ -198,6 +196,7 @@ export function createConstellationPanel() {
             row.appendChild(label);
             row.appendChild(switchLabel);
             itemsContainer.appendChild(row);
+            counter += 1;
         }
         
         section.appendChild(itemsContainer);
@@ -206,8 +205,7 @@ export function createConstellationPanel() {
 
     createSectionToggle(GNSS_CONSTELLATIONS, 'GNSS');
     createSectionToggle(STATIONS, 'Stations');
-    createSectionToggle(CUBESATS, 'Cubesats');
-    createSectionToggle(STARLINK, 'Starlink', true);
+    createSectionToggle(MISC, 'Miscelaneous', true, false);
 
     const insertPoint = panel.querySelector('#constellations-close');
     panel.insertBefore(container, insertPoint);
