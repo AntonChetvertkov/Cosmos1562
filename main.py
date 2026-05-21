@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, jsonify, session, url_for
-from werkzeug.security import generate_password_hash, check_password_hash
-from dbFuncs import init_db, add_user, get_all_users, get_user_by_email, get_or_create_user_oauth
+from flask_wtf.csrf import CSRFProtect
+from werkzeug.security import check_password_hash
+from dbFuncs import init_db, add_user, get_user_by_email, get_or_create_user_oauth
 from antiTunneling import checkIpTunneling, getUserIp
 import sqlite3
 import requests
@@ -21,6 +22,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'dev-key-change-in-production')
 
 oauth = OAuth(app)
+csrf = CSRFProtect(app)
 
 google = oauth.register(
     name='google',
@@ -153,7 +155,7 @@ def cubesats():
 def starlink():
     return jsonify(get_satellite_data(STARLINK_CACHE_PATH, CELESTRAK_STARLINK_URL))
 
-@app.route('/logout')
+@app.route('/logout', methods = ['POST'])
 def logout():
     session.pop('authenticated', None)
     session.pop('user_email', None)
@@ -218,4 +220,4 @@ def auth_callback_yandex():
 if __name__ == '__main__':
     init_db()
     debug_mode = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
-    app.run(debug=debug_mode)
+    app.run()

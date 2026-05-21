@@ -1,14 +1,7 @@
-from flask import Flask, render_template, request, redirect, jsonify, session, url_for
-from werkzeug.security import generate_password_hash, check_password_hash
-from dbFuncs import init_db, add_user, get_all_users, get_user_by_email, get_or_create_user_oauth
-import sqlite3
+from flask import request
 import requests
-import json
 import os
-import time
 import dotenv
-from dotenv import load_dotenv
-from authlib.integrations.flask_client import OAuth
 
 dotenv.load_dotenv()
 BASE_URL = 'https://ip-intelligence.abstractapi.com/v1?'

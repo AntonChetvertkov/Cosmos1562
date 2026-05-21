@@ -45,10 +45,13 @@
                 <span class="btn-icon">⊙</span>
                 <span class="btn-label">Account</span>
             </button>
-            <button class="sidebar-btn" onclick="window.location.href='/logout'">
-                <span class="btn-icon">⇦</span>
-                <span class="btn-label">Logout</span>
-            </button>
+            <form method="post" action="/logout">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="sidebar-btn">
+                    <span class="btn-icon">⇦</span>
+                    <span class="btn-label">Logout</span>
+                </button>
+            </form>
         </div>
 
         <div id="key-panel" style="

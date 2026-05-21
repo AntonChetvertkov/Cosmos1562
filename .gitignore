@@ -23,6 +23,7 @@ env/
 DBs/
 *.db
 *.sqlite3
+userTable.db
 
 # -----------------------------
 # Logs
