@@ -82,12 +82,9 @@ export function getSatColour(name) {
     if (name.includes('POPACS'))    return 'purple';
     if (name.includes('HORYU'))     return 'purple';
     if (name.includes('OPTICUBE'))  return 'purple';
-    if (name.includes('NANOSAT'))   return 'green';
-    if (name.includes('ZACUBE'))    return 'green';
-    if (name.includes('CUBEBUG'))   return 'green';
-    if (name.includes('PEGASO'))    return 'green';
-    if (name.includes('KRYSAOR'))   return 'green';
-    if (name.includes('GREENCUBE')) return 'green';
+    if (name.includes('NANOSAT'))   return 'cyan';
+    if (name.includes('KRYSAOR'))   return 'red';
+    if (name.includes('GREENCUBE')) return 'cyan';
     if (name.includes('STARLINK')) return '#66ff66';
     if (name.includes('DMSP'))       return 'blue';
     if (name.includes('NOAA'))       return 'blue';
