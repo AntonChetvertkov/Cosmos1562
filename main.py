@@ -46,6 +46,8 @@ CUBESATS_CACHE_PATH = "dynamic/sats/cube_sats.json"
 STATIONS_CACHE_PATH = "dynamic/sats/stations.json"
 STARLINK_CACHE_PATH = "dynamic/sats/starlink.json"
 WEATHER_CACHE_PATH = "dynamic/sats/weather.json"
+RESOURCE_CACHE_PATH = "dynamic/sats/resource.json"
+ACTIVE_PATH = "dynamic/sats/active.json"
 CACHE_MAX_AGE = 72 * 3600
 
 CELESTRAK_GNSS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=gnss&FORMAT=json"
@@ -53,6 +55,8 @@ CELESTRAK_CUBESAT_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=cubes
 CELESTRAK_STATIONS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json"
 CELESTRAK_STARLINK_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=json"
 CELESTRACK_WEATHER_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=weather&FORMAT=json"
+CELESTRACK_RESOURCE_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=resource&FORMAT=json"
+ACTIVE_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=json"
 
 def get_satellite_data(PATH, URL):
     if os.path.exists(PATH) and os.path.getsize(PATH) > 0:
@@ -159,6 +163,10 @@ def starlink():
 @app.route('/dynamic/weather')
 def weather():
     return jsonify(get_satellite_data(WEATHER_CACHE_PATH, CELESTRACK_WEATHER_URL))
+
+@app.route('/dynamic/resource')
+def resource():
+    return jsonify(get_satellite_data(RESOURCE_CACHE_PATH, CELESTRACK_RESOURCE_URL))
 
 @app.route('/logout', methods = ['POST'])
 def logout():

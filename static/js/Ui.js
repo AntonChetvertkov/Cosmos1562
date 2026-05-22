@@ -79,6 +79,16 @@ setTimeout(() => {
             toggleConstellation(const_name, e.target.checked);
         });
     }
+    document.querySelectorAll('[id^="toggle-section-"]').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+            const sectionName = e.target.id.replace('toggle-section-', '');
+            const sectionCheckboxes = document.querySelectorAll(`[data-section="${sectionName}"]`);
+            for (const cb of sectionCheckboxes) {
+                cb.checked = e.target.checked;
+                toggleConstellation(cb.dataset.constellation, e.target.checked);
+            }
+        });
+    });
 }, 100);
 
 

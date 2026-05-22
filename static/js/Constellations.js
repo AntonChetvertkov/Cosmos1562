@@ -32,6 +32,57 @@ export const MISC = [
     'CUBESAT',
 ];
 
+export const RESOURCE = [
+    'LANDSAT',
+    'SENTINEL',
+    'TERRA',
+    'AQUA',
+    'AURA',
+    'WORLDVIEW',
+    'GEOEYE',
+    'SKYSAT',
+    'SPOT',
+    'PLEIADES',
+    'COSMO-SKYMED',
+    'TERRASAR',
+    'TANDEM-X',
+    'RADARSAT',
+    'GAOFEN',
+    'YAOGAN',
+    'ZIYUAN',
+    'HAIYANG',
+    'HUANJING',
+    'CARTOSAT',
+    'RESOURCESAT',
+    'OCEANSAT',
+    'RESURS',
+    'KANOPUS',
+    'ARIRANG',
+    'DEIMOS',
+    'CBERS',
+    'FORMOSAT',
+];
+
+export const WEATHER = [
+    'METEOR',
+    'ELECTRO',
+    'ARKTIKA',
+    'DMSP',
+    'NOAA',
+    'JPSS',
+    'GOES',
+    'SUOMI',
+    'CYGFM',
+    'FENGYUN',
+    'TIANMU',
+    'METEOSAT',
+    'METOP',
+    'INSAT',
+    'HIMAWARI',
+    'COMS',
+    'KOMPSAT',
+]
+
 export function getConstellationName(satName) {
     for (const const_name of GNSS_CONSTELLATIONS) {
         if (satName.includes(const_name)) return const_name;
@@ -41,6 +92,12 @@ export function getConstellationName(satName) {
     if (satName.includes('ISS')) return 'ISS';
     if (satName.includes('CSS')) return 'CSS';
     if (satName.includes('STARLINK')) return 'STARLINK';
+    for (const const_name of WEATHER) {
+        if (satName.includes(const_name)) return const_name;
+    }
+    for (const const_name of RESOURCE) {
+        if (satName.includes(const_name)) return const_name;
+    }
     return 'CUBESAT';
 }
 
@@ -66,6 +123,8 @@ export function createConstellationPanel() {
         font-size: 0.6rem;
         letter-spacing: 0.1em;
         text-transform: uppercase;
+        max-height: 400px;
+        overflow-y: auto;
     `;
 
     const switchStyle = `
@@ -125,6 +184,16 @@ export function createConstellationPanel() {
             gap: 8px;
             margin-left: 8px;
         }
+        #constellation-toggles::-webkit-scrollbar {
+            width: 4px;
+        }
+        #constellation-toggles::-webkit-scrollbar-track {
+            background: #060d18;
+        }
+        #constellation-toggles::-webkit-scrollbar-thumb {
+            background: #1a4a6b;
+            border-radius: 2px;
+}
     `;
 
     const style = document.createElement('style');
@@ -162,7 +231,26 @@ export function createConstellationPanel() {
         
         const sectionHeader = document.createElement('div');
         sectionHeader.className = 'section-header';
-        sectionHeader.textContent = sectionName;
+        sectionHeader.style.cssText = 'display: flex; align-items: center; justify-content: space-between;';
+
+        const sectionLabel = document.createElement('span');
+        sectionLabel.textContent = sectionName;
+
+        const sectionSwitch = document.createElement('label');
+        sectionSwitch.className = 'toggle-switch';
+
+        const sectionCheckbox = document.createElement('input');
+        sectionCheckbox.type = 'checkbox';
+        sectionCheckbox.checked = true;
+        sectionCheckbox.id = `toggle-section-${sectionName}`;
+
+        const sectionSlider = document.createElement('span');
+        sectionSlider.className = 'switch-slider';
+
+        sectionSwitch.appendChild(sectionCheckbox);
+        sectionSwitch.appendChild(sectionSlider);
+        sectionHeader.appendChild(sectionLabel);
+        sectionHeader.appendChild(sectionSwitch);
         section.appendChild(sectionHeader);
         
         const itemsContainer = document.createElement('div');
@@ -182,17 +270,17 @@ export function createConstellationPanel() {
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.id = `toggle-${const_name}`;
-            if ((override && counter == 0)) {checkbox.checked = false;}
-            else if (override2 && counter == 1) {checkbox.checked = false;}
-            else {checkbox.checked=true;}
+            if (override && counter == 0) { checkbox.checked = false; }
+            else if (override2 && counter == 1) { checkbox.checked = false; }
+            else { checkbox.checked = true; }
             checkbox.dataset.constellation = const_name;
+            checkbox.dataset.section = sectionName;
             
             const slider = document.createElement('span');
             slider.className = 'switch-slider';
             
             switchLabel.appendChild(checkbox);
             switchLabel.appendChild(slider);
-            
             row.appendChild(label);
             row.appendChild(switchLabel);
             itemsContainer.appendChild(row);
@@ -205,6 +293,8 @@ export function createConstellationPanel() {
 
     createSectionToggle(GNSS_CONSTELLATIONS, 'GNSS');
     createSectionToggle(STATIONS, 'Stations');
+    createSectionToggle(WEATHER, 'Weather');
+    createSectionToggle(RESOURCE, 'Resource');
     createSectionToggle(MISC, 'Miscelaneous', true, false);
 
     const insertPoint = panel.querySelector('#constellations-close');

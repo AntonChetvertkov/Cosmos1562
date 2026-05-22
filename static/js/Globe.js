@@ -11,10 +11,14 @@ export var GMT = satellite.gstime(new Date());
 export const scene = new THREE.Scene();
 export const markers = [];
 export const sat_meshes = [];
+window.sat_meshes = sat_meshes;
 export let activeTrackEntry = null;
 
 const visibleConstellations = new Set([
-    'GPS', 'GLONASS', 'BEIDOU', 'GALILEO', 'NAVIC', 'QZSS', 'ISS', 'CSS', 'CUBESAT'
+    'GPS', 'GLONASS', 'BEIDOU', 'GALILEO', 'NAVIC', 'QZSS', 'ISS', 'CSS', 'CUBESAT',
+    'METEOR', 'ELECTRO', 'ARKTIKA', 'DMSP', 'NOAA', 'JPSS', 'GOES',
+    'SUOMI', 'CYGFM', 'FENGYUN', 'TIANMU', 'METEOSAT', 'METOP',
+    'INSAT', 'HIMAWARI', 'COMS', 'KOMPSAT',
 ]);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -151,6 +155,19 @@ async function weather_init(){
 
 }
 
+async function resource_init(){
+    const response = await fetch('dynamic/resource');
+    const data = await response.json();
+    for (const sat of data) placeSatMesh(sat, getSatColour(sat.OBJECT_NAME));
+}
+
+async function active_init(){
+    const response = await fetch('/dynamic/active');
+    const data = await response.json();
+    for (const sat of data) placeSatMesh(sat, getSatColour(sat.OBJECT_NAME));
+
+}
+
 function placeGroundMarker(lat, lon, colour, name, size = 0.005) {
     const latRad = lat * (Math.PI / 180);
     const lonRad = lon * (Math.PI / 180);
@@ -198,6 +215,7 @@ cube_sats_init();
 stations_init();
 starlink_init();
 weather_init();
+resource_init();
 
 const popup = document.createElement('div');
 popup.style.cssText = `
