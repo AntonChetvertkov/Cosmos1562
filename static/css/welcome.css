@@ -84,6 +84,26 @@ body::before {
     color: var(--cyan);
 }
 
+@media (max-width: 768px) {
+    #lang-selector {
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px 1rem;
+        align-items: flex-start;
+    }
+
+    #lang-selector p {
+        font-size: 0.65rem;
+        width: 100%;
+    }
+
+    #lang-selector select {
+        width: 100%;
+        font-size: 0.6rem;
+        padding: 10px;
+    }
+}
+
 #main-content {
     position: relative;
     z-index: 1;
@@ -93,6 +113,22 @@ body::before {
     justify-content: center;
     gap: 3rem;
     padding: 2rem;
+}
+
+@media (max-width: 1024px) {
+    #main-content {
+        gap: 2rem;
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    #main-content {
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1rem;
+        justify-content: flex-start;
+    }
 }
 
 #about_sidebar_bg {
@@ -113,6 +149,15 @@ body::before {
         inset 0 1px 0 rgba(0, 200, 255, 0.06);
 }
 
+@media (max-width: 768px) {
+    #about_sidebar_bg {
+        width: 100%;
+        max-width: 100%;
+        padding: 1.5rem 1.25rem;
+        gap: 1rem;
+    }
+}
+
 #homepage_title h1 {
     font-size: 1rem;
     font-weight: 700;
@@ -121,6 +166,13 @@ body::before {
     color: var(--cyan);
     text-shadow: 0 0 20px rgba(0, 200, 255, 0.4);
     animation: pulse 3s ease-in-out infinite;
+}
+
+@media (max-width: 768px) {
+    #homepage_title h1 {
+        font-size: 0.85rem;
+        letter-spacing: 0.2em;
+    }
 }
 
 @keyframes pulse {
@@ -162,6 +214,18 @@ body::before {
     text-transform: none;
 }
 
+@media (max-width: 768px) {
+    #about_sidebar_bg header h1 {
+        font-size: 0.7rem;
+        letter-spacing: 0.15em;
+    }
+
+    #about_sidebar_bg h2 {
+        font-size: 0.6rem;
+        line-height: 1.6;
+    }
+}
+
 #login_form {
     position: relative;
     z-index: 1;
@@ -186,6 +250,22 @@ body::before {
         0 0 60px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 200, 255, 0.06),
         inset 0 1px 0 rgba(0, 200, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+    #login_form {
+        width: 100%;
+        max-width: 100%;
+        padding: 1.5rem 1.25rem;
+    }
+
+    #login_form:hover {
+        border-color: var(--cyan-dim);
+        box-shadow:
+            0 0 40px rgba(0, 0, 0, 0.8),
+            0 0 0 1px rgba(0, 200, 255, 0.04),
+            inset 0 1px 0 rgba(0, 200, 255, 0.06);
+    }
 }
 
 #login_form h1 {
@@ -239,6 +319,20 @@ input[type="text"]:focus {
     box-shadow: 0 0 0 2px rgba(0, 200, 255, 0.1);
 }
 
+@media (max-width: 768px) {
+    label {
+        font-size: 0.5rem;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+        font-size: 0.6rem;
+        padding: 0.5rem 0.6rem;
+        margin-bottom: 0.8rem;
+    }
+}
+
 input::placeholder {
     color: var(--text-muted);
     opacity: 0.6;
@@ -266,6 +360,18 @@ button[type="submit"]:hover {
     background: var(--cyan-glow);
     border-color: var(--cyan);
     box-shadow: 0 0 12px rgba(0, 200, 255, 0.15);
+}
+
+@media (max-width: 768px) {
+    button[type="submit"] {
+        font-size: 0.55rem;
+        padding: 0.55rem 0.8rem;
+        margin-top: 0.4rem;
+    }
+
+    button[type="submit"]:hover {
+        box-shadow: 0 0 8px rgba(0, 200, 255, 0.1);
+    }
 }
 
 .error-message {
@@ -322,10 +428,33 @@ a.register-btn:hover {
     background: var(--cyan-glow);
 }
 
-.error-msg {
-    margin-top: 0.75rem;
-    font-size: 0.55rem;
-    letter-spacing: 0.1em;
-    color: #ff4d6d;
-    text-align: center;
+@media (max-width: 768px) {
+    a.register-btn {
+        font-size: 0.5rem;
+        padding: 0.5rem 0.8rem;
+        margin-top: 0.6rem;
+    }
+}
+
+.oauth-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.oauth-icon {
+    width: 60px !important;
+    height: auto !important;
+    max-width: 60px !important;
+    display: block;
+    border-radius: 30px;
+}
+
+@media (max-width: 768px) {
+    .oauth-icon {
+        width: 50px !important;
+        max-width: 50px !important;
+    }
 }
