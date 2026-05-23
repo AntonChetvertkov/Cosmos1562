@@ -155,6 +155,7 @@ body::before {
         max-width: 100%;
         padding: 1.5rem 1.25rem;
         gap: 1rem;
+        order: 1;
     }
 }
 
@@ -257,6 +258,7 @@ body::before {
         width: 100%;
         max-width: 100%;
         padding: 1.5rem 1.25rem;
+        order: 2;
     }
 
     #login_form:hover {

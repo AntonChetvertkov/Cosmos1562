@@ -23,6 +23,15 @@ body {
     align-items: center;
     justify-content: center;
     color: var(--text);
+    padding: 0;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 1rem;
+        align-items: flex-start;
+        padding-top: 2rem;
+    }
 }
 
 body::before {
@@ -61,6 +70,22 @@ body::before {
         0 0 60px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 200, 255, 0.06),
         inset 0 1px 0 rgba(0, 200, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+    #register_form {
+        width: 100%;
+        max-width: 100%;
+        padding: 1.5rem 1.25rem;
+    }
+
+    #register_form:hover {
+        border-color: var(--cyan-dim);
+        box-shadow:
+            0 0 40px rgba(0, 0, 0, 0.8),
+            0 0 0 1px rgba(0, 200, 255, 0.04),
+            inset 0 1px 0 rgba(0, 200, 255, 0.06);
+    }
 }
 
 #register_form h1 {
@@ -114,6 +139,20 @@ input[type="text"]:focus {
     box-shadow: 0 0 0 2px rgba(0, 200, 255, 0.1);
 }
 
+@media (max-width: 768px) {
+    label {
+        font-size: 0.5rem;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+        font-size: 0.6rem;
+        padding: 0.5rem 0.6rem;
+        margin-bottom: 0.8rem;
+    }
+}
+
 input::placeholder {
     color: var(--text-muted);
     opacity: 0.6;
@@ -146,6 +185,13 @@ input::placeholder {
     border-radius: 30px;
 }
 
+@media (max-width: 768px) {
+    .oauth-icon {
+        width: 50px !important;
+        max-width: 50px !important;
+    }
+}
+
 button[type="submit"] {
     width: 100%;
     margin-top: 0.5rem;
@@ -168,6 +214,18 @@ button[type="submit"]:hover {
     background: var(--cyan-glow);
     border-color: var(--cyan);
     box-shadow: 0 0 12px rgba(0, 200, 255, 0.15);
+}
+
+@media (max-width: 768px) {
+    button[type="submit"] {
+        font-size: 0.55rem;
+        padding: 0.55rem 0.8rem;
+        margin-top: 0.4rem;
+    }
+
+    button[type="submit"]:hover {
+        box-shadow: 0 0 8px rgba(0, 200, 255, 0.1);
+    }
 }
 
 .error-msg {
