@@ -62,6 +62,7 @@ document.getElementById('chat-btn').addEventListener('click', () => {
     document.getElementById('chat-panel').style.display = 'block';
 });
 document.getElementById('chat-close').addEventListener('click', () => {
+    const x = fetch('/ai/close');
     document.getElementById('chat-panel').style.display = 'none';
 });
 

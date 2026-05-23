@@ -125,6 +125,10 @@ def chatInteract():
     aiResponse, session['pastResponses'] = aiInteract(prompt, session['pastResponses'])
     return aiResponse
 
+@app.route('/ai/clear')
+def clear():
+    session.pop('pastResponses', None)
+    return 1
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
