@@ -71,6 +71,7 @@ createConstellationPanel();
 document.getElementById("aiChat").addEventListener("submit", async (e) => {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
     e.preventDefault();
+    document.getElementById('response-message').innerText = 'Thinking...';
     const response = await fetch('/ai/chat', {
         method: "POST",
         headers: {
@@ -84,7 +85,6 @@ document.getElementById("aiChat").addEventListener("submit", async (e) => {
     const answer = await response.text();
     document.getElementById('response-message').innerText = answer;
 });
-
 setTimeout(() => {
     const toggleAllCheckbox = document.getElementById('toggle-all');
     const individualCheckboxes = document.querySelectorAll('[id^="toggle-"]:not(#toggle-all)');

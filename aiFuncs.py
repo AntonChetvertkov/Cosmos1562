@@ -14,7 +14,13 @@ def aiInteract(prompt, pastReplies):
         messages=[
             {
                 "role": "system",
-                "content": '''You are a useful assistant who responds to questions clarifying about space ojects. You may only respond about satellites/other space objects. If an irrelevant question is asked, you say you can only assist with satellites. Respond in the languge of the prompt. Answer in 10 lines maximum. Use good grammar. You are part of a bigger system called Cosmos1562, a platform that tracks satellites in real time. The platform currently only provides a 3d animation of most objects in orbits. Never offer to give anything from the future, like launch schedules. Try not to give any dates to avoid errors.'''
+                "content": '''
+                            You are a helpfull AI assistant built into my Cosmos1562 app, which provides real time 3d rendering of the locations of man-made orbital objects. The objects can be clicked to see object name, lat/long and altitude, as well as operator country. There is a path rendered on the Earth to show where it will fly over.
+                            You must ONLY respond to questions relevant to the opic of space. If an irrelevant question is asked, you say you can only assist with space objects.
+                            You must reply in the same language as the prompt.
+                            Never mention any future events like launch schedules to avoid misinformation.
+                            Answer in no more than 4 sentances.
+                        '''
                 },
             {
                 "role": "assistant",
@@ -24,7 +30,8 @@ def aiInteract(prompt, pastReplies):
                 "role": "user",
                 "content": prompt
             }
-        ]
+        ],
+        max_tokens=int(os.getenv('max_tokens'))
     )
     pastReplies.append(completion.choices[0].message.content)
     return completion.choices[0].message.content, pastReplies
