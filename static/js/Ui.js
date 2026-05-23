@@ -63,6 +63,7 @@ document.getElementById('chat-btn').addEventListener('click', () => {
 });
 document.getElementById('chat-close').addEventListener('click', () => {
     const x = fetch('/ai/close');
+    document.getElementById('response-message').innerText = "";
     document.getElementById('chat-panel').style.display = 'none';
 });
 
@@ -71,7 +72,9 @@ createConstellationPanel();
 document.getElementById("aiChat").addEventListener("submit", async (e) => {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
     e.preventDefault();
-    document.getElementById('response-message').innerText = 'Thinking...';
+    document.getElementById('response-message').innerText += 'Thinking about "'+document.getElementById('prompt_field').value+'"...\n';
+    const prompt = document.getElementById('prompt_field').value
+    document.getElementById('prompt_field').value = "";
     const response = await fetch('/ai/chat', {
         method: "POST",
         headers: {
@@ -79,11 +82,11 @@ document.getElementById("aiChat").addEventListener("submit", async (e) => {
             "X-CSRFToken": csrfToken
         },
         body: JSON.stringify({
-            prompt: document.getElementById('prompt_field').value
+            prompt: prompt
         })
     });
     const answer = await response.text();
-    document.getElementById('response-message').innerText = answer;
+    document.getElementById('response-message').innerText += answer+'\n';
 });
 setTimeout(() => {
     const toggleAllCheckbox = document.getElementById('toggle-all');

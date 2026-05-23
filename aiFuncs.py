@@ -19,7 +19,7 @@ def aiInteract(prompt, pastReplies):
                             You must ONLY respond to questions relevant to the opic of space. If an irrelevant question is asked, you say you can only assist with space objects.
                             You must reply in the same language as the prompt.
                             Never mention any future events like launch schedules to avoid misinformation.
-                            Answer in no more than 4 sentances.
+                            Answer in no more than 3 sentances.
                         '''
                 },
             {
