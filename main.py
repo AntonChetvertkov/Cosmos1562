@@ -168,6 +168,10 @@ def weather():
 def resource():
     return jsonify(get_satellite_data(RESOURCE_CACHE_PATH, CELESTRACK_RESOURCE_URL))
 
+@app.route('/dynamic/active')
+def active():
+    return jsonify(get_satellite_data(ACTIVE_PATH, ACTIVE_URL))
+
 @app.route('/logout', methods = ['POST'])
 def logout():
     session.pop('authenticated', None)
@@ -188,7 +192,7 @@ def login_yandex():
 def auth_callback_google():
     token = google.authorize_access_token()
     user = token.get('userinfo')
-    
+
     if not user:
         return redirect('/?error=Failed to get user info from Google')
     
