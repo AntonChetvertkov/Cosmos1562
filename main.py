@@ -102,7 +102,13 @@ def get_template(name, lang):
 def index():
     IP = getUserIp()
     ip_data = getIpData(IP)
-    lang = getLanguage(ip_data)
+    auto_lang = getLanguage(ip_data)
+    country = ip_data.get('location', {}).get('country', 'Unknown')
+    
+    lang = request.args.get('lang', auto_lang)
+    if lang not in ['en', 'ru']:
+        lang = auto_lang
+    
     if ANTI_VPN and checkIpTunneling(ip_data):
         return redirect('/error451')
     if request.method == 'POST':
@@ -112,10 +118,11 @@ def index():
         if user and check_password_hash(user['password'], password):
             session['authenticated'] = True
             session['user_email'] = email
+            session['user_lang'] = lang
             return redirect('/home')
         else:
-            return render_template(get_template('welcome.html', lang), error="Invalid email or password")
-    return render_template(get_template('welcome.html', lang))
+            return render_template(get_template('welcome.html', lang), error="Invalid email or password", country=country, lang=lang)
+    return render_template(get_template('welcome.html', lang), country=country, lang=lang)
 
 @app.route('/home')
 def home():

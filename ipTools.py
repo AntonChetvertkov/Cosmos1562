@@ -30,7 +30,7 @@ def getCountry(response):
 def getLanguage(response):
     country = getCountry(response)
     if not country:
-        return 'English'
+        return 'en'
 
     country = country.strip().lower()
 

@@ -20,11 +20,8 @@ body {
     font-family: 'Orbitron', sans-serif;
     min-height: 100vh;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 3rem;
+    flex-direction: column;
     color: var(--text);
-    padding: 2rem;
 }
 
 body::before {
@@ -37,6 +34,65 @@ body::before {
     background-size: 60px 60px;
     pointer-events: none;
     z-index: 0;
+}
+
+#lang-selector {
+    position: relative;
+    z-index: 10;
+    background: #0a1628;
+    border-bottom: 1px solid var(--cyan-dim);
+    padding: 12px 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 50px;
+}
+
+#lang-selector p {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: var(--text);
+    margin: 0;
+}
+
+#lang-selector p strong {
+    color: var(--cyan);
+}
+
+#lang-selector select {
+    background: #060d18;
+    border: 1px solid var(--cyan-dim);
+    color: var(--cyan);
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: border-color 0.25s var(--ease), background 0.25s var(--ease);
+}
+
+#lang-selector select:hover,
+#lang-selector select:focus {
+    border-color: var(--cyan);
+    background: var(--cyan-glow);
+    outline: none;
+}
+
+#lang-selector select option {
+    background: #0a1628;
+    color: var(--cyan);
+}
+
+#main-content {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+    padding: 2rem;
 }
 
 #about_sidebar_bg {

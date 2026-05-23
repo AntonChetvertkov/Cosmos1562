@@ -10,7 +10,7 @@ def aiInteract(prompt, pastReplies):
         api_key=os.getenv('OPENROUTER_KEY'),
     )
     completion = AIclient.chat.completions.create(
-        model='nvidia/nemotron-3-nano-30b-a3b:free',
+        model=os.getenv('model'),
         messages=[
             {
                 "role": "system",

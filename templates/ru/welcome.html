@@ -9,42 +9,55 @@
     <link rel="stylesheet" href="static/css/welcome.css">
 </head>
 <body>
-    <div id="login_form">
-        <form id="login" method="post">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <label for="email">Электронная почта</label>
-            <input type="email" id="email_field" name="email" placeholder="Введите вашу электронную почту" required>
-            <br>
-            <label for="password">Пароль</label>
-            <input type="password" id="password_field" name="password" placeholder="Введите пароль" required>
-            <br>
-            <button type="submit">Войти</button>
-            <a href="/register" class="register-btn">Зарегистрироваться</a>
-            <br>
-            <div class="oauth-buttons">
-                <a href="/auth/login/yandex" class="oauth-btn oauth-yandex">
-                    <img src="{{ url_for('static', filename='img/Yandex.png') }}" class="oauth-icon">
-                </a>
-                <br>
-                <a href="/auth/login/google" class="oauth-btn oauth-google">
-                    <img src="{{ url_for('static', filename='img/Google.png') }}" class="oauth-icon">
-                </a>
-            </div>
-            {% if error %}
-                <div class="error-message">{{ error }}</div>
-            {% endif %}
+    <div id="lang-selector">
+        <p>Мы определили вашу страну: <strong>{{ country }}</strong></p>
+        <form method="get" style="margin: 0;">
+            <select name="lang" onchange="window.location.href='/?lang=' + this.value;">
+                <option value="">ЯЗЫК</option>
+                <option value="ru" {% if lang == 'ru' %}selected{% endif %}>Русский</option>
+                <option value="en" {% if lang == 'en' %}selected{% endif %}>Глобальный</option>
+            </select>
         </form>
     </div>
-    <div id="about_sidebar_bg">
-        <div id="homepage_title"><header><h1>Добро пожаловать в Cosmos1562!</h1></header></div>
-        <h2 id="aboutus">
-            Мы — Cosmos1562, сервис отслеживания спутников в режиме реального времени.
-        </h2>
-        <header><h1>Небо больше не предел.</h1></header>
-        <h2>
-            С Cosmos1562 вы можете следить за спутниками в реальном времени прямо со своего устройства. Наблюдайте за объектами на орбите Земли по мере их движения, изучайте траектории полётов и откройте для себя невидимую сеть над нами — ту, что поддерживает современный мир.
-        </h2>
-        <header><h1>Космос больше не где‑то далеко — он рядом, в прямом эфире.</h1></header>
+
+    <div id="main-content">
+        <div id="login_form">
+            <form id="login" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label for="email">Электронная почта</label>
+                <input type="email" id="email_field" name="email" placeholder="Введите вашу электронную почту" required>
+                <br>
+                <label for="password">Пароль</label>
+                <input type="password" id="password_field" name="password" placeholder="Введите пароль" required>
+                <br>
+                <button type="submit">Войти</button>
+                <a href="/register" class="register-btn">Зарегистрироваться</a>
+                <br>
+                <div class="oauth-buttons">
+                    <a href="/auth/login/yandex" class="oauth-btn oauth-yandex">
+                        <img src="{{ url_for('static', filename='img/Yandex.png') }}" class="oauth-icon">
+                    </a>
+                    <br>
+                    <a href="/auth/login/google" class="oauth-btn oauth-google">
+                        <img src="{{ url_for('static', filename='img/Google.png') }}" class="oauth-icon">
+                    </a>
+                </div>
+                {% if error %}
+                    <div class="error-message">{{ error }}</div>
+                {% endif %}
+            </form>
+        </div>
+        <div id="about_sidebar_bg">
+            <div id="homepage_title"><header><h1>Добро пожаловать в Cosmos1562!</h1></header></div>
+            <h2 id="aboutus">
+                Мы — Cosmos1562, сервис отслеживания спутников в режиме реального времени.
+            </h2>
+            <header><h1>Небо больше не предел.</h1></header>
+            <h2>
+                С Cosmos1562 вы сможете следить за спутниками в реальном времени прямо со своего устройства. Наблюдайте за объектами на орбите Земли по мере их движения, изучайте траектории полётов и откройте для себя невидимую сеть над нами — ту, что поддерживает современный мир.
+            </h2>
+            <header><h1>Космос больше не где-то далеко — он рядом, в прямом эфире.</h1></header>
+        </div>
     </div>
 </body>
 </html>
