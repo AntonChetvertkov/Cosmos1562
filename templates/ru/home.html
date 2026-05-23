@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <title>Cosmos1562</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="/static/css/home.css">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+    </head>
+    <body>
+        <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/",
+                "satellite.js": "https://cdn.jsdelivr.net/npm/satellite.js@7.0.0/dist/index.min.js"
+            }
+        }
+        </script>
+
+        <div id="sidebar">
+            <button class="sidebar-btn" id="constellations-btn">
+                <span class="btn-icon">◈</span>
+                <span class="btn-label">Созвездия</span>
+            </button>
+            <button class="sidebar-btn">
+                <span class="btn-icon">⊟</span>
+                <span class="btn-label">Фильтры</span>
+            </button>
+            <button class="sidebar-btn" id="marker-btn">
+                <span class="btn-icon">⌖</span>
+                <span class="btn-label">Маркеры</span>
+            </button>
+            <button class="sidebar-btn" id="key-btn">
+                <span class="btn-icon">◉</span>
+                <span class="btn-label">Легенда</span>
+            </button>
+            <button class="sidebar-btn" id="chat-btn">
+                <span class="btn-icon">🗨</span>
+                <span class="btn-label">Чат</span>
+            </button>
+            <div class="sidebar-divider"></div>
+            <button class="sidebar-btn">
+                <span class="btn-icon">⚙</span>
+                <span class="btn-label">Настройки</span>
+            </button>
+            <button class="sidebar-btn">
+                <span class="btn-icon">⊙</span>
+                <span class="btn-label">Аккаунт</span>
+            </button>
+            <form method="post" action="/logout">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="sidebar-btn">
+                    <span class="btn-icon">⇦</span>
+                    <span class="btn-label">Выйти</span>
+                </button>
+            </form>
+        </div>
+
+        <div id="key-panel" style="
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #0a1628;
+            border: 1px solid #1a4a6b;
+            border-radius: 10px;
+            padding: 24px 32px;
+            z-index: 200;
+            font-family: 'Orbitron', sans-serif;
+            color: #00c8ff;
+            min-width: 260px;
+        ">
+            <div style="
+                font-size:0.7rem;
+                letter-spacing:0.2em;
+                text-transform:uppercase;
+                margin-bottom:16px;
+                border-bottom:1px solid #1a4a6b;
+                padding-bottom:10px;
+            ">
+                Легенда спутников
+            </div>
+
+            <div style="
+                display:flex;
+                flex-direction:column;
+                gap:10px;
+                font-size:0.58rem;
+                letter-spacing:0.12em;
+                text-transform:uppercase;
+            ">
+
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:red;"></span>
+                    Russia
+                </div>
+
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:blue;"></span>
+                    USA
+                </div>
+
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:yellow;"></span>
+                    China
+                </div>
+
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:cyan;"></span>
+                    Europe / UK
+                </div>
+
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:orange;"></span>
+                    India
+                </div>
+
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:purple;"></span>
+                    Japan
+                </div>
+
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#00ff99;"></span>
+                    South Korea
+                </div>
+
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#ffaa33;"></span>
+                    Canada
+                </div>
+
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#33dd55;"></span>
+                    Brazil
+                </div>
+
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#ff99cc;"></span>
+                    Israel
+                </div>
+
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#ff6644;"></span>
+                    Türkiye
+                </div>
+
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#ffcc44;"></span>
+                    Thailand
+                </div>
+
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#00ff88;"></span>
+                    International
+                </div>
+
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#ffffff;"></span>
+                    Unknown
+                </div>
+
+            </div>
+
+            <div style="
+                margin-top:18px;
+                border-top:1px solid #1a4a6b;
+                padding-top:10px;
+                font-size:0.55rem;
+                letter-spacing:0.12em;
+                text-transform:uppercase;
+                color:#1a6a8b;
+                cursor:pointer;
+            " id="key-close">
+                Close
+            </div>
+        </div>
+
+        <div id="markers-panel" style="
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #0a1628;
+            border: 1px solid #1a4a6b;
+            border-radius: 10px;
+            padding: 24px 32px;
+            z-index: 200;
+            font-family: 'Orbitron', sans-serif;
+            color: #00c8ff;
+            min-width: 300px;
+        ">
+            <div style="font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:16px; border-bottom:1px solid #1a4a6b; padding-bottom:10px;">
+                Маркеры городов
+            </div>
+            <input id="city-search" type="text" placeholder="Поиск города..." style="
+                width: 100%;
+                background: #060d18;
+                border: 1px solid #1a4a6b;
+                color: #00c8ff;
+                font-family: 'Orbitron', sans-serif;
+                font-size: 0.6rem;
+                letter-spacing: 0.1em;
+                padding: 8px 10px;
+                border-radius: 4px;
+                box-sizing: border-box;
+                outline: none;
+            ">
+            <ul id="city-results" style="
+                list-style: none;
+                margin: 8px 0 0 0;
+                padding: 0;
+                max-height: 180px;
+                overflow-y: auto;
+                font-size: 0.58rem;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            "></ul>
+            <div id="added-cities-section" style="margin-top:16px; border-top:1px solid #1a4a6b; padding-top:12px;">
+                <div style="font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:8px; color:#1a6a8b;">
+                    Добавленные маркеры
+                </div>
+                <ul id="added-cities" style="
+                    list-style: none;
+                    margin: 0;
+                    padding: 0;
+                    font-size: 0.55rem;
+                    letter-spacing: 0.1em;
+                    text-transform: uppercase;
+                    max-height: 120px;
+                    overflow-y: auto;
+                "></ul>
+            </div>
+            <div id="markers-close" style="
+                margin-top:18px;
+                border-top:1px solid #1a4a6b;
+                padding-top:10px;
+                font-size:0.55rem;
+                letter-spacing:0.12em;
+                text-transform:uppercase;
+                color:#1a6a8b;
+                cursor:pointer;
+            ">Закрыть</div>
+        </div>
+
+        <div id="constellations-panel" style="
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #0a1628;
+            border: 1px solid #1a4a6b;
+            border-radius: 10px;
+            padding: 24px 32px;
+            z-index: 200;
+            font-family: 'Orbitron', sans-serif;
+            color: #00c8ff;
+            min-width: 300px;
+        ">
+            <div style="font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:16px; border-bottom:1px solid #1a4a6b; padding-bottom:10px;">
+                Созвездия
+            </div>
+            <div id="constellation-toggles"></div>
+            <div id="constellations-close" style="
+                margin-top:18px;
+                border-top:1px solid #1a4a6b;
+                padding-top:10px;
+                font-size:0.55rem;
+                letter-spacing:0.12em;
+                text-transform:uppercase;
+                color:#1a6a8b;
+                cursor:pointer;
+            ">Закрыть</div>
+        </div>
+
+        <div id="chat-panel" style="
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #0a1628;
+            border: 1px solid #1a4a6b;
+            border-radius: 10px;
+            padding: 24px 32px;
+            z-index: 200;
+            font-family: 'Orbitron', sans-serif;
+            color: #00c8ff;
+            min-width: 300px;
+        ">
+            <div style="font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:16px; border-bottom:1px solid #1a4a6b; padding-bottom:10px;">
+                Chat
+            </div>
+            <div id="chat-form">
+                <form id="aiChat", method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="text" id="prompt_field" name="prompt" placeholder="Введите запрос">
+                </form>
+            </div>
+            <div id="response-message"></div>
+            <div id="chat-close" style="
+                margin-top:18px;
+                border-top:1px solid #1a4a6b;
+                padding-top:10px;
+                font-size:0.55rem;
+                letter-spacing:0.12em;
+                text-transform:uppercase;
+                color:#1a6a8b;
+                cursor:pointer;
+            ">Закрыть</div>
+        </div>
+
+        <script type="module" src="/static/js/globe.js"></script>
+        <script type="module" src="/static/js/ui.js"></script>
+    </body>
+</html>

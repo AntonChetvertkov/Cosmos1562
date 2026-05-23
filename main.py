@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, jsonify, session, u
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import check_password_hash
 from dbFuncs import init_db, add_user, get_user_by_email, get_or_create_user_oauth
-from antiTunneling import checkIpTunneling, getUserIp
+from ipTools import getIpData, checkIpTunneling, getLanguage, getUserIp
 import requests
 import json
 import os
@@ -12,6 +12,8 @@ from authlib.integrations.flask_client import OAuth
 from aiFuncs import aiInteract
 
 load_dotenv()
+
+ANTI_VPN = os.getenv('antiVPN', 'false').lower() == 'true'
 
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
@@ -93,31 +95,36 @@ def get_satellite_data(PATH, URL):
         print(f"Returning empty list")
         return []
 
+def get_template(name, lang):
+    return f"{lang}/{name}"
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     IP = getUserIp()
-    tunnelling = checkIpTunneling(IP)
-    if tunnelling:
+    ip_data = getIpData(IP)
+    lang = getLanguage(ip_data)
+    if ANTI_VPN and checkIpTunneling(ip_data):
         return redirect('/error451')
-    else:   
-        if request.method == 'POST':
-            email = request.form.get('email')
-            password = request.form.get('password')
-            user = get_user_by_email(email)
-            if user and check_password_hash(user['password'], password):
-                session['authenticated'] = True
-                session['user_email'] = email
-                return redirect('/home')
-            else:
-                return render_template('welcome.html', error="Invalid email or password")
-        return render_template('welcome.html')
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        user = get_user_by_email(email)
+        if user and check_password_hash(user['password'], password):
+            session['authenticated'] = True
+            session['user_email'] = email
+            return redirect('/home')
+        else:
+            return render_template(get_template('welcome.html', lang), error="Invalid email or password")
+    return render_template(get_template('welcome.html', lang))
 
 @app.route('/home')
 def home():
     if 'authenticated' not in session:
         return redirect('/')
+    IP = getUserIp()
+    lang = getLanguage(getIpData(IP))
     session['pastResponses'] = []
-    return render_template('home.html')
+    return render_template(get_template('home.html', lang))
     
 @app.route('/ai/chat', methods=['POST'])
 def chatInteract():
@@ -132,29 +139,35 @@ def clear():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    IP = getUserIp()
+    lang = getLanguage(getIpData(IP))
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
         password_repeat = request.form.get('password_repeat')
         if len(password) < 8:
-            return render_template('register.html', error='Password must be at least 8 characters')
+            return render_template(get_template('register.html', lang), error='Password must be at least 8 characters')
         elif password != password_repeat:
-            return render_template('register.html', error="Passwords don't match!")
+            return render_template(get_template('register.html', lang), error="Passwords don't match!")
         else:
             tryAdd = add_user(email, password)
             if tryAdd:
                 return redirect('/')
             else:
-                return render_template('register.html', error='Email already exists')
-    return render_template('register.html')
+                return render_template(get_template('register.html', lang), error='Email already exists')
+    return render_template(get_template('register.html', lang))
 
 @app.route('/AUP')
 def AUP():
-    return render_template('AUP.html')
+    IP = getUserIp()
+    lang = getLanguage(getIpData(IP))
+    return render_template(get_template('AUP.html', lang))
 
 @app.route('/error451')
 def error451():
-    return render_template('error451.html')
+    IP = getUserIp()
+    lang = getLanguage(getIpData(IP))
+    return render_template(get_template('error451.html', lang))
 
 @app.route('/dynamic/gnss_sats')
 def gnss_sats():

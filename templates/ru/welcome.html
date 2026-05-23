@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Cosmos1562</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/css/welcome.css">
+</head>
+<body>
+    <div id="login_form">
+        <form id="login" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label for="email">Электронная почта</label>
+            <input type="email" id="email_field" name="email" placeholder="Введите вашу электронную почту" required>
+            <br>
+            <label for="password">Пароль</label>
+            <input type="password" id="password_field" name="password" placeholder="Введите пароль" required>
+            <br>
+            <button type="submit">Войти</button>
+            <a href="/register" class="register-btn">Зарегистрироваться</a>
+            <br>
+            <div class="oauth-buttons">
+                <a href="/auth/login/yandex" class="oauth-btn oauth-yandex">
+                    <img src="{{ url_for('static', filename='img/Yandex.png') }}" class="oauth-icon">
+                </a>
+                <br>
+                <a href="/auth/login/google" class="oauth-btn oauth-google">
+                    <img src="{{ url_for('static', filename='img/Google.png') }}" class="oauth-icon">
+                </a>
+            </div>
+            {% if error %}
+                <div class="error-message">{{ error }}</div>
+            {% endif %}
+        </form>
+    </div>
+    <div id="about_sidebar_bg">
+        <div id="homepage_title"><header><h1>Добро пожаловать в Cosmos1562!</h1></header></div>
+        <h2 id="aboutus">
+            Мы — Cosmos1562, сервис отслеживания спутников в режиме реального времени.
+        </h2>
+        <header><h1>Небо больше не предел.</h1></header>
+        <h2>
+            С Cosmos1562 вы можете следить за спутниками в реальном времени прямо со своего устройства. Наблюдайте за объектами на орбите Земли по мере их движения, изучайте траектории полётов и откройте для себя невидимую сеть над нами — ту, что поддерживает современный мир.
+        </h2>
+        <header><h1>Космос больше не где‑то далеко — он рядом, в прямом эфире.</h1></header>
+    </div>
+</body>
+</html>

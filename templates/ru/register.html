@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <title>Cosmos1562</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="static/css/register.css">
+    </head>
+    <body>
+        <div id="register_form">
+            <form id="register", method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label for="email">Электронная почта</label>
+                <input type="email" id="email_field" name="email" placeholder="Введите вашу электронную почту" required >
+                <br>
+                <label for="password">Пароль</label>
+                <input type="password" id="password_field" name="password" placeholder="Введите пароль" required>
+                <br>
+                <label for="password">Повторите пароль</label>
+                <input type="password" id="password_repeat" name="password_repeat" placeholder="Повторите пароль" required>
+                <br>
+                {% if error %}
+                    <div class="error-message">{{ error }}</div>
+                {% endif %}
+                <button type="submit">Зарегистрироваться</button>
+                <br>
+                <div class="oauth-buttons">
+                    <a href="/auth/login/yandex" class="oauth-btn oauth-yandex">
+                        <img src="{{ url_for('static', filename='img/Yandex.png') }}" class="oauth-icon">
+                    </a>
+                    <br>
+                    <a href="/auth/login/google" class="oauth-btn oauth-google">
+                        <img src="{{ url_for('static', filename='img/Google.png') }}" class="oauth-icon">
+                    </a>
+                </div>
+                <br>
+                <p style="margin-top: 20px; font-size: 0.9rem;">
+                    Уже есть аккаунт? <a href="/" style="color: #00c8ff; text-decoration: none;">Войти</a>
+                </p>
+                
+            </form>
+        </div>
+    </body>
+</html>
