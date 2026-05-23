@@ -9,6 +9,7 @@ import os
 import time
 from dotenv import load_dotenv
 from authlib.integrations.flask_client import OAuth
+from aiFuncs import aiInteract
 
 load_dotenv()
 
@@ -73,7 +74,6 @@ def get_satellite_data(PATH, URL):
         response = requests.get(URL, headers={'User-Agent': 'Mozilla/5.0'}, timeout=30)
         response.raise_for_status()
         data = response.json()
-        print(f"✓ Got {len(data)} satellites")
 
         os.makedirs(os.path.dirname(PATH), exist_ok=True)
         with open(PATH, "w") as f:
@@ -81,16 +81,16 @@ def get_satellite_data(PATH, URL):
 
         return data
     except Exception as e:
-        print(f"✗ Error fetching {URL}: {type(e).__name__}: {e}")
+        print(f"Error fetching {URL}: {type(e).__name__}: {e}")
         if os.path.exists(PATH) and os.path.getsize(PATH) > 0:
             try:
                 with open(PATH, "r") as f:
                     cached = json.load(f)
-                    print(f"  Using cached data ({len(cached)} satellites)")
+                    print(f"Using cached data ({len(cached)} satellites)")
                     return cached
             except:
                 pass
-        print(f"  Returning empty list")
+        print(f"Returning empty list")
         return []
 
 @app.route('/', methods=['GET', 'POST'])
@@ -116,15 +116,15 @@ def index():
 def home():
     if 'authenticated' not in session:
         return redirect('/')
+    session['pastResponses'] = []
     return render_template('home.html')
+    
+@app.route('/ai/chat', methods=['POST'])
+def chatInteract():
+    prompt = request.get_json().get('prompt')
+    aiResponse, session['pastResponses'] = aiInteract(prompt, session['pastResponses'])
+    return aiResponse
 
-@app.route('/AUP')
-def AUP():
-    return render_template('AUP.html')
-
-@app.route('/error451')
-def error451():
-    return render_template('error451.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -143,6 +143,14 @@ def register():
             else:
                 return render_template('register.html', error='Email already exists')
     return render_template('register.html')
+
+@app.route('/AUP')
+def AUP():
+    return render_template('AUP.html')
+
+@app.route('/error451')
+def error451():
+    return render_template('error451.html')
 
 @app.route('/dynamic/gnss_sats')
 def gnss_sats():
@@ -176,6 +184,7 @@ def active():
 def logout():
     session.pop('authenticated', None)
     session.pop('user_email', None)
+    session.pop('pastResponses', None)
     return redirect('/')
 
 @app.route('/auth/login/google')

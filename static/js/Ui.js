@@ -58,8 +58,31 @@ document.getElementById('constellations-btn').addEventListener('click', () => {
 document.getElementById('constellations-close').addEventListener('click', () => {
     document.getElementById('constellations-panel').style.display = 'none';
 });
+document.getElementById('chat-btn').addEventListener('click', () => {
+    document.getElementById('chat-panel').style.display = 'block';
+});
+document.getElementById('chat-close').addEventListener('click', () => {
+    document.getElementById('chat-panel').style.display = 'none';
+});
 
 createConstellationPanel();
+
+document.getElementById("aiChat").addEventListener("submit", async (e) => {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    e.preventDefault();
+    const response = await fetch('/ai/chat', {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+        },
+        body: JSON.stringify({
+            prompt: document.getElementById('prompt_field').value
+        })
+    });
+    const answer = await response.text();
+    document.getElementById('response-message').innerText = answer;
+});
 
 setTimeout(() => {
     const toggleAllCheckbox = document.getElementById('toggle-all');
@@ -90,6 +113,7 @@ setTimeout(() => {
         });
     });
 }, 100);
+
 
 
 
