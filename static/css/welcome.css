@@ -70,6 +70,7 @@ body::before {
     letter-spacing: 0.1em;
     cursor: pointer;
     transition: border-color 0.25s var(--ease), background 0.25s var(--ease);
+    text-align: center;
 }
 
 #lang-selector select:hover,
@@ -87,20 +88,20 @@ body::before {
 @media (max-width: 768px) {
     #lang-selector {
         flex-direction: column;
-        gap: 12px;
+        gap: 8px;
         padding: 12px 1rem;
-        align-items: flex-start;
+        align-items: stretch;
     }
 
     #lang-selector p {
-        font-size: 0.65rem;
+        font-size: 0.6rem;
         width: 100%;
     }
 
     #lang-selector select {
-        width: 100%;
         font-size: 0.6rem;
         padding: 10px;
+        width: 100%;
     }
 }
 
@@ -393,7 +394,6 @@ button[type="submit"]:hover {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    
 }
 
 .oauth-icon {
@@ -402,7 +402,6 @@ button[type="submit"]:hover {
     max-width: 60px !important;
     display: block;
     border-radius: 30px;
-    
 }
 
 a.register-btn {
@@ -436,22 +435,6 @@ a.register-btn:hover {
         padding: 0.5rem 0.8rem;
         margin-top: 0.6rem;
     }
-}
-
-.oauth-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
-
-.oauth-icon {
-    width: 60px !important;
-    height: auto !important;
-    max-width: 60px !important;
-    display: block;
-    border-radius: 30px;
 }
 
 @media (max-width: 768px) {
