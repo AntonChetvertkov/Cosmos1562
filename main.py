@@ -270,4 +270,4 @@ def auth_callback_yandex():
 if __name__ == '__main__':
     init_db()
     debug_mode = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
-    app.run()
+    app.run(host="0.0.0.0", port=5000)
