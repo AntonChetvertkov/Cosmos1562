@@ -8,3 +8,5 @@ authlib>=1.2.0
 python-dotenv>=1.0.0
 openAI
 flask-wtf
+flask-limiter>=3.5.0
+geoip2>=4.8.0

@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, redirect, jsonify, session, url_for
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
 from werkzeug.security import check_password_hash
 from dbFuncs import init_db, add_user, get_user_by_email, get_or_create_user_oauth
-from ipTools import getIpData, checkIpTunneling, getLanguage, getUserIp
+from ipTools import getCountryCode, getLanguage, getUserIp
+from functools import wraps
 import requests
 import json
 import os
@@ -13,7 +15,7 @@ from aiFuncs import aiInteract
 
 load_dotenv()
 
-ANTI_VPN = os.getenv('antiVPN', 'false').lower() == 'true'
+DEBUG_MODE = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
 
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
@@ -21,10 +23,54 @@ YANDEX_CLIENT_ID = os.getenv('YANDEX_CLIENT_ID')
 YANDEX_CLIENT_SECRET = os.getenv('YANDEX_CLIENT_SECRET')
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'dev-key-change-in-production')
+
+# A weak/default secret key lets attackers forge session cookies. Require a
+# strong value in production; only fall back to a dev key when debugging.
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY or SECRET_KEY == 'dev-key-change-in-production':
+    if DEBUG_MODE:
+        SECRET_KEY = 'dev-key-change-in-production'
+    else:
+        raise RuntimeError(
+            "SECRET_KEY must be set to a strong random value in production. "
+            "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+        )
+app.secret_key = SECRET_KEY
+
+# Harden the session cookie for production.
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SECURE=not DEBUG_MODE,
+)
 
 oauth = OAuth(app)
 csrf = CSRFProtect(app)
+
+# Rate limiting keyed on the real client IP (respects X-Forwarded-For via
+# getUserIp). Note: memory:// is per-process; use Redis when running multiple
+# workers/instances.
+limiter = Limiter(
+    key_func=getUserIp,
+    app=app,
+    default_limits=["2000 per day", "300 per hour"],
+    storage_uri="memory://",
+)
+
+# Shared burst cap for the public satellite-data proxy routes.
+SAT_DATA_LIMIT = "60 per minute"
+
+
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'authenticated' not in session:
+            # JSON 401 for API/AJAX endpoints, redirect for page routes.
+            if request.path.startswith('/ai/') or request.is_json:
+                return jsonify({'error': 'Authentication required'}), 401
+            return redirect('/')
+        return f(*args, **kwargs)
+    return decorated
 
 google = oauth.register(
     name='google',
@@ -69,10 +115,10 @@ def get_satellite_data(PATH, URL):
                 with open(PATH, "r") as f:
                     return json.load(f)
             except json.JSONDecodeError:
-                print(f"Cache file corrupted: {PATH}")
+                print(f"file corrupted: {PATH}")
     
     try:
-        print(f"Fetching {URL}...")
+        print(f"Fetching {URL}")
         response = requests.get(URL, headers={'User-Agent': 'Mozilla/5.0'}, timeout=30)
         response.raise_for_status()
         data = response.json()
@@ -88,11 +134,10 @@ def get_satellite_data(PATH, URL):
             try:
                 with open(PATH, "r") as f:
                     cached = json.load(f)
-                    print(f"Using cached data ({len(cached)} satellites)")
+                    print(f"Using cached data ({len(cached)} sats)")
                     return cached
             except:
                 pass
-        print(f"Returning empty list")
         return []
 
 def get_template(name, lang):
@@ -101,16 +146,13 @@ def get_template(name, lang):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     IP = getUserIp()
-    ip_data = getIpData(IP)
-    auto_lang = getLanguage(ip_data)
-    country = ip_data.get('location', {}).get('country', 'Unknown')
-    
+    country_code = getCountryCode(IP)
+    auto_lang = getLanguage(country_code)
+
     lang = request.args.get('lang', auto_lang)
     if lang not in ['en', 'ru']:
         lang = auto_lang
-    
-    if ANTI_VPN and checkIpTunneling(ip_data):
-        return redirect('/error451')
+
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
@@ -121,33 +163,38 @@ def index():
             session['user_lang'] = lang
             return redirect('/home')
         else:
-            return render_template(get_template('welcome.html', lang), error="Invalid email or password", country=country, lang=lang)
-    return render_template(get_template('welcome.html', lang), country=country, lang=lang)
+            return render_template(get_template('welcome.html', lang), error="Invalid email or password", lang=lang)
+    return render_template(get_template('welcome.html', lang), lang=lang)
 
 @app.route('/home')
+@login_required
 def home():
-    if 'authenticated' not in session:
-        return redirect('/')
     IP = getUserIp()
-    lang = getLanguage(getIpData(IP))
+    lang = getLanguage(getCountryCode(IP))
     session['pastResponses'] = []
     return render_template(get_template('home.html', lang))
-    
+
 @app.route('/ai/chat', methods=['POST'])
+@login_required
+@limiter.limit("10 per minute")
 def chatInteract():
-    prompt = request.get_json().get('prompt')
-    aiResponse, session['pastResponses'] = aiInteract(prompt, session['pastResponses'])
+    data = request.get_json(silent=True) or {}
+    prompt = data.get('prompt')
+    if not prompt or not isinstance(prompt, str) or not prompt.strip():
+        return jsonify({'error': 'A non-empty prompt is required'}), 400
+    aiResponse, session['pastResponses'] = aiInteract(prompt, session.get('pastResponses', []))
     return aiResponse
 
-@app.route('/ai/clear')
+@app.route('/ai/clear', methods=['POST'])
+@login_required
 def clear():
     session.pop('pastResponses', None)
-    return 1
+    return jsonify({'status': 'ok'})
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     IP = getUserIp()
-    lang = getLanguage(getIpData(IP))
+    lang = getLanguage(getCountryCode(IP))
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
@@ -167,40 +214,47 @@ def register():
 @app.route('/AUP')
 def AUP():
     IP = getUserIp()
-    lang = getLanguage(getIpData(IP))
+    lang = getLanguage(getCountryCode(IP))
     return render_template(get_template('AUP.html', lang))
 
 @app.route('/error451')
 def error451():
     IP = getUserIp()
-    lang = getLanguage(getIpData(IP))
+    lang = getLanguage(getCountryCode(IP))
     return render_template(get_template('error451.html', lang))
 
 @app.route('/dynamic/gnss_sats')
+@limiter.limit(SAT_DATA_LIMIT)
 def gnss_sats():
     return jsonify(get_satellite_data(GNSS_CACHE_PATH, CELESTRAK_GNSS_URL))
 
 @app.route('/dynamic/stations')
+@limiter.limit(SAT_DATA_LIMIT)
 def stations():
     return jsonify(get_satellite_data(STATIONS_CACHE_PATH, CELESTRAK_STATIONS_URL))
 
 @app.route('/dynamic/cubesats')
+@limiter.limit(SAT_DATA_LIMIT)
 def cubesats():
     return jsonify(get_satellite_data(CUBESATS_CACHE_PATH, CELESTRAK_CUBESAT_URL))
 
 @app.route('/dynamic/starlink')
+@limiter.limit(SAT_DATA_LIMIT)
 def starlink():
     return jsonify(get_satellite_data(STARLINK_CACHE_PATH, CELESTRAK_STARLINK_URL))
 
 @app.route('/dynamic/weather')
+@limiter.limit(SAT_DATA_LIMIT)
 def weather():
     return jsonify(get_satellite_data(WEATHER_CACHE_PATH, CELESTRACK_WEATHER_URL))
 
 @app.route('/dynamic/resource')
+@limiter.limit(SAT_DATA_LIMIT)
 def resource():
     return jsonify(get_satellite_data(RESOURCE_CACHE_PATH, CELESTRACK_RESOURCE_URL))
 
 @app.route('/dynamic/active')
+@limiter.limit(SAT_DATA_LIMIT)
 def active():
     return jsonify(get_satellite_data(ACTIVE_PATH, ACTIVE_URL))
 

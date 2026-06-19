@@ -13,8 +13,6 @@ RUN pip install -r requirements.txt
 # Копируем код приложения
 COPY . .
 
-ENV PYTHONUNBUFFERED=1
-
 EXPOSE 5000
 
 # Команда для запуска проекта

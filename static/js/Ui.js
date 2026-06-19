@@ -62,7 +62,11 @@ document.getElementById('chat-btn').addEventListener('click', () => {
     document.getElementById('chat-panel').style.display = 'block';
 });
 document.getElementById('chat-close').addEventListener('click', () => {
-    const x = fetch('/ai/close');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    fetch('/ai/clear', {
+        method: "POST",
+        headers: { "X-CSRFToken": csrfToken }
+    });
     document.getElementById('response-message').innerText = "";
     document.getElementById('chat-panel').style.display = 'none';
 });

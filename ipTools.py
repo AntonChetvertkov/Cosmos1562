@@ -1,65 +1,25 @@
 from flask import request
-import requests
+import geoip2.database
 import os
-import dotenv
 
-dotenv.load_dotenv()
-BASE_URL = 'https://ip-intelligence.abstractapi.com/v1?'
-key = os.environ.get('ABSTRACT_IP')
+_DB_PATH = os.path.join(os.path.dirname(__file__), 'static', 'geolite', 'GeoLite2-Country.mmdb')
+_reader = geoip2.database.Reader(_DB_PATH)
 
-def getIpData(IP):
-    url = BASE_URL + 'api_key='+key+'&ip_address='+IP
-    response = requests.get(url).json()
-    return response
-
-
-def checkIpTunneling(response):
-    response = response.get('security')
-    vpm = response.get('is_vpn')
-    pr0xy = response.get('is_proxy')
-    t0r = response.get('is_tor')
-    if vpm or pr0xy or t0r:
-        return True
-    else:
-        return False
-
-def getCountry(response):
-    location = response.get('location', {})
-    return location.get('country')
-
-def getLanguage(response):
-    country = getCountry(response)
-    if not country:
-        return 'en'
-
-    country = country.strip().lower()
-
-    russian_countries = {
-        'armenia',
-        'azerbaijan',
-        'belarus',
-        'estonia',
-        'georgia',
-        'kazakhstan',
-        'kyrgyzstan',
-        'latvia',
-        'lithuania',
-        'moldova',
-        'russia',
-        'russian federation',
-        'tajikistan',
-        'turkmenistan',
-        'ukraine',
-        'uzbekistan'
-    }
-
-    if country in russian_countries:
-        return 'ru'
-    else:
-        return 'en'
+RUSSIAN_COUNTRIES = {
+    'AM', 'AZ', 'BY', 'EE', 'GE', 'KZ', 'KG', 'LV', 'LT', 'MD',
+    'RU', 'TJ', 'TM', 'UA', 'UZ'
+}
 
 def getUserIp():
     if request.headers.get('X-Forwarded-For'):
         return request.headers.get('X-Forwarded-For').split(',')[0].strip()
-    else:
-        return request.remote_addr
+    return request.remote_addr
+
+def getCountryCode(ip):
+    try:
+        return _reader.country(ip).country.iso_code or ''
+    except Exception:
+        return ''
+
+def getLanguage(country_code):
+    return 'ru' if country_code in RUSSIAN_COUNTRIES else 'en'

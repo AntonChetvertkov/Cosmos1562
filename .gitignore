@@ -42,6 +42,11 @@ userTable.db
 Thumbs.db
 
 # -----------------------------
+# GeoLite2 database (MaxMind license prohibits redistribution)
+# -----------------------------
+static/geolite/
+
+# -----------------------------
 # Misc
 # -----------------------------
 *.tmp
