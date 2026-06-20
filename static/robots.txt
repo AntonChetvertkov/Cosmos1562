@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /ai/
+Disallow: /auth/
+Disallow: /dynamic/
+
+Sitemap: https://cosmos1562.space/sitemap.xml

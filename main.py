@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, jsonify, session, url_for
+from flask import Flask, render_template, request, redirect, jsonify, session, url_for, send_from_directory
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from werkzeug.security import check_password_hash
@@ -210,6 +210,10 @@ def register():
             else:
                 return render_template(get_template('register.html', lang), error='Email already exists')
     return render_template(get_template('register.html', lang))
+
+@app.route('/robots.txt')
+def robots():
+    return send_from_directory(app.static_folder, 'robots.txt')
 
 @app.route('/AUP')
 def AUP():
