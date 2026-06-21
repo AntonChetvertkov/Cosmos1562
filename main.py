@@ -46,6 +46,7 @@ app.config.update(
 
 oauth = OAuth(app)
 csrf = CSRFProtect(app)
+init_db()
 
 # Rate limiting keyed on the real client IP (respects X-Forwarded-For via
 # getUserIp). Note: memory:// is per-process; use Redis when running multiple
