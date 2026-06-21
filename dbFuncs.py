@@ -28,7 +28,6 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    # Migrate: add AI usage tracking columns if not present
     for col, defn in [('daily_ai_count', 'INTEGER DEFAULT 0'), ('last_ai_date', 'TEXT')]:
         try:
             cursor.execute(f'ALTER TABLE users ADD COLUMN {col} {defn}')
