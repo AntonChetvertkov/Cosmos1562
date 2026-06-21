@@ -24,8 +24,6 @@ YANDEX_CLIENT_SECRET = os.getenv('YANDEX_CLIENT_SECRET')
 
 app = Flask(__name__)
 
-# A weak/default secret key lets attackers forge session cookies. Require a
-# strong value in production; only fall back to a dev key when debugging.
 SECRET_KEY = os.getenv('SECRET_KEY')
 if not SECRET_KEY or SECRET_KEY == 'dev-key-change-in-production':
     if DEBUG_MODE:
@@ -37,7 +35,6 @@ if not SECRET_KEY or SECRET_KEY == 'dev-key-change-in-production':
         )
 app.secret_key = SECRET_KEY
 
-# Harden the session cookie for production.
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
@@ -48,9 +45,6 @@ oauth = OAuth(app)
 csrf = CSRFProtect(app)
 init_db()
 
-# Rate limiting keyed on the real client IP (respects X-Forwarded-For via
-# getUserIp). Note: memory:// is per-process; use Redis when running multiple
-# workers/instances.
 limiter = Limiter(
     key_func=getUserIp,
     app=app,
@@ -58,7 +52,6 @@ limiter = Limiter(
     storage_uri="memory://",
 )
 
-# Shared burst cap for the public satellite-data proxy routes.
 SAT_DATA_LIMIT = "60 per minute"
 
 
@@ -66,7 +59,6 @@ def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'authenticated' not in session:
-            # JSON 401 for API/AJAX endpoints, redirect for page routes.
             if request.path.startswith('/ai/') or request.is_json:
                 return jsonify({'error': 'Authentication required'}), 401
             return redirect('/')
