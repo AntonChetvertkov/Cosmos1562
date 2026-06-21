@@ -7,7 +7,7 @@
     --text: #a8d4e8;
     --text-muted: #2e5f7a;
     --sidebar-w: 52px;
-    --sidebar-w-open: 188px;
+    --sidebar-w-open: 220px;
     --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -108,7 +108,7 @@ body::before {
 
     .btn-label {
         display: none;
-        font-size: 0.35rem;
+        font-size: 0.65rem;
     }
 
     .sidebar-divider {
@@ -126,9 +126,9 @@ body::before {
     border-radius: 6px;
     color: var(--text-muted);
     font-family: 'Orbitron', sans-serif;
-    font-size: 0.55rem;
+    font-size: 0.78rem;
     font-weight: 700;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     cursor: pointer;
     white-space: nowrap;
