@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as satellite from 'satellite.js';
 import { cosmodromes, capitals, getSatColour, getSatOperator } from '/static/js/data.js';
-import { getConstellationName } from '/static/js/constellations.js';
+import { getConstellationName, GNSS_CONSTELLATIONS, STATIONS, WEATHER, RESOURCE, MISC } from '/static/js/constellations.js';
 
 const TRACK_STEP_SECONDS = 30;
 const TRACK_SURFACE_OFFSET = 1.001;
@@ -18,10 +18,12 @@ window.sat_meshes = sat_meshes;
 export let activeTrackEntry = null;
 
 const visibleConstellations = new Set([
-    'GPS', 'GLONASS', 'BEIDOU', 'GALILEO', 'NAVIC', 'QZSS', 'ISS', 'CSS', 'CUBESAT',
-    'METEOR', 'ELECTRO', 'ARKTIKA', 'DMSP', 'NOAA', 'JPSS', 'GOES',
-    'SUOMI', 'CYGFM', 'FENGYUN', 'TIANMU', 'METEOSAT', 'METOP',
-    'INSAT', 'HIMAWARI', 'COMS', 'KOMPSAT',
+    ...GNSS_CONSTELLATIONS,
+    ...STATIONS,
+    ...WEATHER,
+    ...RESOURCE,
+    'GLONASS',
+    'CUBESAT',
 ]);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
