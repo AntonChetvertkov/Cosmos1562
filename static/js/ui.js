@@ -61,6 +61,12 @@ document.getElementById('constellations-close').addEventListener('click', () => 
 document.getElementById('chat-btn').addEventListener('click', () => {
     document.getElementById('chat-panel').style.display = 'block';
 });
+document.getElementById('account-btn').addEventListener('click', () => {
+    document.getElementById('account-panel').style.display = 'block';
+});
+document.getElementById('account-close').addEventListener('click', () => {
+    document.getElementById('account-panel').style.display = 'none';
+});
 document.getElementById('chat-close').addEventListener('click', () => {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
     fetch('/ai/clear', {
@@ -109,6 +115,69 @@ document.getElementById("aiChat").addEventListener("submit", async (e) => {
         countEl.textContent = remaining + ' / 15 MESSAGES REMAINING TODAY';
     }
 });
+
+function acctEditField(field) {
+    document.getElementById(`acct-display-${field}`).style.display = 'none';
+    document.getElementById(`acct-edit-${field}`).style.display = 'block';
+}
+function acctCancelEdit(field) {
+    document.getElementById(`acct-display-${field}`).style.display = '';
+    document.getElementById(`acct-edit-${field}`).style.display = 'none';
+}
+function acctMsg(msg, isError) {
+    const el = document.getElementById('account-msg');
+    el.textContent = msg;
+    el.style.color = isError ? '#ff6666' : '#00c8ff';
+    setTimeout(() => el.textContent = '', 4000);
+}
+async function acctSaveName() {
+    const name = document.getElementById('acct-input-name').value.trim();
+    if (!name) { acctMsg('Name cannot be empty.', true); return; }
+    const csrf = document.querySelector('meta[name="csrf-token"]').content;
+    const res = await fetch('/account/update-name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+        body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    if (res.ok) { document.getElementById('acct-display-name').textContent = name; acctCancelEdit('name'); acctMsg('Name updated.'); }
+    else acctMsg(data.error || 'Failed.', true);
+}
+async function acctSaveEmail() {
+    const email = document.getElementById('acct-input-email').value.trim();
+    const csrf = document.querySelector('meta[name="csrf-token"]').content;
+    const res = await fetch('/account/update-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+        body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (res.ok) { acctMsg('Email updated. Redirecting to login...'); setTimeout(() => window.location.href = '/', 2000); }
+    else acctMsg(data.error || 'Failed.', true);
+}
+async function acctSavePassword() {
+    const current = document.getElementById('acct-input-pwd-current').value;
+    const newPwd = document.getElementById('acct-input-pwd-new').value;
+    const confirm = document.getElementById('acct-input-pwd-confirm').value;
+    if (newPwd !== confirm) { acctMsg('Passwords do not match.', true); return; }
+    if (newPwd.length < 8) { acctMsg('Minimum 8 characters.', true); return; }
+    const csrf = document.querySelector('meta[name="csrf-token"]').content;
+    const res = await fetch('/account/update-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+        body: JSON.stringify({ current_password: current, new_password: newPwd })
+    });
+    const data = await res.json();
+    if (res.ok) { document.getElementById('acct-pwd-form').style.display = 'none'; acctMsg('Password updated.'); }
+    else acctMsg(data.error || 'Failed.', true);
+}
+async function acctConfirmDelete() {
+    const csrf = document.querySelector('meta[name="csrf-token"]').content;
+    const res = await fetch('/account/delete', { method: 'POST', headers: { 'X-CSRFToken': csrf } });
+    if (res.ok) window.location.href = '/';
+    else acctMsg('Failed to delete account.', true);
+}
+
 setTimeout(() => {
     const toggleAllCheckbox = document.getElementById('toggle-all');
     const individualCheckboxes = document.querySelectorAll('[id^="toggle-"]:not(#toggle-all)');

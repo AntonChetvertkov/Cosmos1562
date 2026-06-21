@@ -13,19 +13,21 @@
         <link rel="stylesheet" href="/static/css/home.css">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <style>
-            #response-message::-webkit-scrollbar {
-                width: 8px;
-            }
-            #response-message::-webkit-scrollbar-track {
-                background: transparent;
-            }
-            #response-message::-webkit-scrollbar-thumb {
-                background: #0d3a52;
-                border-radius: 4px;
-            }
-            #response-message::-webkit-scrollbar-thumb:hover {
-                background: #00c8ff;
-            }
+            #response-message::-webkit-scrollbar { width: 8px; }
+            #response-message::-webkit-scrollbar-track { background: transparent; }
+            #response-message::-webkit-scrollbar-thumb { background: #0d3a52; border-radius: 4px; }
+            #response-message::-webkit-scrollbar-thumb:hover { background: #00c8ff; }
+            .acct-section { border-top: 1px solid #1a4a6b; padding-top: 14px; margin-bottom: 16px; }
+            .acct-section-title { font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase; color: #1a6a8b; margin-bottom: 10px; }
+            .acct-row { display: flex; align-items: center; gap: 10px; font-size: 0.58rem; letter-spacing: 0.08em; margin-bottom: 6px; }
+            .acct-label { color: #1a6a8b; text-transform: uppercase; font-size: 0.5rem; letter-spacing: 0.12em; min-width: 80px; }
+            .acct-edit-btn { background: transparent; border: 1px solid #1a4a6b; color: #a8d4e8; font-family: 'Orbitron', sans-serif; font-size: 0.45rem; letter-spacing: 0.1em; padding: 3px 8px; cursor: pointer; border-radius: 3px; }
+            .acct-save-btn { background: #00c8ff; color: #050510; border: none; font-family: 'Orbitron', sans-serif; font-size: 0.45rem; letter-spacing: 0.1em; padding: 5px 12px; cursor: pointer; border-radius: 3px; }
+            .acct-cancel-btn { background: transparent; border: 1px solid #1a4a6b; color: #1a6a8b; font-family: 'Orbitron', sans-serif; font-size: 0.45rem; letter-spacing: 0.1em; padding: 5px 10px; cursor: pointer; border-radius: 3px; }
+            .acct-action-btn { width: 100%; background: transparent; border: 1px solid #1a4a6b; color: #a8d4e8; font-family: 'Orbitron', sans-serif; font-size: 0.5rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 8px; cursor: pointer; border-radius: 4px; margin-bottom: 8px; }
+            .acct-danger-btn { width: 100%; background: transparent; border: 1px solid #ff4444; color: #ff4444; font-family: 'Orbitron', sans-serif; font-size: 0.5rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 8px; cursor: pointer; border-radius: 4px; }
+            .acct-input { width: 100%; background: #060d18; border: 1px solid #1a4a6b; color: #00c8ff; font-family: 'Orbitron', sans-serif; font-size: 0.55rem; letter-spacing: 0.08em; padding: 6px 8px; border-radius: 4px; box-sizing: border-box; outline: none; margin-bottom: 6px; }
+            .acct-disabled-btn { width: 100%; background: transparent; border: 1px solid #1a4a6b; color: #1a4a6b; font-family: 'Orbitron', sans-serif; font-size: 0.5rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 8px; border-radius: 4px; cursor: not-allowed; }
         </style>
     </head>
     <body>
@@ -65,7 +67,7 @@
                 <span class="btn-icon">⚙</span>
                 <span class="btn-label">Настройки</span>
             </button>
-            <button class="sidebar-btn">
+            <button class="sidebar-btn" id="account-btn">
                 <span class="btn-icon">⊙</span>
                 <span class="btn-label">Аккаунт</span>
             </button>
@@ -346,6 +348,101 @@
                 color:#1a6a8b;
                 cursor:pointer;
             ">Закрыть</div>
+        </div>
+
+        <div id="account-panel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#0a1628;border:1px solid #1a4a6b;border-radius:10px;padding:24px 32px;z-index:200;font-family:'Orbitron',sans-serif;color:#00c8ff;min-width:380px;max-height:80vh;overflow-y:auto;">
+            <div style="font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:20px;border-bottom:1px solid #1a4a6b;padding-bottom:10px;">Аккаунт</div>
+
+            <div style="margin-bottom:16px;">
+                <div class="acct-section-title">Профиль</div>
+                <div class="acct-row">
+                    <span class="acct-label">Имя</span>
+                    <span id="acct-display-name">{{ user_name or '—' }}</span>
+                    <button class="acct-edit-btn" onclick="acctEditField('name')">Изм.</button>
+                </div>
+                <div id="acct-edit-name" style="display:none;margin-top:6px;">
+                    <input type="text" id="acct-input-name" value="{{ user_name or '' }}" class="acct-input">
+                    <div style="display:flex;gap:6px;">
+                        <button class="acct-save-btn" onclick="acctSaveName()">Сохранить</button>
+                        <button class="acct-cancel-btn" onclick="acctCancelEdit('name')">Отмена</button>
+                    </div>
+                </div>
+                <div class="acct-row" style="margin-top:8px;">
+                    <span class="acct-label">Email</span>
+                    <span id="acct-display-email">{{ user_email }}</span>
+                    <button class="acct-edit-btn" onclick="acctEditField('email')">Изм.</button>
+                </div>
+                <div id="acct-edit-email" style="display:none;margin-top:6px;">
+                    <input type="email" id="acct-input-email" value="{{ user_email }}" class="acct-input">
+                    <div style="display:flex;gap:6px;">
+                        <button class="acct-save-btn" onclick="acctSaveEmail()">Сохранить</button>
+                        <button class="acct-cancel-btn" onclick="acctCancelEdit('email')">Отмена</button>
+                    </div>
+                </div>
+                <div class="acct-row" style="margin-top:8px;">
+                    <span class="acct-label">Дата регистрации</span>
+                    <span>{{ user_since }}</span>
+                </div>
+            </div>
+
+            <div class="acct-section">
+                <div class="acct-section-title">Подписка</div>
+                <div class="acct-row">
+                    <span class="acct-label">Тариф</span>
+                    <span>{{ 'Премиум' if is_paid else 'Бесплатный' }}</span>
+                </div>
+                {% if not is_paid %}
+                <div class="acct-row">
+                    <span class="acct-label">ИИ сегодня</span>
+                    <span>{{ ai_remaining }} / 15 осталось</span>
+                </div>
+                {% endif %}
+                <button class="acct-disabled-btn" style="margin-top:10px;" disabled>Сменить тариф — скоро</button>
+            </div>
+
+            {% if has_password %}
+            <div class="acct-section">
+                <div class="acct-section-title">Безопасность</div>
+                <button class="acct-action-btn" onclick="document.getElementById('acct-pwd-form').style.display=document.getElementById('acct-pwd-form').style.display==='none'?'block':'none'">Сменить пароль</button>
+                <div id="acct-pwd-form" style="display:none;">
+                    <input type="password" id="acct-input-pwd-current" placeholder="Текущий пароль" class="acct-input">
+                    <input type="password" id="acct-input-pwd-new" placeholder="Новый пароль (мин. 8 символов)" class="acct-input">
+                    <input type="password" id="acct-input-pwd-confirm" placeholder="Подтвердите новый пароль" class="acct-input">
+                    <div style="display:flex;gap:6px;">
+                        <button class="acct-save-btn" onclick="acctSavePassword()">Обновить</button>
+                        <button class="acct-cancel-btn" onclick="document.getElementById('acct-pwd-form').style.display='none'">Отмена</button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="acct-section">
+                <div class="acct-section-title">Привязанные аккаунты</div>
+                <div class="acct-row">
+                    <span class="acct-label">Google</span>
+                    <span style="color:{{ '#00c8ff' if google_linked else '#1a6a8b' }}">{{ '✓ Привязан' if google_linked else '— Не привязан' }}</span>
+                </div>
+                <div class="acct-row">
+                    <span class="acct-label">Яндекс</span>
+                    <span style="color:{{ '#00c8ff' if yandex_linked else '#1a6a8b' }}">{{ '✓ Привязан' if yandex_linked else '— Не привязан' }}</span>
+                </div>
+            </div>
+
+            <div class="acct-section">
+                <div class="acct-section-title">Данные и конфиденциальность</div>
+                <button class="acct-action-btn" onclick="window.location.href='/account/export'">Скачать мои данные</button>
+                <div id="acct-delete-confirm" style="display:none;padding:10px;border:1px solid #ff4444;border-radius:4px;font-size:0.52rem;color:#ff8888;margin-bottom:8px;">
+                    Это навсегда удалит ваш аккаунт и все данные. Отменить невозможно.
+                    <div style="display:flex;gap:6px;margin-top:8px;">
+                        <button style="background:#ff4444;color:white;border:none;font-family:'Orbitron',sans-serif;font-size:0.45rem;letter-spacing:0.1em;padding:6px 12px;cursor:pointer;border-radius:3px;" onclick="acctConfirmDelete()">Подтвердить удаление</button>
+                        <button class="acct-cancel-btn" onclick="document.getElementById('acct-delete-confirm').style.display='none'">Отмена</button>
+                    </div>
+                </div>
+                <button class="acct-danger-btn" onclick="document.getElementById('acct-delete-confirm').style.display='block'">Удалить аккаунт</button>
+            </div>
+
+            <div id="account-msg" style="font-size:0.52rem;min-height:16px;margin:8px 0;"></div>
+            <div id="account-close" style="border-top:1px solid #1a4a6b;padding-top:10px;font-size:0.52rem;letter-spacing:0.12em;text-transform:uppercase;color:#1a6a8b;cursor:pointer;">Закрыть</div>
         </div>
 
         <div id="cookie-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#0a1628;border-top:1px solid #1a4a6b;padding:14px 24px;z-index:9999;font-family:'Orbitron',sans-serif;font-size:0.55rem;letter-spacing:0.08em;color:#a8d4e8;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">

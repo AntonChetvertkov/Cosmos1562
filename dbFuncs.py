@@ -124,6 +124,30 @@ def add_user(email, password):
     return True
 
 
+def update_user_name(email, name):
+    conn = db_connect()
+    conn.execute('UPDATE users SET name = ? WHERE email = ?', (name, email))
+    conn.commit()
+    conn.close()
+
+def update_user_email(old_email, new_email):
+    conn = db_connect()
+    conn.execute('UPDATE users SET email = ? WHERE email = ?', (new_email, old_email))
+    conn.commit()
+    conn.close()
+
+def update_user_password(email, new_password):
+    conn = db_connect()
+    conn.execute('UPDATE users SET password = ? WHERE email = ?', (generate_password_hash(new_password), email))
+    conn.commit()
+    conn.close()
+
+def delete_user(email):
+    conn = db_connect()
+    conn.execute('DELETE FROM users WHERE email = ?', (email,))
+    conn.commit()
+    conn.close()
+
 def get_all_users():
     conn = db_connect()
     users = conn.execute('SELECT * FROM users').fetchall()

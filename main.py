@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, redirect, jsonify, session, url_for, send_from_directory
+from flask import Flask, render_template, request, redirect, jsonify, session, url_for, send_from_directory, Response
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from werkzeug.security import check_password_hash
-from dbFuncs import init_db, add_user, get_user_by_email, get_or_create_user_oauth, get_ai_usage, increment_ai_count
+from dbFuncs import init_db, add_user, get_user_by_email, get_or_create_user_oauth, get_ai_usage, increment_ai_count, update_user_name, update_user_email, update_user_password, delete_user
+from datetime import datetime
 from ipTools import getCountryCode, getLanguage, getUserIp
 from functools import wraps
 import requests
@@ -168,10 +169,23 @@ def home():
     lang = getLanguage(getCountryCode(IP))
     session['pastResponses'] = []
     email = session.get('user_email')
+    user = get_user_by_email(email)
     count, acc_type = get_ai_usage(email)
     is_paid = acc_type == 'PAID'
     ai_remaining = None if is_paid else max(0, FREE_AI_LIMIT - count)
-    return render_template(get_template('home.html', lang), ai_remaining=ai_remaining, is_paid=is_paid)
+    created_at = user['created_at'] if user and user['created_at'] else None
+    user_since = datetime.strptime(created_at[:10], '%Y-%m-%d').strftime('%d %b %Y') if created_at else '—'
+    return render_template(
+        get_template('home.html', lang),
+        ai_remaining=ai_remaining,
+        is_paid=is_paid,
+        user_name=user['name'] or '' if user else '',
+        user_email=email,
+        user_since=user_since,
+        has_password=bool(user and user['password']),
+        google_linked=bool(user and user['google_id']),
+        yandex_linked=bool(user and user['yandex_id']),
+    )
 
 @app.route('/ai/chat', methods=['POST'])
 @login_required
@@ -194,6 +208,68 @@ def chatInteract():
 def clear():
     session.pop('pastResponses', None)
     return jsonify({'status': 'ok'})
+
+@app.route('/account/update-name', methods=['POST'])
+@login_required
+def account_update_name():
+    data = request.get_json(silent=True) or {}
+    name = data.get('name', '').strip()
+    if not name:
+        return jsonify({'error': 'Name cannot be empty'}), 400
+    update_user_name(session['user_email'], name)
+    return jsonify({'status': 'ok'})
+
+@app.route('/account/update-email', methods=['POST'])
+@login_required
+def account_update_email():
+    data = request.get_json(silent=True) or {}
+    new_email = data.get('email', '').strip()
+    if not new_email or '@' not in new_email:
+        return jsonify({'error': 'Invalid email address'}), 400
+    if get_user_by_email(new_email):
+        return jsonify({'error': 'Email already in use'}), 400
+    update_user_email(session['user_email'], new_email)
+    session.clear()
+    return jsonify({'status': 'ok'})
+
+@app.route('/account/update-password', methods=['POST'])
+@login_required
+def account_update_password():
+    data = request.get_json(silent=True) or {}
+    current_password = data.get('current_password', '')
+    new_password = data.get('new_password', '')
+    if len(new_password) < 8:
+        return jsonify({'error': 'Password must be at least 8 characters'}), 400
+    user = get_user_by_email(session['user_email'])
+    if not user or not user['password'] or not check_password_hash(user['password'], current_password):
+        return jsonify({'error': 'Current password is incorrect'}), 400
+    update_user_password(session['user_email'], new_password)
+    return jsonify({'status': 'ok'})
+
+@app.route('/account/delete', methods=['POST'])
+@login_required
+def account_delete():
+    delete_user(session['user_email'])
+    session.clear()
+    return jsonify({'status': 'ok'})
+
+@app.route('/account/export')
+@login_required
+def account_export():
+    user = get_user_by_email(session['user_email'])
+    export = {
+        'email': user['email'],
+        'name': user['name'],
+        'account_type': user['acc_type'],
+        'created_at': user['created_at'],
+        'google_linked': user['google_id'] is not None,
+        'yandex_linked': user['yandex_id'] is not None,
+    }
+    return Response(
+        json.dumps(export, indent=2),
+        mimetype='application/json',
+        headers={'Content-Disposition': 'attachment; filename=cosmos1562_data.json'}
+    )
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
