@@ -158,15 +158,31 @@ def index():
             return redirect('/home')
         else:
             return render_template(get_template('welcome.html', lang), error="Invalid email or password", lang=lang)
+    if 'authenticated' in session:
+        return redirect('/home')
     return render_template(get_template('welcome.html', lang), lang=lang)
 
 FREE_AI_LIMIT = 15
 
 @app.route('/home')
-@login_required
 def home():
     IP = getUserIp()
     lang = getLanguage(getCountryCode(IP))
+
+    if 'authenticated' not in session:
+        return render_template(
+            get_template('home.html', lang),
+            is_authenticated=False,
+            is_paid=False,
+            ai_remaining=0,
+            user_name='',
+            user_email='',
+            user_since='—',
+            has_password=False,
+            google_linked=False,
+            yandex_linked=False,
+        )
+
     session['pastResponses'] = []
     email = session.get('user_email')
     user = get_user_by_email(email)
@@ -177,6 +193,7 @@ def home():
     user_since = datetime.strptime(created_at[:10], '%Y-%m-%d').strftime('%d %b %Y') if created_at else '—'
     return render_template(
         get_template('home.html', lang),
+        is_authenticated=True,
         ai_remaining=ai_remaining,
         is_paid=is_paid,
         user_name=user['name'] or '' if user else '',

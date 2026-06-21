@@ -7,6 +7,9 @@ import { getConstellationName } from '/static/js/constellations.js';
 const TRACK_STEP_SECONDS = 30;
 const TRACK_SURFACE_OFFSET = 1.001;
 
+const IS_AUTHENTICATED = window.IS_AUTHENTICATED === true;
+const LOCKED_COLOUR = '#33475a';
+
 export var GMT = satellite.gstime(new Date());
 export const scene = new THREE.Scene();
 export const markers = [];
@@ -93,9 +96,10 @@ export function setActiveTrackEntry(entry) {
     activeTrackEntry = entry;
 }
 
-function placeSatMesh(sat_response, colour) {
+function placeSatMesh(sat_response, colour, isFree = false) {
+    const locked = !IS_AUTHENTICATED && !isFree;
     const satGeometry = new THREE.SphereGeometry(0.02, 8, 4);
-    const satMaterial = new THREE.MeshBasicMaterial({ color: colour });
+    const satMaterial = new THREE.MeshBasicMaterial({ color: locked ? LOCKED_COLOUR : colour });
     const sat = new THREE.Mesh(satGeometry, satMaterial);
     const sat_rec = satellite.json2satrec(sat_response);
     const positionAndVelocity = satellite.propagate(sat_rec, new Date());
@@ -113,6 +117,7 @@ function placeSatMesh(sat_response, colour) {
     );
     sat.userData.name = sat_response.OBJECT_NAME;
     sat.userData.type = 'sat';
+    sat.userData.locked = locked;
     sat.userData.constellation = getConstellationName(sat_response.OBJECT_NAME);
     sat.visible = visibleConstellations.has(sat.userData.constellation);
     scene.add(sat);
@@ -151,7 +156,7 @@ async function starlink_init() {
 async function weather_init(){
     const response = await fetch('/dynamic/weather');
     const data = await response.json();
-    for (const sat of data) placeSatMesh(sat, getSatColour(sat.OBJECT_NAME));
+    for (const sat of data) placeSatMesh(sat, getSatColour(sat.OBJECT_NAME), true);
 
 }
 
@@ -261,6 +266,10 @@ renderer.domElement.addEventListener('click', (e) => {
             popup.style.display = 'none';
         });
     } else if (sat_hits.length > 0) {
+        if (sat_hits[0].object.userData.locked) {
+            if (window.showLoginPopup) window.showLoginPopup();
+            return;
+        }
         const s = sat_hits[0].object.userData;
         const entry = sat_meshes.find(m => m.mesh === sat_hits[0].object);
         const pv = satellite.propagate(entry.satrec, new Date());

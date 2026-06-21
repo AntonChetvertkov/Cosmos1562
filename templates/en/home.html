@@ -35,6 +35,9 @@
             .acct-danger-btn { width: 100%; background: transparent; border: 1px solid #ff4444; color: #ff4444; font-family: 'Orbitron', sans-serif; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 11px; cursor: pointer; border-radius: 4px; }
             .acct-input { width: 100%; background: #060d18; border: 1px solid #1a4a6b; color: #00c8ff; font-family: 'Orbitron', sans-serif; font-size: 0.84rem; letter-spacing: 0.04em; padding: 9px 10px; border-radius: 4px; box-sizing: border-box; outline: none; margin-bottom: 6px; }
             .acct-disabled-btn { width: 100%; background: transparent; border: 1px solid #1a4a6b; color: #1a4a6b; font-family: 'Orbitron', sans-serif; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 11px; border-radius: 4px; cursor: not-allowed; }
+            .popup-input { width:100%; background:#060d18; border:1px solid #1a4a6b; color:#00c8ff; font-family:'Orbitron',sans-serif; font-size:0.82rem; letter-spacing:0.04em; padding:10px 12px; border-radius:6px; box-sizing:border-box; outline:none; margin-bottom:12px; }
+            .popup-btn { display:block; width:100%; text-align:center; text-decoration:none; box-sizing:border-box; background:transparent; border:1px solid #1a4a6b; color:#a8d4e8; font-family:'Orbitron',sans-serif; font-size:0.82rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; padding:11px; border-radius:6px; cursor:pointer; margin-bottom:10px; }
+            .popup-btn:hover { color:#00c8ff; border-color:#00c8ff; background:rgba(0,200,255,0.08); }
         </style>
     </head>
     <body>
@@ -78,6 +81,7 @@
                 <span class="btn-icon">⊙</span>
                 <span class="btn-label">Account</span>
             </button>
+            {% if is_authenticated %}
             <form method="post" action="/logout">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="sidebar-btn">
@@ -85,6 +89,12 @@
                     <span class="btn-label">Logout</span>
                 </button>
             </form>
+            {% else %}
+            <button type="button" class="sidebar-btn" id="login-btn">
+                <span class="btn-icon">⇨</span>
+                <span class="btn-label">Login</span>
+            </button>
+            {% endif %}
         </div>
 
         <div id="key-panel" style="
@@ -466,6 +476,25 @@
             }
         </script>
 
+        <div id="login-popup" style="display:none; position:fixed; inset:0; z-index:9998; background:rgba(3,5,16,0.8); align-items:center; justify-content:center;">
+            <div style="background:#0a1628; border:1px solid #1a4a6b; border-radius:10px; padding:28px 32px; min-width:320px; max-width:90vw; font-family:'Orbitron',sans-serif;">
+                <div style="font-size:0.8rem; letter-spacing:0.18em; text-transform:uppercase; color:#00c8ff; margin-bottom:20px; text-align:center;">Log in to continue</div>
+                <form method="post" action="/">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="email" name="email" placeholder="Email" required class="popup-input">
+                    <input type="password" name="password" placeholder="Password" required class="popup-input">
+                    <button type="submit" class="popup-btn">Log in</button>
+                </form>
+                <a href="/register" class="popup-btn">Register</a>
+                <div style="display:flex; gap:12px; justify-content:center; margin-top:6px;">
+                    <a href="/auth/login/yandex"><img src="{{ url_for('static', filename='img/Yandex.png') }}" style="width:46px; border-radius:23px;"></a>
+                    <a href="/auth/login/google"><img src="{{ url_for('static', filename='img/Google.png') }}" style="width:46px; border-radius:23px;"></a>
+                </div>
+                <div id="login-popup-close" style="text-align:center; margin-top:18px; font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase; color:#1a6a8b; cursor:pointer;">Close</div>
+            </div>
+        </div>
+
+        <script>window.IS_AUTHENTICATED = {{ 'true' if is_authenticated else 'false' }};</script>
         <script type="module" src="/static/js/globe.js"></script>
         <script type="module" src="/static/js/ui.js"></script>
     </body>

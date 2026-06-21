@@ -1,6 +1,21 @@
 import { addCityMarkerToScene, toggleConstellation } from '/static/js/globe.js';
 import { createConstellationPanel } from '/static/js/constellations.js';
 
+const IS_AUTHENTICATED = window.IS_AUTHENTICATED === true;
+
+function showLoginPopup() {
+    const p = document.getElementById('login-popup');
+    if (p) p.style.display = 'flex';
+}
+window.showLoginPopup = showLoginPopup;
+
+function requireAuth(action) {
+    return () => {
+        if (!IS_AUTHENTICATED) { showLoginPopup(); return; }
+        action();
+    };
+}
+
 let CITIES = [];
 fetch('/static/cities/world-cities.json').then(r => r.json()).then(d => CITIES = d);
 
@@ -46,26 +61,33 @@ document.getElementById('key-btn').addEventListener('click', () => {
 document.getElementById('key-close').addEventListener('click', () => {
     document.getElementById('key-panel').style.display = 'none';
 });
-document.getElementById('marker-btn').addEventListener('click', () => {
+document.getElementById('marker-btn').addEventListener('click', requireAuth(() => {
     document.getElementById('markers-panel').style.display = 'block';
-});
+}));
 document.getElementById('markers-close').addEventListener('click', () => {
     document.getElementById('markers-panel').style.display = 'none';
 });
-document.getElementById('constellations-btn').addEventListener('click', () => {
+document.getElementById('constellations-btn').addEventListener('click', requireAuth(() => {
     document.getElementById('constellations-panel').style.display = 'block';
-});
+}));
 document.getElementById('constellations-close').addEventListener('click', () => {
     document.getElementById('constellations-panel').style.display = 'none';
 });
-document.getElementById('chat-btn').addEventListener('click', () => {
+document.getElementById('chat-btn').addEventListener('click', requireAuth(() => {
     document.getElementById('chat-panel').style.display = 'block';
-});
-document.getElementById('account-btn').addEventListener('click', () => {
+}));
+document.getElementById('account-btn').addEventListener('click', requireAuth(() => {
     document.getElementById('account-panel').style.display = 'block';
-});
+}));
 document.getElementById('account-close').addEventListener('click', () => {
     document.getElementById('account-panel').style.display = 'none';
+});
+
+const loginBtn = document.getElementById('login-btn');
+if (loginBtn) loginBtn.addEventListener('click', showLoginPopup);
+const loginPopupClose = document.getElementById('login-popup-close');
+if (loginPopupClose) loginPopupClose.addEventListener('click', () => {
+    document.getElementById('login-popup').style.display = 'none';
 });
 document.getElementById('chat-close').addEventListener('click', () => {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
@@ -177,6 +199,13 @@ async function acctConfirmDelete() {
     if (res.ok) window.location.href = '/';
     else acctMsg('Failed to delete account.', true);
 }
+
+window.acctEditField = acctEditField;
+window.acctCancelEdit = acctCancelEdit;
+window.acctSaveName = acctSaveName;
+window.acctSaveEmail = acctSaveEmail;
+window.acctSavePassword = acctSavePassword;
+window.acctConfirmDelete = acctConfirmDelete;
 
 setTimeout(() => {
     const toggleAllCheckbox = document.getElementById('toggle-all');
