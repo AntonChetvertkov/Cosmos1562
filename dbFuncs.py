@@ -1,5 +1,6 @@
 import sqlite3
 from pathlib import Path
+from datetime import date
 from werkzeug.security import generate_password_hash, check_password_hash
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -27,6 +28,43 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    # Migrate: add AI usage tracking columns if not present
+    for col, defn in [('daily_ai_count', 'INTEGER DEFAULT 0'), ('last_ai_date', 'TEXT')]:
+        try:
+            cursor.execute(f'ALTER TABLE users ADD COLUMN {col} {defn}')
+        except sqlite3.OperationalError:
+            pass
+    conn.commit()
+    conn.close()
+
+def get_ai_usage(email):
+    conn = db_connect()
+    row = conn.execute(
+        'SELECT daily_ai_count, last_ai_date, acc_type FROM users WHERE email = ?', (email,)
+    ).fetchone()
+    conn.close()
+    if not row:
+        return 0, 'BASIC'
+    today = str(date.today())
+    count = row['daily_ai_count'] or 0
+    if row['last_ai_date'] != today:
+        count = 0
+    return count, row['acc_type'] or 'BASIC'
+
+def increment_ai_count(email):
+    conn = db_connect()
+    today = str(date.today())
+    row = conn.execute(
+        'SELECT daily_ai_count, last_ai_date FROM users WHERE email = ?', (email,)
+    ).fetchone()
+    if row and row['last_ai_date'] == today:
+        new_count = (row['daily_ai_count'] or 0) + 1
+    else:
+        new_count = 1
+    conn.execute(
+        'UPDATE users SET daily_ai_count = ?, last_ai_date = ? WHERE email = ?',
+        (new_count, today, email)
+    )
     conn.commit()
     conn.close()
 

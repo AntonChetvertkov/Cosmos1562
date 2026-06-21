@@ -316,6 +316,11 @@
             <div style="font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:16px; border-bottom:1px solid #1a4a6b; padding-bottom:10px;">
                 Chat
             </div>
+            {% if is_paid %}
+            <div id="ai-count-display" style="font-size:0.5rem;letter-spacing:0.12em;color:#1a6a8b;margin-bottom:10px;text-transform:uppercase;">БЕЗЛИМИТНЫЕ СООБЩЕНИЯ</div>
+            {% else %}
+            <div id="ai-count-display" data-remaining="{{ ai_remaining }}" style="font-size:0.5rem;letter-spacing:0.12em;color:#1a6a8b;margin-bottom:10px;text-transform:uppercase;">{{ ai_remaining }} / 15 СООБЩЕНИЙ ОСТАЛОСЬ СЕГОДНЯ</div>
+            {% endif %}
             <div id="chat-form">
                 <form id="aiChat", method="post">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -342,6 +347,20 @@
                 cursor:pointer;
             ">Закрыть</div>
         </div>
+
+        <div id="cookie-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#0a1628;border-top:1px solid #1a4a6b;padding:14px 24px;z-index:9999;font-family:'Orbitron',sans-serif;font-size:0.55rem;letter-spacing:0.08em;color:#a8d4e8;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+            <span>Мы используем файлы cookie для аналитики и рекламы. <a href="/AUP" style="color:#00c8ff;">Политика cookie</a></span>
+            <button onclick="acceptCookies()" style="background:#00c8ff;color:#050510;border:none;padding:8px 20px;font-family:'Orbitron',sans-serif;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;border-radius:4px;white-space:nowrap;">Принять</button>
+        </div>
+        <script>
+            function acceptCookies() {
+                document.cookie = 'cosmos_consent=1; max-age=31536000; path=/; SameSite=Lax';
+                document.getElementById('cookie-banner').style.display = 'none';
+            }
+            if (!document.cookie.split('; ').find(r => r.startsWith('cosmos_consent='))) {
+                document.getElementById('cookie-banner').style.display = 'flex';
+            }
+        </script>
 
         <script type="module" src="/static/js/globe.js"></script>
         <script type="module" src="/static/js/ui.js"></script>

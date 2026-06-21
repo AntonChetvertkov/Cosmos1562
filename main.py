@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, jsonify, session, u
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from werkzeug.security import check_password_hash
-from dbFuncs import init_db, add_user, get_user_by_email, get_or_create_user_oauth
+from dbFuncs import init_db, add_user, get_user_by_email, get_or_create_user_oauth, get_ai_usage, increment_ai_count
 from ipTools import getCountryCode, getLanguage, getUserIp
 from functools import wraps
 import requests
@@ -166,13 +166,19 @@ def index():
             return render_template(get_template('welcome.html', lang), error="Invalid email or password", lang=lang)
     return render_template(get_template('welcome.html', lang), lang=lang)
 
+FREE_AI_LIMIT = 15
+
 @app.route('/home')
 @login_required
 def home():
     IP = getUserIp()
     lang = getLanguage(getCountryCode(IP))
     session['pastResponses'] = []
-    return render_template(get_template('home.html', lang))
+    email = session.get('user_email')
+    count, acc_type = get_ai_usage(email)
+    is_paid = acc_type == 'PAID'
+    ai_remaining = None if is_paid else max(0, FREE_AI_LIMIT - count)
+    return render_template(get_template('home.html', lang), ai_remaining=ai_remaining, is_paid=is_paid)
 
 @app.route('/ai/chat', methods=['POST'])
 @login_required
@@ -182,7 +188,12 @@ def chatInteract():
     prompt = data.get('prompt')
     if not prompt or not isinstance(prompt, str) or not prompt.strip():
         return jsonify({'error': 'A non-empty prompt is required'}), 400
+    email = session.get('user_email')
+    count, acc_type = get_ai_usage(email)
+    if acc_type != 'PAID' and count >= FREE_AI_LIMIT:
+        return jsonify({'error': 'daily_limit', 'message': 'You\'ve used all 15 free messages today. Upgrade for unlimited access.'}), 429
     aiResponse, session['pastResponses'] = aiInteract(prompt, session.get('pastResponses', []))
+    increment_ai_count(email)
     return aiResponse
 
 @app.route('/ai/clear', methods=['POST'])

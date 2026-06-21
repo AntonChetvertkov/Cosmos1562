@@ -76,21 +76,38 @@ createConstellationPanel();
 document.getElementById("aiChat").addEventListener("submit", async (e) => {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
     e.preventDefault();
-    document.getElementById('response-message').innerText += 'Thinking about "'+document.getElementById('prompt_field').value+'"...\n';
-    const prompt = document.getElementById('prompt_field').value
+    const prompt = document.getElementById('prompt_field').value;
+    const msgDiv = document.getElementById('response-message');
+    msgDiv.innerText += 'Thinking about "' + prompt + '"...\n';
     document.getElementById('prompt_field').value = "";
+
     const response = await fetch('/ai/chat', {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": csrfToken
         },
-        body: JSON.stringify({
-            prompt: prompt
-        })
+        body: JSON.stringify({ prompt })
     });
+
+    if (response.status === 429) {
+        const data = await response.json();
+        msgDiv.innerText += (data.message || 'Daily limit reached. Upgrade for unlimited access.') + '\n';
+        const countEl = document.getElementById('ai-count-display');
+        if (countEl) countEl.textContent = '0 / 15 MESSAGES REMAINING TODAY';
+        return;
+    }
+
     const answer = await response.text();
-    document.getElementById('response-message').innerText += answer+'\n';
+    msgDiv.innerText += answer + '\n';
+    msgDiv.scrollTop = msgDiv.scrollHeight;
+
+    const countEl = document.getElementById('ai-count-display');
+    if (countEl && countEl.dataset.remaining !== undefined) {
+        const remaining = Math.max(0, parseInt(countEl.dataset.remaining) - 1);
+        countEl.dataset.remaining = remaining;
+        countEl.textContent = remaining + ' / 15 MESSAGES REMAINING TODAY';
+    }
 });
 setTimeout(() => {
     const toggleAllCheckbox = document.getElementById('toggle-all');

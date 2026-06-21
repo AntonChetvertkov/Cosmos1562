@@ -63,5 +63,19 @@
             <header><h1>Космос больше не где-то далеко — он рядом, в прямом эфире.</h1></header>
         </div>
     </div>
+
+    <div id="cookie-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#0a1628;border-top:1px solid #1a4a6b;padding:14px 24px;z-index:9999;font-family:'Orbitron',sans-serif;font-size:0.55rem;letter-spacing:0.08em;color:#a8d4e8;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <span>Мы используем файлы cookie для аналитики и рекламы. <a href="/AUP" style="color:#00c8ff;">Политика cookie</a></span>
+        <button onclick="acceptCookies()" style="background:#00c8ff;color:#050510;border:none;padding:8px 20px;font-family:'Orbitron',sans-serif;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;border-radius:4px;white-space:nowrap;">Принять</button>
+    </div>
+    <script>
+        function acceptCookies() {
+            document.cookie = 'cosmos_consent=1; max-age=31536000; path=/; SameSite=Lax';
+            document.getElementById('cookie-banner').style.display = 'none';
+        }
+        if (!document.cookie.split('; ').find(r => r.startsWith('cosmos_consent='))) {
+            document.getElementById('cookie-banner').style.display = 'flex';
+        }
+    </script>
 </body>
 </html>
