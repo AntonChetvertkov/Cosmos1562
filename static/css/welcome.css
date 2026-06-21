@@ -49,8 +49,8 @@ body::before {
 }
 
 #lang-selector p {
-    font-size: 0.7rem;
-    letter-spacing: 0.1em;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
     color: var(--text);
     margin: 0;
 }
@@ -66,8 +66,8 @@ body::before {
     padding: 8px 12px;
     border-radius: 4px;
     font-family: 'Orbitron', sans-serif;
-    font-size: 0.65rem;
-    letter-spacing: 0.1em;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
     cursor: pointer;
     transition: border-color 0.25s var(--ease), background 0.25s var(--ease);
     text-align: center;
@@ -183,9 +183,9 @@ body::before {
 }
 
 #aboutus {
-    font-size: 0.7rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     line-height: 1.9;
     color: var(--text);
     text-transform: uppercase;
@@ -199,9 +199,9 @@ body::before {
 }
 
 #about_sidebar_bg header h1 {
-    font-size: 0.8rem;
+    font-size: 0.95rem;
     font-weight: 700;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
     color: var(--cyan);
     text-shadow: 0 0 20px rgba(0, 200, 255, 0.4);
