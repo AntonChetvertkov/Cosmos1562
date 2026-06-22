@@ -55,37 +55,37 @@ document.getElementById('city-search').addEventListener('input', e => {
     }, 300);
 });
 
-document.getElementById('key-btn').addEventListener('click', () => {
+document.getElementById('key-btn')?.addEventListener('click', () => {
     document.getElementById('key-panel').style.display = 'block';
 });
-document.getElementById('key-close').addEventListener('click', () => {
+document.getElementById('key-close')?.addEventListener('click', () => {
     document.getElementById('key-panel').style.display = 'none';
 });
-document.getElementById('marker-btn').addEventListener('click', requireAuth(() => {
+document.getElementById('marker-btn')?.addEventListener('click', requireAuth(() => {
     document.getElementById('markers-panel').style.display = 'block';
 }));
-document.getElementById('markers-close').addEventListener('click', () => {
+document.getElementById('markers-close')?.addEventListener('click', () => {
     document.getElementById('markers-panel').style.display = 'none';
 });
-document.getElementById('constellations-btn').addEventListener('click', requireAuth(() => {
+document.getElementById('constellations-btn')?.addEventListener('click', requireAuth(() => {
     document.getElementById('constellations-panel').style.display = 'block';
 }));
-document.getElementById('filter-btn').addEventListener('click', () => {
+document.getElementById('filter-btn')?.addEventListener('click', requireAuth(() => {
     document.getElementById('filter-panel').style.display = 'block';
-});
-document.getElementById('filter-close').addEventListener('click', () => {
+}));
+document.getElementById('filter-close')?.addEventListener('click', () => {
     document.getElementById('filter-panel').style.display = 'none';
 });
-document.getElementById('constellations-close').addEventListener('click', () => {
+document.getElementById('constellations-close')?.addEventListener('click', () => {
     document.getElementById('constellations-panel').style.display = 'none';
 });
-document.getElementById('chat-btn').addEventListener('click', requireAuth(() => {
+document.getElementById('chat-btn')?.addEventListener('click', requireAuth(() => {
     document.getElementById('chat-panel').style.display = 'block';
 }));
-document.getElementById('account-btn').addEventListener('click', requireAuth(() => {
+document.getElementById('account-btn')?.addEventListener('click', requireAuth(() => {
     document.getElementById('account-panel').style.display = 'block';
 }));
-document.getElementById('account-close').addEventListener('click', () => {
+document.getElementById('account-close')?.addEventListener('click', () => {
     document.getElementById('account-panel').style.display = 'none';
 });
 
