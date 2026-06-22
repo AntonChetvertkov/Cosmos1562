@@ -10,7 +10,6 @@ const TRACK_SURFACE_OFFSET = 1.001;
 const IS_AUTHENTICATED = window.IS_AUTHENTICATED === true;
 const LOCKED_COLOUR = '#33475a';
 
-const SAT_GEO = new THREE.SphereGeometry(0.015, 4, 2);
 const _matCache = {};
 function _getMat(color) {
     if (!_matCache[color]) _matCache[color] = new THREE.MeshBasicMaterial({ color });
@@ -102,7 +101,11 @@ export function setActiveTrackEntry(entry) {
 
 function placeSatMesh(sat_response, colour, isFree = false) {
     const locked = !IS_AUTHENTICATED && !isFree;
-    const sat = new THREE.Mesh(SAT_GEO, _getMat(locked ? LOCKED_COLOUR : colour));
+    const sat = new THREE.Mesh(
+        new THREE.ConeGeometry(0.012, 0.016, 4),
+        _getMat(locked ? LOCKED_COLOUR : colour)
+    );
+    sat.rotation.set(0, Math.PI / 4, 0);
     const sat_rec = satellite.json2satrec(sat_response);
     const positionAndVelocity = satellite.propagate(sat_rec, new Date());
     if (!positionAndVelocity || !positionAndVelocity.position) return;

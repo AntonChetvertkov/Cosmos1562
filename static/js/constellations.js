@@ -64,6 +64,7 @@ export const CONSTELLATION_GROUPS = [
             { name: 'HUANJING',    label: 'HuanJing',       country: '🇨🇳 China' },
             { name: 'RESURS',      label: 'Resurs',         country: '🇷🇺 Russia' },
             { name: 'KANOPUS',     label: 'Kanopus-V',      country: '🇷🇺 Russia' },
+            { name: 'RASSVET',     label: 'Rassvet',        country: '🇷🇺 Russia' },
             { name: 'CARTOSAT',    label: 'Cartosat',       country: '🇮🇳 India' },
             { name: 'RESOURCESAT', label: 'ResourceSat',    country: '🇮🇳 India' },
             { name: 'OCEANSAT',    label: 'OceanSat',       country: '🇮🇳 India' },
@@ -170,6 +171,7 @@ export function getConstellationName(satName) {
     if (n.includes('ZIYUAN'))      return 'ZIYUAN';
     if (n.includes('KANOPUS'))     return 'KANOPUS';
     if (n.includes('RESURS'))      return 'RESURS';
+    if (n.includes('RASSVET'))     return 'RASSVET';
     if (n.includes('DEIMOS'))      return 'DEIMOS';
     if (n.includes('CBERS'))       return 'CBERS';
     if (n.includes('FLOCK'))       return 'FLOCK';

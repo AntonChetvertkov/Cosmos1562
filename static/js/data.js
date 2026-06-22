@@ -67,6 +67,7 @@ export function getSatColour(name) {
     if (name.includes('ARKTIKA'))    return 'red';
     if (name.includes('RESURS'))     return 'red';
     if (name.includes('KANOPUS'))    return 'red';
+    if (name.includes('RASSVET'))    return 'red';
     if (name.includes('KONDOR'))     return 'red';
     if (name.includes('IONOSFERA'))  return 'red';
     if (name.includes('KAZEOSAT'))   return 'red';
@@ -342,6 +343,7 @@ export function getSatOperator(name) {
     if (name.includes('METOP'))      return 'EU';
     if (name.includes('METEOR'))     return 'Russia';
     if (name.includes('ELEKTRO'))    return 'Russia';
+    if (name.includes('RASSVET'))    return 'Russia';
     if (name.includes('ELECTRO'))    return 'Russia';
     if (name.includes('ARKTIKA'))    return 'Russia';
     if (name.includes('IONOSFERA'))  return 'Russia';
