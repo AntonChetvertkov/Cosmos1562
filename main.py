@@ -53,7 +53,7 @@ limiter = Limiter(
     storage_uri="memory://",
 )
 
-SAT_DATA_LIMIT = "60 per minute"
+SAT_DATA_LIMIT = "600 per minute"
 
 
 def login_required(f):

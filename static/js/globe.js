@@ -178,14 +178,21 @@ function placeSatMesh(sat_response, colour, isFree = false) {
 const WEATHER_CONSTELLATIONS = new Set(WEATHER);
 
 async function fetchCategory(category) {
-    const response = await fetch(`/dynamic/sats/${category}`);
-    const data = await response.json();
-    for (const sat of data) {
-        const constName = getConstellationName(sat.OBJECT_NAME);
-        const isFree = WEATHER_CONSTELLATIONS.has(constName);
-        placeSatMesh(sat, getSatColour(sat.OBJECT_NAME), isFree);
+    try {
+        const response = await fetch(`/dynamic/sats/${category}`);
+        if (!response.ok) return 0;
+        const data = await response.json();
+        if (!Array.isArray(data)) return 0;
+        for (const sat of data) {
+            const constName = getConstellationName(sat.OBJECT_NAME);
+            const isFree = WEATHER_CONSTELLATIONS.has(constName);
+            placeSatMesh(sat, getSatColour(sat.OBJECT_NAME), isFree);
+        }
+        return data.length;
+    } catch (e) {
+        console.warn(`fetchCategory(${category}) failed:`, e);
+        return 0;
     }
-    return data.length;
 }
 
 function placeGroundMarker(lat, lon, colour, name, size = 0.005) {
