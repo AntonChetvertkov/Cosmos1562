@@ -118,6 +118,7 @@ export function getSatColour(name) {
     if (name.includes('HAIYANG'))    return 'yellow';
     if (name.includes('HUANJING'))   return 'yellow';
     if (name.includes('SHIYAN'))     return 'yellow';
+    if (name.includes('QIANFAN'))    return 'yellow';
     if (name.includes('PRSC'))       return 'yellow';
     if (name.includes('CBERS'))      return 'yellow';
     if (name.includes('FORMOSAT'))   return 'yellow';
@@ -221,10 +222,57 @@ export function getSatColour(name) {
     if (name.includes('KNACKSAT'))   return '#fadc8a';
     if (name.includes('THEOS'))      return '#fadc8a';
 
+    // ── Commercial constellations ─────────────────────────────────────────────
+    if (name.includes('IRIDIUM'))    return 'blue';
+    if (name.includes('KUIPER'))     return 'blue';
+    if (name.includes('ONEWEB'))     return 'cyan';
+    if (name.includes('FLOCK'))      return 'blue';
+    if (name.includes('PELICAN'))    return 'blue';
+    if (name.includes('SPIRE'))      return 'blue';
+    if (name.includes('LEMUR'))      return 'blue';
+    if (name.includes('HAWKEYE'))    return 'blue';
+    if (name.includes('CAPELLA'))    return 'blue';
+    if (name.includes('UMBRA'))      return 'blue';
+    if (name.includes('ICEYE'))      return 'cyan';
+    if (name.includes('REAKTOR'))    return 'cyan';
+    if (name.includes('ESAIL'))      return 'cyan';
+
+    // ── Russia misc ───────────────────────────────────────────────────────────
+    if (name.includes('STRELA'))     return 'red';
+    if (name.includes('MOLNIYA'))    return 'red';
+    if (name.includes('MERIDIAN'))   return 'red';
+    if (name.includes('RADUGA'))     return 'red';
+    if (name.includes('GORIZONT'))   return 'red';
+    if (name.includes('EKSPRESS'))   return 'red';
+    if (name.includes('GONETS'))     return 'red';
+    if (name.includes('RODNIK'))     return 'red';
+    if (name.includes('MUSSON'))     return 'red';
+    if (name.includes('PARUS'))      return 'red';
+
+    // ── China misc ────────────────────────────────────────────────────────────
+    if (name.includes('CHINASAT'))   return 'yellow';
+    if (name.includes('APSTAR'))     return 'yellow';
+    if (name.includes('SHIJIAN'))    return 'yellow';
+    if (name.includes('TIANYAN'))    return 'yellow';
+    if (name.includes('LUDI'))       return 'yellow';
+    if (name.includes('QUEQIAO'))    return 'yellow';
+    if (name.includes('TIANHUI'))    return 'yellow';
+
+    // ── USA misc ──────────────────────────────────────────────────────────────
+    if (name.includes('INTELSAT'))   return 'blue';
+    if (name.includes('SES-'))       return 'blue';
+    if (name.includes('VIASAT'))     return 'blue';
+    if (name.includes('HUGHES'))     return 'blue';
+    if (name.includes('DIRECTV'))    return 'blue';
+    if (name.includes('AMC-'))       return 'blue';
+    if (name.includes('GALAXY'))     return 'blue';
+    if (name.includes('ECHOSTAR'))   return 'blue';
+
     // ── International / ISS ──────────────────────────────────────────────────
     if (name.includes('ISS'))        return '#00ff88';
 
-    return '#ffffff';
+    // dim teal for genuinely unidentified objects (debris, classified, amateur)
+    return '#2a5a6a';
 }
 
 
@@ -283,6 +331,13 @@ export function getSatOperator(name) {
     if (name.includes('CYGFM'))      return 'USA';
     if (name.includes('FENGYUN'))    return 'China';
     if (name.includes('TIANMU'))     return 'China';
+    if (name.includes('GAOFEN'))     return 'China';
+    if (name.includes('YAOGAN'))     return 'China';
+    if (name.includes('ZIYUAN'))     return 'China';
+    if (name.includes('HAIYANG'))    return 'China';
+    if (name.includes('HUANJING'))   return 'China';
+    if (name.includes('SHIYAN'))     return 'China';
+    if (name.includes('QIANFAN'))    return 'China';
     if (name.includes('METEOSAT'))   return 'EU';
     if (name.includes('METOP'))      return 'EU';
     if (name.includes('METEOR'))     return 'Russia';
@@ -333,7 +388,12 @@ export function getSatOperator(name) {
     if (name.includes('KAZEOSAT'))   return 'Kazakhstan';
     if (name.includes('CBERS'))      return 'China / Brazil';
     if (name.includes('FORMOSAT'))   return 'China';
-    if (name.includes('EGNOS'))   return 'EU';
-    if (name.includes('EUTELSAT '))   return 'EU';
+    if (name.includes('IRIDIUM'))    return 'USA';
+    if (name.includes('ONEWEB'))     return 'UK';
+    if (name.includes('KUIPER'))     return 'USA – Amazon';
+    if (name.includes('FLOCK'))      return 'USA – Planet Labs';
+    if (name.includes('PELICAN'))    return 'USA – Planet Labs';
+    if (name.includes('EGNOS'))      return 'EU';
+    if (name.includes('EUTELSAT '))  return 'EU';
     return 'Unknown';
 }

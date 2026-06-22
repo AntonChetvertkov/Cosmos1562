@@ -2,13 +2,20 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as satellite from 'satellite.js';
 import { cosmodromes, capitals, getSatColour, getSatOperator } from '/static/js/data.js';
-import { getConstellationName, GNSS_CONSTELLATIONS, STATIONS, WEATHER, RESOURCE, MISC } from '/static/js/constellations.js';
+import { getConstellationName, WEATHER, ALL_CONSTELLATION_NAMES, DEFAULT_OFF_CONSTELLATIONS } from '/static/js/constellations.js';
 
 const TRACK_STEP_SECONDS = 30;
 const TRACK_SURFACE_OFFSET = 1.001;
 
 const IS_AUTHENTICATED = window.IS_AUTHENTICATED === true;
 const LOCKED_COLOUR = '#33475a';
+
+const SAT_GEO = new THREE.SphereGeometry(0.015, 4, 2);
+const _matCache = {};
+function _getMat(color) {
+    if (!_matCache[color]) _matCache[color] = new THREE.MeshBasicMaterial({ color });
+    return _matCache[color];
+}
 
 export var GMT = satellite.gstime(new Date());
 export const scene = new THREE.Scene();
@@ -17,14 +24,9 @@ export const sat_meshes = [];
 window.sat_meshes = sat_meshes;
 export let activeTrackEntry = null;
 
-const visibleConstellations = new Set([
-    ...GNSS_CONSTELLATIONS,
-    ...STATIONS,
-    ...WEATHER,
-    ...RESOURCE,
-    'GLONASS',
-    'CUBESAT',
-]);
+const visibleConstellations = new Set(
+    ALL_CONSTELLATION_NAMES.filter(n => !DEFAULT_OFF_CONSTELLATIONS.has(n))
+);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -100,9 +102,7 @@ export function setActiveTrackEntry(entry) {
 
 function placeSatMesh(sat_response, colour, isFree = false) {
     const locked = !IS_AUTHENTICATED && !isFree;
-    const satGeometry = new THREE.SphereGeometry(0.02, 8, 4);
-    const satMaterial = new THREE.MeshBasicMaterial({ color: locked ? LOCKED_COLOUR : colour });
-    const sat = new THREE.Mesh(satGeometry, satMaterial);
+    const sat = new THREE.Mesh(SAT_GEO, _getMat(locked ? LOCKED_COLOUR : colour));
     const sat_rec = satellite.json2satrec(sat_response);
     const positionAndVelocity = satellite.propagate(sat_rec, new Date());
     if (!positionAndVelocity || !positionAndVelocity.position) return;
@@ -126,53 +126,17 @@ function placeSatMesh(sat_response, colour, isFree = false) {
     sat_meshes.push({ satrec: sat_rec, mesh: sat, trackLines: [] });
 }
 
-async function gnss_sats_init() {
-    const response = await fetch('/dynamic/gnss_sats');
-    const data = await response.json();
-    for (const sat of data) placeSatMesh(sat, getSatColour(sat.OBJECT_NAME));
-}
+const WEATHER_CONSTELLATIONS = new Set(WEATHER);
 
-async function cube_sats_init() {
-    const response = await fetch('/dynamic/cubesats');
+async function fetchCategory(category) {
+    const response = await fetch(`/dynamic/sats/${category}`);
     const data = await response.json();
-    for (const sat of data) placeSatMesh(sat, getSatColour(sat.OBJECT_NAME));
-}
-
-async function stations_init() {
-    const response = await fetch('/dynamic/stations');
-    const data = await response.json();
-    const allowed = (name) => name === 'ISS (ZARYA)' || name.startsWith('CSS');
     for (const sat of data) {
-        if (!allowed(sat.OBJECT_NAME)) continue;
-        const colour = sat.OBJECT_NAME.startsWith('CSS') ? 'yellow' : '#00ff88';
-        placeSatMesh(sat, colour);
+        const constName = getConstellationName(sat.OBJECT_NAME);
+        const isFree = WEATHER_CONSTELLATIONS.has(constName);
+        placeSatMesh(sat, getSatColour(sat.OBJECT_NAME), isFree);
     }
-}
-
-async function starlink_init() {
-    const response = await fetch('/dynamic/starlink');
-    const data = await response.json();
-    for (const sat of data) placeSatMesh(sat, getSatColour(sat.OBJECT_NAME));
-}
-
-async function weather_init(){
-    const response = await fetch('/dynamic/weather');
-    const data = await response.json();
-    for (const sat of data) placeSatMesh(sat, getSatColour(sat.OBJECT_NAME), true);
-
-}
-
-async function resource_init(){
-    const response = await fetch('dynamic/resource');
-    const data = await response.json();
-    for (const sat of data) placeSatMesh(sat, getSatColour(sat.OBJECT_NAME));
-}
-
-async function active_init(){
-    const response = await fetch('/dynamic/active');
-    const data = await response.json();
-    for (const sat of data) placeSatMesh(sat, getSatColour(sat.OBJECT_NAME));
-
+    return data.length;
 }
 
 function placeGroundMarker(lat, lon, colour, name, size = 0.005) {
@@ -217,12 +181,30 @@ export function toggleConstellation(const_name, visible) {
 for (const c of cosmodromes) placeGroundMarker(c.lat, c.lon, 'cyan', c.name);
 for (const c of capitals)    placeGroundMarker(c.lat, c.lon, 'red',  c.name);
 
-gnss_sats_init();
-cube_sats_init();
-stations_init();
-starlink_init();
-weather_init();
-resource_init();
+const satLoader = document.getElementById('sat-loader');
+let _loaded = 0;
+const _updateLoader = (n) => {
+    _loaded += n;
+    if (satLoader) satLoader.textContent = `Loading satellites... ${_loaded.toLocaleString()}`;
+};
+const _hideLoader = () => {
+    if (satLoader) {
+        satLoader.style.transition = 'opacity 0.6s';
+        satLoader.style.opacity = '0';
+        setTimeout(() => satLoader.style.display = 'none', 650);
+    }
+};
+
+// Fire all category fetches in parallel — each renders as it arrives
+Promise.all([
+    fetchCategory('stations').then(_updateLoader),
+    fetchCategory('gnss').then(_updateLoader),
+    fetchCategory('weather').then(_updateLoader),
+    fetchCategory('resource').then(_updateLoader),
+    fetchCategory('commercial').then(_updateLoader),
+    fetchCategory('other').then(_updateLoader),
+    fetchCategory('starlink').then(_updateLoader),
+]).then(_hideLoader);
 
 const popup = document.createElement('div');
 popup.style.cssText = `
@@ -304,22 +286,77 @@ renderer.domElement.addEventListener('click', (e) => {
     }
 });
 
+export function focusSat(name) {
+    const lname = name.toLowerCase();
+    const entry = sat_meshes.find(e => e.mesh.userData.name.toLowerCase().includes(lname));
+    if (!entry) return false;
+
+    if (entry.mesh.userData.locked) {
+        if (window.showLoginPopup) window.showLoginPopup();
+        return true;
+    }
+
+    const pos = entry.mesh.position.clone();
+    const satDist = pos.length();
+    const cameraDist = Math.max(2.5, satDist + 1.5);
+    camera.position.copy(pos.normalize().multiplyScalar(cameraDist));
+    controls.update();
+
+    const pv = satellite.propagate(entry.satrec, new Date());
+    if (!pv || !pv.position) return true;
+    const gd = satellite.eciToGeodetic(pv.position, GMT);
+    const s = entry.mesh.userData;
+
+    if (activeTrackEntry && activeTrackEntry !== entry) {
+        removeTrackLines(activeTrackEntry.trackLines);
+        activeTrackEntry.trackLines = [];
+    }
+    if (activeTrackEntry !== entry) {
+        entry.trackLines = createTrackLines(buildGroundTrack(entry.satrec));
+        activeTrackEntry = entry;
+    }
+
+    popup.style.display = 'block';
+    popup.style.left = (window.innerWidth / 2) + 'px';
+    popup.style.top = (window.innerHeight / 2) + 'px';
+    popup.innerHTML = `
+        <div>${s.name}</div>
+        <div>LAT: ${satellite.degreesLat(gd.latitude).toFixed(2)}°</div>
+        <div>LON: ${satellite.degreesLong(gd.longitude).toFixed(2)}°</div>
+        <div>ALT: ${gd.height.toFixed(0)} km</div>
+        <div>OPERATOR: ${getSatOperator(s.name)}</div>
+        <div id="popup-close" style="margin-top:6px; color:#1a6a8b; cursor:pointer; font-size:0.5rem;">CLOSE</div>
+    `;
+    document.getElementById('popup-close').addEventListener('click', () => {
+        removeTrackLines(activeTrackEntry.trackLines);
+        activeTrackEntry.trackLines = [];
+        activeTrackEntry = null;
+        popup.style.display = 'none';
+    });
+    return true;
+}
+
+let _animFrame = 0;
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
-    GMT = satellite.gstime(new Date());
-    for (const entry of sat_meshes) {
-        const pv = satellite.propagate(entry.satrec, new Date());
-        if (!pv || !pv.position) continue;
-        const geoPos = satellite.eciToGeodetic(pv.position, GMT);
-        const latRad = geoPos.latitude;
-        const lonRad = geoPos.longitude;
-        const scale = 1 + (geoPos.height / 6371);
-        entry.mesh.position.set(
-            Math.cos(latRad) * Math.cos(lonRad) * scale,
-            Math.sin(latRad) * scale,
-            -Math.cos(latRad) * Math.sin(lonRad) * scale
-        );
+    if (++_animFrame % 4 === 0) {
+        const now = new Date();
+        GMT = satellite.gstime(now);
+        for (const entry of sat_meshes) {
+            if (!entry.mesh.visible) continue;
+            const pv = satellite.propagate(entry.satrec, now);
+            if (!pv || !pv.position) continue;
+            const geoPos = satellite.eciToGeodetic(pv.position, GMT);
+            const latRad = geoPos.latitude;
+            const lonRad = geoPos.longitude;
+            const scale = 1 + (geoPos.height / 6371);
+            entry.mesh.position.set(
+                Math.cos(latRad) * Math.cos(lonRad) * scale,
+                Math.sin(latRad) * scale,
+                -Math.cos(latRad) * Math.sin(lonRad) * scale
+            );
+        }
     }
     renderer.render(scene, camera);
 }

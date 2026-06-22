@@ -1,4 +1,4 @@
-import { addCityMarkerToScene, toggleConstellation } from '/static/js/globe.js';
+import { addCityMarkerToScene, toggleConstellation, focusSat } from '/static/js/globe.js';
 import { createConstellationPanel } from '/static/js/constellations.js';
 
 const IS_AUTHENTICATED = window.IS_AUTHENTICATED === true;
@@ -81,6 +81,49 @@ document.getElementById('account-btn').addEventListener('click', requireAuth(() 
 }));
 document.getElementById('account-close').addEventListener('click', () => {
     document.getElementById('account-panel').style.display = 'none';
+});
+
+document.getElementById('search-btn').addEventListener('click', () => {
+    document.getElementById('search-panel').style.display = 'block';
+    document.getElementById('sat-search').focus();
+});
+document.getElementById('search-close').addEventListener('click', () => {
+    document.getElementById('search-panel').style.display = 'none';
+});
+
+let satSearchTimer;
+document.getElementById('sat-search').addEventListener('input', e => {
+    clearTimeout(satSearchTimer);
+    satSearchTimer = setTimeout(() => {
+        const q = e.target.value.toLowerCase().trim();
+        const ul = document.getElementById('sat-results');
+        ul.innerHTML = '';
+        if (q.length < 2) return;
+        const matches = (window.sat_meshes || [])
+            .filter(m => m.mesh.userData.name.toLowerCase().includes(q))
+            .slice(0, 12);
+        for (const entry of matches) {
+            const li = document.createElement('li');
+            const locked = entry.mesh.userData.locked;
+            li.textContent = entry.mesh.userData.name + (locked ? ' 🔒' : '');
+            li.style.cssText = 'padding:7px 8px; cursor:pointer; color:#00c8ff; border-radius:4px; border-bottom:1px solid #0d2040;';
+            li.addEventListener('mouseenter', () => li.style.background = '#0d2040');
+            li.addEventListener('mouseleave', () => li.style.background = 'transparent');
+            li.addEventListener('click', () => {
+                focusSat(entry.mesh.userData.name);
+                document.getElementById('search-panel').style.display = 'none';
+                document.getElementById('sat-search').value = '';
+                ul.innerHTML = '';
+            });
+            ul.appendChild(li);
+        }
+        if (matches.length === 0 && q.length >= 2) {
+            const li = document.createElement('li');
+            li.textContent = 'No results';
+            li.style.cssText = 'padding:7px 8px; color:#1a6a8b;';
+            ul.appendChild(li);
+        }
+    }, 250);
 });
 
 const loginBtn = document.getElementById('login-btn');
@@ -209,26 +252,25 @@ window.acctConfirmDelete = acctConfirmDelete;
 
 setTimeout(() => {
     const toggleAllCheckbox = document.getElementById('toggle-all');
-    const individualCheckboxes = document.querySelectorAll('[id^="toggle-"]:not(#toggle-all)');
+    const individualCheckboxes = document.querySelectorAll('[data-constellation]');
 
     toggleAllCheckbox.addEventListener('change', (e) => {
-        for (const checkbox of individualCheckboxes) {
-            checkbox.checked = e.target.checked;
-            const const_name = checkbox.dataset.constellation;
-            toggleConstellation(const_name, e.target.checked);
+        for (const cb of individualCheckboxes) {
+            cb.checked = e.target.checked;
+            toggleConstellation(cb.dataset.constellation, e.target.checked);
         }
     });
 
-    for (const checkbox of individualCheckboxes) {
-        checkbox.addEventListener('change', (e) => {
-            const const_name = e.target.dataset.constellation;
-            toggleConstellation(const_name, e.target.checked);
+    for (const cb of individualCheckboxes) {
+        cb.addEventListener('change', (e) => {
+            toggleConstellation(e.target.dataset.constellation, e.target.checked);
         });
     }
-    document.querySelectorAll('[id^="toggle-section-"]').forEach(checkbox => {
-        checkbox.addEventListener('change', (e) => {
-            const sectionName = e.target.id.replace('toggle-section-', '');
-            const sectionCheckboxes = document.querySelectorAll(`[data-section="${sectionName}"]`);
+
+    document.querySelectorAll('[data-section][id^="toggle-section-"]').forEach(sectionCb => {
+        sectionCb.addEventListener('change', (e) => {
+            const sectionName = e.target.dataset.section;
+            const sectionCheckboxes = document.querySelectorAll(`[data-constellation][data-section="${sectionName}"]`);
             for (const cb of sectionCheckboxes) {
                 cb.checked = e.target.checked;
                 toggleConstellation(cb.dataset.constellation, e.target.checked);

@@ -84,22 +84,28 @@ yandex = oauth.register(
     client_kwargs={'scope': 'login:email'}
 )
 
-GNSS_CACHE_PATH = "dynamic/sats/gnss_sats.json"
-CUBESATS_CACHE_PATH = "dynamic/sats/cube_sats.json"
-STATIONS_CACHE_PATH = "dynamic/sats/stations.json"
-STARLINK_CACHE_PATH = "dynamic/sats/starlink.json"
-WEATHER_CACHE_PATH = "dynamic/sats/weather.json"
-RESOURCE_CACHE_PATH = "dynamic/sats/resource.json"
 ACTIVE_PATH = "dynamic/sats/active.json"
+ACTIVE_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=json"
 CACHE_MAX_AGE = 72 * 3600
 
-CELESTRAK_GNSS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=gnss&FORMAT=json"
-CELESTRAK_CUBESAT_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=cubesat&FORMAT=json"
-CELESTRAK_STATIONS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json"
-CELESTRAK_STARLINK_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=json"
-CELESTRACK_WEATHER_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=weather&FORMAT=json"
-CELESTRACK_RESOURCE_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=resource&FORMAT=json"
-ACTIVE_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=json"
+_CATEGORIES = {
+    'gnss':       ['GPS', 'GLONASS', 'BEIDOU', 'GALILEO', 'NAVIC', 'IRNSS', 'QZSS'],
+    'weather':    ['METEOR', 'ELEKTRO', 'ELECTRO', 'ARKTIKA', 'DMSP', 'NOAA', 'JPSS', 'GOES',
+                   'SUOMI', 'CYGFM', 'FENGYUN', 'TIANMU', 'METEOSAT', 'METOP', 'INSAT', 'HIMAWARI'],
+    'stations':   ['ISS (', 'CSS ('],
+    'resource':   ['LANDSAT', 'SENTINEL', 'WORLDVIEW', 'GEOEYE', 'SKYSAT', 'TERRASAR', 'TANDEM-X',
+                   'COSMO-SKY', 'RADARSAT', 'RESOURCESAT', 'FORMOSAT', 'CARTOSAT', 'OCEANSAT',
+                   'GAOFEN', 'YAOGAN', 'ZIYUAN', 'HAIYANG', 'HUANJING', 'KANOPUS', 'RESURS',
+                   'KOMPSAT', 'ARIRANG', 'DEIMOS', 'CBERS', 'PLEIADES', 'FLOCK', 'PELICAN',
+                   'TERRA', 'AQUA', 'AURA'],
+    'starlink':   ['STARLINK'],
+    'commercial': ['ONEWEB', 'IRIDIUM', 'KUIPER', 'QIANFAN'],
+}
+_ALL_PATTERNS = [p for pats in _CATEGORIES.values() for p in pats]
+
+def _cat_match(name, patterns):
+    n = name.upper()
+    return any(p in n for p in patterns)
 
 def get_satellite_data(PATH, URL):
     if os.path.exists(PATH) and os.path.getsize(PATH) > 0:
@@ -335,40 +341,21 @@ def error451():
     lang = getLanguage(getCountryCode(IP))
     return render_template(get_template('error451.html', lang))
 
-@app.route('/dynamic/gnss_sats')
-@limiter.limit(SAT_DATA_LIMIT)
-def gnss_sats():
-    return jsonify(get_satellite_data(GNSS_CACHE_PATH, CELESTRAK_GNSS_URL))
-
-@app.route('/dynamic/stations')
-@limiter.limit(SAT_DATA_LIMIT)
-def stations():
-    return jsonify(get_satellite_data(STATIONS_CACHE_PATH, CELESTRAK_STATIONS_URL))
-
-@app.route('/dynamic/cubesats')
-@limiter.limit(SAT_DATA_LIMIT)
-def cubesats():
-    return jsonify(get_satellite_data(CUBESATS_CACHE_PATH, CELESTRAK_CUBESAT_URL))
-
-@app.route('/dynamic/starlink')
-@limiter.limit(SAT_DATA_LIMIT)
-def starlink():
-    return jsonify(get_satellite_data(STARLINK_CACHE_PATH, CELESTRAK_STARLINK_URL))
-
-@app.route('/dynamic/weather')
-@limiter.limit(SAT_DATA_LIMIT)
-def weather():
-    return jsonify(get_satellite_data(WEATHER_CACHE_PATH, CELESTRACK_WEATHER_URL))
-
-@app.route('/dynamic/resource')
-@limiter.limit(SAT_DATA_LIMIT)
-def resource():
-    return jsonify(get_satellite_data(RESOURCE_CACHE_PATH, CELESTRACK_RESOURCE_URL))
-
 @app.route('/dynamic/active')
 @limiter.limit(SAT_DATA_LIMIT)
 def active():
     return jsonify(get_satellite_data(ACTIVE_PATH, ACTIVE_URL))
+
+@app.route('/dynamic/sats/<category>')
+@limiter.limit(SAT_DATA_LIMIT)
+def sats_category(category):
+    data = get_satellite_data(ACTIVE_PATH, ACTIVE_URL)
+    if category == 'other':
+        return jsonify([s for s in data if not _cat_match(s['OBJECT_NAME'], _ALL_PATTERNS)])
+    pats = _CATEGORIES.get(category)
+    if not pats:
+        return jsonify([])
+    return jsonify([s for s in data if _cat_match(s['OBJECT_NAME'], pats)])
 
 @app.route('/logout', methods = ['POST'])
 def logout():

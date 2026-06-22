@@ -60,6 +60,10 @@
                 <span class="btn-icon">⊟</span>
                 <span class="btn-label">Фильтры</span>
             </button>
+            <button class="sidebar-btn" id="search-btn">
+                <span class="btn-icon">⌕</span>
+                <span class="btn-label">Поиск</span>
+            </button>
             <button class="sidebar-btn" id="marker-btn">
                 <span class="btn-icon">⌖</span>
                 <span class="btn-label">Маркеры</span>
@@ -216,6 +220,17 @@
             " id="key-close">
                 Close
             </div>
+        </div>
+
+        <div id="sat-loader" style="position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:rgba(10,22,40,0.92); border:1px solid #1a4a6b; border-radius:8px; padding:10px 22px; font-family:'Orbitron',sans-serif; font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; color:#00c8ff; z-index:100; pointer-events:none;">
+            Загрузка спутников...
+        </div>
+
+        <div id="search-panel" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#0a1628; border:1px solid #1a4a6b; border-radius:10px; padding:24px 32px; z-index:200; font-family:'Orbitron',sans-serif; color:#00c8ff; min-width:300px;">
+            <div style="font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:16px; border-bottom:1px solid #1a4a6b; padding-bottom:10px;">Поиск спутника</div>
+            <input id="sat-search" type="text" placeholder="Поиск по названию..." style="width:100%; background:#060d18; border:1px solid #1a4a6b; color:#00c8ff; font-family:'Orbitron',sans-serif; font-size:0.6rem; letter-spacing:0.1em; padding:8px 10px; border-radius:4px; box-sizing:border-box; outline:none;">
+            <ul id="sat-results" style="list-style:none; margin:8px 0 0 0; padding:0; max-height:240px; overflow-y:auto; font-size:0.58rem; letter-spacing:0.1em; text-transform:uppercase;"></ul>
+            <div id="search-close" style="padding-top:10px; font-size:0.55rem; letter-spacing:0.12em; text-transform:uppercase; color:#1a6a8b; cursor:pointer;">Закрыть</div>
         </div>
 
         <div id="markers-panel" style="
