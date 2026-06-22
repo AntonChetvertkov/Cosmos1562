@@ -315,6 +315,14 @@ def register():
                 return render_template(get_template('register.html', lang), error='Email already exists', show_google=show_google)
     return render_template(get_template('register.html', lang), show_google=show_google)
 
+@app.route('/debug/ip')
+def debug_ip():
+    if not DEBUG_MODE:
+        return '', 404
+    ip = getUserIp()
+    cc = getCountryCode(ip)
+    return jsonify({'ip': ip, 'country_code': cc, 'show_google': cc != 'RU'})
+
 @app.route('/robots.txt')
 def robots():
     return send_from_directory(app.static_folder, 'robots.txt')
