@@ -35,9 +35,11 @@
                         <img src="{{ url_for('static', filename='img/Yandex.png') }}" class="oauth-icon">
                     </a>
                     <br>
+                    {% if show_google %}
                     <a href="/auth/login/google" class="oauth-btn oauth-google">
                         <img src="{{ url_for('static', filename='img/Google.png') }}" class="oauth-icon">
                     </a>
+                    {% endif %}
                 </div>
                 <br>
                 <p style="margin-top: 20px; font-size: 0.9rem;">

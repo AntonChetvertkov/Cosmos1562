@@ -42,9 +42,11 @@
                         <img src="{{ url_for('static', filename='img/Yandex.png') }}" class="oauth-icon">
                     </a>
                     <br>
+                    {% if show_google %}
                     <a href="/auth/login/google" class="oauth-btn oauth-google">
                         <img src="{{ url_for('static', filename='img/Google.png') }}" class="oauth-icon">
                     </a>
+                    {% endif %}
                 </div>
                 {% if error %}
                     <div class="error-message">{{ error }}</div>

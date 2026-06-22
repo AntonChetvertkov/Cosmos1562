@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, render_template, request, redirect, jsonify, session, url_for, send_from_directory, Response
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
@@ -8,13 +12,9 @@ from ipTools import getCountryCode, getLanguage, getUserIp
 from functools import wraps
 import requests
 import json
-import os
 import time
-from dotenv import load_dotenv
 from authlib.integrations.flask_client import OAuth
 from aiFuncs import aiInteract
-
-load_dotenv()
 
 DEBUG_MODE = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
 
@@ -147,6 +147,7 @@ def index():
     if lang not in ['en', 'ru']:
         lang = auto_lang
 
+    show_google = country_code != 'RU'
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
@@ -157,17 +158,19 @@ def index():
             session['user_lang'] = lang
             return redirect('/home')
         else:
-            return render_template(get_template('welcome.html', lang), error="Invalid email or password", lang=lang)
+            return render_template(get_template('welcome.html', lang), error="Invalid email or password", lang=lang, show_google=show_google)
     if 'authenticated' in session:
         return redirect('/home')
-    return render_template(get_template('welcome.html', lang), lang=lang)
+    return render_template(get_template('welcome.html', lang), lang=lang, show_google=show_google)
 
 FREE_AI_LIMIT = 15
 
 @app.route('/home')
 def home():
     IP = getUserIp()
-    lang = getLanguage(getCountryCode(IP))
+    country_code = getCountryCode(IP)
+    lang = getLanguage(country_code)
+    show_google = country_code != 'RU'
 
     if 'authenticated' not in session:
         return render_template(
@@ -181,6 +184,7 @@ def home():
             has_password=False,
             google_linked=False,
             yandex_linked=False,
+            show_google=show_google,
         )
 
     session['pastResponses'] = []
@@ -202,6 +206,7 @@ def home():
         has_password=bool(user and user['password']),
         google_linked=bool(user and user['google_id']),
         yandex_linked=bool(user and user['yandex_id']),
+        show_google=show_google,
     )
 
 @app.route('/ai/chat', methods=['POST'])
@@ -291,22 +296,24 @@ def account_export():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     IP = getUserIp()
-    lang = getLanguage(getCountryCode(IP))
+    country_code = getCountryCode(IP)
+    lang = getLanguage(country_code)
+    show_google = country_code != 'RU'
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
         password_repeat = request.form.get('password_repeat')
         if len(password) < 8:
-            return render_template(get_template('register.html', lang), error='Password must be at least 8 characters')
+            return render_template(get_template('register.html', lang), error='Password must be at least 8 characters', show_google=show_google)
         elif password != password_repeat:
-            return render_template(get_template('register.html', lang), error="Passwords don't match!")
+            return render_template(get_template('register.html', lang), error="Passwords don't match!", show_google=show_google)
         else:
             tryAdd = add_user(email, password)
             if tryAdd:
                 return redirect('/')
             else:
-                return render_template(get_template('register.html', lang), error='Email already exists')
-    return render_template(get_template('register.html', lang))
+                return render_template(get_template('register.html', lang), error='Email already exists', show_google=show_google)
+    return render_template(get_template('register.html', lang), show_google=show_google)
 
 @app.route('/robots.txt')
 def robots():

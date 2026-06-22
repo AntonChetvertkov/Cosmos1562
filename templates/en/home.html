@@ -488,7 +488,7 @@
                 <a href="/register" class="popup-btn">Register</a>
                 <div style="display:flex; gap:12px; justify-content:center; margin-top:6px;">
                     <a href="/auth/login/yandex"><img src="{{ url_for('static', filename='img/Yandex.png') }}" style="width:46px; border-radius:23px;"></a>
-                    <a href="/auth/login/google"><img src="{{ url_for('static', filename='img/Google.png') }}" style="width:46px; border-radius:23px;"></a>
+                    {% if show_google %}<a href="/auth/login/google"><img src="{{ url_for('static', filename='img/Google.png') }}" style="width:46px; border-radius:23px;"></a>{% endif %}
                 </div>
                 <div id="login-popup-close" style="text-align:center; margin-top:18px; font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase; color:#1a6a8b; cursor:pointer;">Close</div>
             </div>
