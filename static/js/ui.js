@@ -272,8 +272,8 @@ function createFilterPanel() {
     container.appendChild(style);
 
     const COUNTRIES = [
-        { key: 'USA',          label: 'USA',          color: '#4477ff' },
         { key: 'Russia',       label: 'Russia',       color: '#ff4444' },
+        { key: 'USA',          label: 'USA',          color: '#4477ff' },
         { key: 'China',        label: 'China',        color: '#ffee44' },
         { key: 'Europe',       label: 'Europe',       color: '#00c8ff' },
         { key: 'India',        label: 'India',        color: '#ff8800' },
