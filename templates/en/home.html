@@ -56,7 +56,7 @@
                 <span class="btn-icon">◈</span>
                 <span class="btn-label">Constellations</span>
             </button>
-            <button class="sidebar-btn">
+            <button class="sidebar-btn" id="filter-btn">
                 <span class="btn-icon">⊟</span>
                 <span class="btn-label">Filters</span>
             </button>
@@ -330,6 +330,26 @@
                 color:#1a6a8b;
                 cursor:pointer;
             ">Close</div>
+        </div>
+
+        <div id="filter-panel" style="
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #0a1628;
+            border: 1px solid #1a4a6b;
+            border-radius: 10px;
+            padding: 24px 32px;
+            z-index: 200;
+            font-family: 'Orbitron', sans-serif;
+            color: #00c8ff;
+            min-width: 300px;
+        ">
+            <div style="font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:16px; border-bottom:1px solid #1a4a6b; padding-bottom:10px;">Filters</div>
+            <div id="filter-content"></div>
+            <div id="filter-close" style="margin-top:18px; border-top:1px solid #1a4a6b; padding-top:10px; font-size:0.55rem; letter-spacing:0.12em; text-transform:uppercase; color:#1a6a8b; cursor:pointer;">Close</div>
         </div>
 
         <div id="chat-panel" style="

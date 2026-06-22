@@ -10,6 +10,50 @@ const TRACK_SURFACE_OFFSET = 1.001;
 const IS_AUTHENTICATED = window.IS_AUTHENTICATED === true;
 const LOCKED_COLOUR = '#33475a';
 
+const COLOUR_TO_COUNTRY = {
+    'red':     'Russia',
+    'blue':    'USA',
+    'yellow':  'China',
+    'cyan':    'Europe',
+    'orange':  'India',
+    'purple':  'Japan',
+    '#00ff99': 'South Korea',
+    '#633154': 'Canada',
+    '#33dd55': 'Brazil',
+    '#ff99cc': 'Israel',
+    '#ff6644': 'Türkiye',
+    '#fadc8a': 'Thailand',
+    '#00ff88': 'International',
+    '#2a5a6a': 'Other',
+};
+
+function _orbitType(altKm) {
+    if (altKm < 2000)  return 'LEO';
+    if (altKm < 34000) return 'MEO';
+    if (altKm < 37000) return 'GEO';
+    return 'HEO';
+}
+
+const activeCountries = new Set(Object.values(COLOUR_TO_COUNTRY));
+const activeOrbits    = new Set(['LEO', 'MEO', 'GEO', 'HEO']);
+
+function _meshVisible(mesh) {
+    const { constellation, country, orbitType } = mesh.userData;
+    return visibleConstellations.has(constellation)
+        && activeCountries.has(country)
+        && activeOrbits.has(orbitType);
+}
+
+export function toggleCountryFilter(country, on) {
+    on ? activeCountries.add(country) : activeCountries.delete(country);
+    for (const entry of sat_meshes) entry.mesh.visible = _meshVisible(entry.mesh);
+}
+
+export function toggleOrbitFilter(orbit, on) {
+    on ? activeOrbits.add(orbit) : activeOrbits.delete(orbit);
+    for (const entry of sat_meshes) entry.mesh.visible = _meshVisible(entry.mesh);
+}
+
 const _matCache = {};
 function _getMat(color) {
     if (!_matCache[color]) _matCache[color] = new THREE.MeshBasicMaterial({ color });
@@ -124,7 +168,9 @@ function placeSatMesh(sat_response, colour, isFree = false) {
     sat.userData.type = 'sat';
     sat.userData.locked = locked;
     sat.userData.constellation = getConstellationName(sat_response.OBJECT_NAME);
-    sat.visible = visibleConstellations.has(sat.userData.constellation);
+    sat.userData.country = COLOUR_TO_COUNTRY[colour] || 'Other';
+    sat.userData.orbitType = _orbitType(sat_height);
+    sat.visible = _meshVisible(sat);
     scene.add(sat);
     sat_meshes.push({ satrec: sat_rec, mesh: sat, trackLines: [] });
 }
@@ -176,7 +222,7 @@ export function toggleConstellation(const_name, visible) {
     }
     for (const entry of sat_meshes) {
         if (entry.mesh.userData.constellation === const_name) {
-            entry.mesh.visible = visible;
+            entry.mesh.visible = _meshVisible(entry.mesh);
         }
     }
 }

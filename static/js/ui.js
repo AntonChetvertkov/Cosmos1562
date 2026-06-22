@@ -1,4 +1,4 @@
-import { addCityMarkerToScene, toggleConstellation, focusSat } from '/static/js/globe.js';
+import { addCityMarkerToScene, toggleConstellation, focusSat, toggleCountryFilter, toggleOrbitFilter } from '/static/js/globe.js';
 import { createConstellationPanel } from '/static/js/constellations.js';
 
 const IS_AUTHENTICATED = window.IS_AUTHENTICATED === true;
@@ -70,6 +70,12 @@ document.getElementById('markers-close').addEventListener('click', () => {
 document.getElementById('constellations-btn').addEventListener('click', requireAuth(() => {
     document.getElementById('constellations-panel').style.display = 'block';
 }));
+document.getElementById('filter-btn').addEventListener('click', () => {
+    document.getElementById('filter-panel').style.display = 'block';
+});
+document.getElementById('filter-close').addEventListener('click', () => {
+    document.getElementById('filter-panel').style.display = 'none';
+});
 document.getElementById('constellations-close').addEventListener('click', () => {
     document.getElementById('constellations-panel').style.display = 'none';
 });
@@ -143,6 +149,7 @@ document.getElementById('chat-close').addEventListener('click', () => {
 });
 
 createConstellationPanel();
+createFilterPanel();
 
 document.getElementById("aiChat").addEventListener("submit", async (e) => {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
@@ -249,6 +256,86 @@ window.acctSaveName = acctSaveName;
 window.acctSaveEmail = acctSaveEmail;
 window.acctSavePassword = acctSavePassword;
 window.acctConfirmDelete = acctConfirmDelete;
+
+function createFilterPanel() {
+    const container = document.getElementById('filter-content');
+    if (!container) return;
+
+    const style = document.createElement('style');
+    style.textContent = `
+        .filter-section { margin-bottom: 16px; }
+        .filter-section-title { color: var(--cyan); font-size: 0.52rem; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.7; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid #0d2040; }
+        .filter-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 5px; }
+        .filter-label { display: flex; align-items: center; gap: 7px; font-size: 0.58rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; }
+        .filter-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+    `;
+    container.appendChild(style);
+
+    const COUNTRIES = [
+        { key: 'USA',          label: 'USA',          color: '#4477ff' },
+        { key: 'Russia',       label: 'Russia',       color: '#ff4444' },
+        { key: 'China',        label: 'China',        color: '#ffee44' },
+        { key: 'Europe',       label: 'Europe',       color: '#00c8ff' },
+        { key: 'India',        label: 'India',        color: '#ff8800' },
+        { key: 'Japan',        label: 'Japan',        color: '#aa44ff' },
+        { key: 'South Korea',  label: 'South Korea',  color: '#00ff99' },
+        { key: 'Canada',       label: 'Canada',       color: '#633154' },
+        { key: 'Brazil',       label: 'Brazil',       color: '#33dd55' },
+        { key: 'Israel',       label: 'Israel',       color: '#ff99cc' },
+        { key: 'Türkiye',      label: 'Türkiye',      color: '#ff6644' },
+        { key: 'Thailand',     label: 'Thailand',     color: '#fadc8a' },
+        { key: 'International',label: 'International',color: '#00ff88' },
+        { key: 'Other',        label: 'Other',        color: '#2a5a6a' },
+    ];
+
+    const ORBITS = [
+        { key: 'LEO', label: 'LEO  (< 2,000 km)',       color: '#00c8ff' },
+        { key: 'MEO', label: 'MEO  (2,000 – 34,000 km)',color: '#44aaff' },
+        { key: 'GEO', label: 'GEO  (≈ 35,786 km)',      color: '#aa88ff' },
+        { key: 'HEO', label: 'HEO  (> 37,000 km)',      color: '#ff88aa' },
+    ];
+
+    function makeToggle(checked, onChange) {
+        const lbl = document.createElement('label');
+        lbl.className = 'toggle-switch';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = checked;
+        cb.addEventListener('change', e => onChange(e.target.checked));
+        lbl.appendChild(cb);
+        lbl.appendChild(Object.assign(document.createElement('span'), { className: 'switch-slider' }));
+        return lbl;
+    }
+
+    function makeSection(title, rows, onToggle) {
+        const sec = document.createElement('div');
+        sec.className = 'filter-section';
+        const heading = document.createElement('div');
+        heading.className = 'filter-section-title';
+        heading.textContent = title;
+        sec.appendChild(heading);
+        for (const row of rows) {
+            const div = document.createElement('div');
+            div.className = 'filter-row';
+            const labelDiv = document.createElement('div');
+            labelDiv.className = 'filter-label';
+            const dot = document.createElement('div');
+            dot.className = 'filter-dot';
+            dot.style.background = row.color;
+            const span = document.createElement('span');
+            span.textContent = row.label;
+            labelDiv.appendChild(dot);
+            labelDiv.appendChild(span);
+            div.appendChild(labelDiv);
+            div.appendChild(makeToggle(true, on => onToggle(row.key, on)));
+            sec.appendChild(div);
+        }
+        return sec;
+    }
+
+    container.appendChild(makeSection('By Country', COUNTRIES, toggleCountryFilter));
+    container.appendChild(makeSection('By Orbit', ORBITS, toggleOrbitFilter));
+}
 
 setTimeout(() => {
     const toggleAllCheckbox = document.getElementById('toggle-all');
