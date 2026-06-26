@@ -184,7 +184,10 @@ export function getConstellationName(satName) {
     return 'CUBESAT';
 }
 
-export function createConstellationPanel() {
+const FREE_SECTION_NAMES = new Set(['Space Stations', 'Weather']);
+const FREE_INDIVIDUAL = new Set(['STARLINK']);
+
+export function createConstellationPanel(isAuth = true) {
     const panel = document.getElementById('constellations-panel');
 
     const style = document.createElement('style');
@@ -233,7 +236,14 @@ export function createConstellationPanel() {
     toggleAllRow.appendChild(toggleAllSwitch);
     container.appendChild(toggleAllRow);
 
-    for (const group of CONSTELLATION_GROUPS) {
+    const visibleGroups = isAuth ? CONSTELLATION_GROUPS : CONSTELLATION_GROUPS
+        .map(g => ({
+            ...g,
+            items: g.items.filter(i => FREE_SECTION_NAMES.has(g.section) || FREE_INDIVIDUAL.has(i.name))
+        }))
+        .filter(g => g.items.length > 0);
+
+    for (const group of visibleGroups) {
         const section = document.createElement('div');
         section.className = 'const-section';
 

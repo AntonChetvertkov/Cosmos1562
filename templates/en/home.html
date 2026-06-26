@@ -10,7 +10,7 @@
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7518808989426617" crossorigin="anonymous"></script>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@400;600&display=optional" rel="stylesheet">
         <link rel="stylesheet" href="/static/css/home.css">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <style>
@@ -533,6 +533,6 @@
         <script>window.IS_AUTHENTICATED = {{ 'true' if is_authenticated else 'false' }};</script>
         {% if is_authenticated %}<script>posthog.identify('{{ user_email }}', {name: '{{ user_name }}', plan: '{{ "paid" if is_paid else "basic" }}'});</script>{% endif %}
         <script type="module" src="/static/js/globe.js?v=4"></script>
-        <script type="module" src="/static/js/ui.js?v=4"></script>
+        <script type="module" src="/static/js/ui.js?v=5"></script>
     </body>
 </html>

@@ -1,5 +1,5 @@
 import { addCityMarkerToScene, toggleConstellation, focusSat, toggleCountryFilter, toggleOrbitFilter } from '/static/js/globe.js?v=4';
-import { createConstellationPanel } from '/static/js/constellations.js?v=4';
+import { createConstellationPanel } from '/static/js/constellations.js?v=5';
 
 const IS_AUTHENTICATED = window.IS_AUTHENTICATED === true;
 
@@ -67,9 +67,9 @@ document.getElementById('marker-btn')?.addEventListener('click', requireAuth(() 
 document.getElementById('markers-close')?.addEventListener('click', () => {
     document.getElementById('markers-panel').style.display = 'none';
 });
-document.getElementById('constellations-btn')?.addEventListener('click', requireAuth(() => {
+document.getElementById('constellations-btn')?.addEventListener('click', () => {
     document.getElementById('constellations-panel').style.display = 'block';
-}));
+});
 document.getElementById('filter-btn')?.addEventListener('click', requireAuth(() => {
     document.getElementById('filter-panel').style.display = 'block';
 }));
@@ -148,7 +148,7 @@ document.getElementById('chat-close').addEventListener('click', () => {
     document.getElementById('chat-panel').style.display = 'none';
 });
 
-createConstellationPanel();
+createConstellationPanel(IS_AUTHENTICATED);
 createFilterPanel();
 
 document.getElementById("aiChat").addEventListener("submit", async (e) => {
