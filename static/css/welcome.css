@@ -28,8 +28,8 @@ body {
     color: var(--text);
 }
 
-h1, h2 {
-    font-family: 'Space Grotesk', sans-serif;
+h1 {
+    font-family: 'Orbitron', sans-serif;
 }
 
 body::before {
@@ -169,7 +169,7 @@ body::before {
 }
 
 #homepage_title h1 {
-    font-size: 0.95rem;
+    font-size: 0.82rem;
     font-weight: 700;
     letter-spacing: 0.25em;
     text-transform: uppercase;
@@ -207,7 +207,7 @@ body::before {
 }
 
 #about_sidebar_bg header h1 {
-    font-size: 0.95rem;
+    font-size: 0.82rem;
     font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
