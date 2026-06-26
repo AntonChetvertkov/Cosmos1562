@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmos1562 — Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #060d18;
+            color: #a8d4e8;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            min-height: 100vh;
+            padding: 32px 24px;
+        }
+        h1 {
+            font-size: 1rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: #00c8ff;
+            margin-bottom: 6px;
+        }
+        .subtitle {
+            font-size: 0.55rem;
+            letter-spacing: 0.15em;
+            color: #1a6a8b;
+            text-transform: uppercase;
+            margin-bottom: 36px;
+        }
+        .section {
+            margin-bottom: 36px;
+        }
+        .section-title {
+            font-size: 0.6rem;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: #1a6a8b;
+            border-bottom: 1px solid #0d2040;
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+        .stat-card {
+            background: #0a1628;
+            border: 1px solid #0d2040;
+            border-radius: 8px;
+            padding: 16px 14px;
+        }
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #00c8ff;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .stat-label {
+            font-size: 0.48rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #1a6a8b;
+        }
+        .stat-card.warn .stat-value { color: #ffaa33; }
+        .stat-card.ok   .stat-value { color: #00ff99; }
+        .stat-card.bad  .stat-value { color: #ff4444; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.6rem;
+            letter-spacing: 0.04em;
+        }
+        th {
+            text-align: left;
+            color: #1a6a8b;
+            font-size: 0.5rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 8px 10px;
+            border-bottom: 1px solid #0d2040;
+        }
+        td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #080f20;
+            color: #a8d4e8;
+            vertical-align: middle;
+        }
+        tr:hover td { background: #0a1628; }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.48rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        .badge-paid  { background: rgba(0,200,255,0.15); color: #00c8ff; border: 1px solid #0d3a52; }
+        .badge-basic { background: rgba(26,74,107,0.3);  color: #1a6a8b; border: 1px solid #0d2040; }
+        .status-fresh     { color: #00ff99; }
+        .status-stale     { color: #ffaa33; }
+        .status-missing,
+        .status-corrupted { color: #ff4444; }
+
+        .ai-bar-wrap { display: flex; align-items: center; gap: 8px; }
+        .ai-bar { height: 6px; border-radius: 3px; background: #0d2040; width: 80px; overflow: hidden; }
+        .ai-bar-fill { height: 100%; background: #00c8ff; border-radius: 3px; }
+        .ai-bar-fill.warn { background: #ffaa33; }
+        .ai-bar-fill.full { background: #ff4444; }
+
+        .upgrade-form { display: inline-flex; gap: 6px; align-items: center; }
+        .upgrade-btn {
+            background: transparent;
+            border: 1px solid #1a4a6b;
+            color: #a8d4e8;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.48rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .upgrade-btn:hover { border-color: #00c8ff; color: #00c8ff; }
+        .downgrade-btn { border-color: #ff4444; color: #ff4444; }
+        .downgrade-btn:hover { border-color: #ff6666; color: #ff6666; }
+    </style>
+</head>
+<body>
+
+<h1>Cosmos1562 Admin</h1>
+<div class="subtitle">Access restricted — you only</div>
+
+<div class="section">
+    <div class="section-title">Overview</div>
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.total }}</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-card ok">
+            <div class="stat-value">{{ stats.paid }}</div>
+            <div class="stat-label">Paid</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.basic }}</div>
+            <div class="stat-label">Basic (Free)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.week }}</div>
+            <div class="stat-label">Signups — 7d</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.month }}</div>
+            <div class="stat-label">Signups — 30d</div>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-title">Auth Methods</div>
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.email_only }}</div>
+            <div class="stat-label">Email Only</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.google_only }}</div>
+            <div class="stat-label">Google Only</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.yandex_only }}</div>
+            <div class="stat-label">Yandex Only</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.multi_oauth }}</div>
+            <div class="stat-label">Both OAuth</div>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-title">AI Usage Today</div>
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.ai_today }}</div>
+            <div class="stat-label">Messages Sent Today</div>
+        </div>
+        <div class="stat-card {% if stats.at_limit > 0 %}warn{% endif %}">
+            <div class="stat-value">{{ stats.at_limit }}</div>
+            <div class="stat-label">Users at Daily Limit</div>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-title">Satellite Data Cache</div>
+    <div class="stat-grid">
+        <div class="stat-card {% if sat_status == 'fresh' %}ok{% elif sat_status == 'stale' %}warn{% else %}bad{% endif %}">
+            <div class="stat-value status-{{ sat_status }}">{{ sat_status | upper }}</div>
+            <div class="stat-label">Cache Status (max {{ cache_max_h }}h)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ sat_count }}</div>
+            <div class="stat-label">Satellites in Cache</div>
+        </div>
+        <div class="stat-card {% if sat_age_h and sat_age_h > cache_max_h %}warn{% endif %}">
+            <div class="stat-value">{{ sat_age_h if sat_age_h is not none else '—' }}<span style="font-size:0.8rem;"> h</span></div>
+            <div class="stat-label">Cache Age</div>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-title">All Users</div>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Email</th>
+                <th>Name</th>
+                <th>Plan</th>
+                <th>Auth</th>
+                <th>AI Today</th>
+                <th>Joined</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for u in stats.users %}
+        <tr>
+            <td style="color:#1a6a8b;">{{ u.id }}</td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.name or '—' }}</td>
+            <td>
+                {% if u.acc_type == 'PAID' %}
+                <span class="badge badge-paid">Pro</span>
+                {% else %}
+                <span class="badge badge-basic">Basic</span>
+                {% endif %}
+            </td>
+            <td>
+                {% set methods = [] %}
+                {% if u.password %}{% set _ = methods.append('pw') %}{% endif %}
+                {% if u.google_id %}{% set _ = methods.append('G') %}{% endif %}
+                {% if u.yandex_id %}{% set _ = methods.append('Y') %}{% endif %}
+                {{ methods | join(', ') or '—' }}
+            </td>
+            <td>
+                {% set count = u.daily_ai_count or 0 %}
+                {% set is_today = u.last_ai_date == today %}
+                {% set shown = count if is_today else 0 %}
+                {% set pct = [shown * 100 // 15, 100] | min %}
+                <div class="ai-bar-wrap">
+                    <div class="ai-bar">
+                        <div class="ai-bar-fill {% if pct >= 100 %}full{% elif pct >= 70 %}warn{% endif %}" style="width:{{ pct }}%;"></div>
+                    </div>
+                    <span style="color:{% if pct >= 100 %}#ff4444{% elif pct >= 70 %}#ffaa33{% else %}#1a6a8b{% endif %};">
+                        {{ shown }}/15
+                    </span>
+                </div>
+            </td>
+            <td style="color:#1a6a8b;">{{ u.created_at[:10] if u.created_at else '—' }}</td>
+            <td>
+                <form class="upgrade-form" method="post" action="/admin/set-tier">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="email" value="{{ u.email }}">
+                    {% if u.acc_type == 'PAID' %}
+                    <input type="hidden" name="tier" value="BASIC">
+                    <button class="upgrade-btn downgrade-btn" type="submit">↓ Basic</button>
+                    {% else %}
+                    <input type="hidden" name="tier" value="PAID">
+                    <button class="upgrade-btn" type="submit">↑ Pro</button>
+                    {% endif %}
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Pass today's date to template context via JS (Jinja doesn't have it natively here)
+    // Already handled server-side via today variable injected below
+</script>
+
+</body>
+</html>

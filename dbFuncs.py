@@ -150,9 +150,51 @@ def delete_user(email):
 
 def get_all_users():
     conn = db_connect()
-    users = conn.execute('SELECT * FROM users').fetchall()
+    users = conn.execute('SELECT * FROM users ORDER BY created_at DESC').fetchall()
     conn.close()
     return users
+
+def set_user_tier(email, tier):
+    conn = db_connect()
+    conn.execute('UPDATE users SET acc_type = ? WHERE email = ?', (tier, email))
+    conn.commit()
+    conn.close()
+
+def get_admin_stats():
+    conn = db_connect()
+    today = str(date.today())
+
+    total = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
+    paid  = conn.execute("SELECT COUNT(*) FROM users WHERE acc_type = 'PAID'").fetchone()[0]
+    basic = total - paid
+
+    week  = conn.execute("SELECT COUNT(*) FROM users WHERE date(created_at) >= date('now', '-7 days')").fetchone()[0]
+    month = conn.execute("SELECT COUNT(*) FROM users WHERE date(created_at) >= date('now', '-30 days')").fetchone()[0]
+
+    email_only  = conn.execute('SELECT COUNT(*) FROM users WHERE google_id IS NULL AND yandex_id IS NULL').fetchone()[0]
+    google_only = conn.execute('SELECT COUNT(*) FROM users WHERE google_id IS NOT NULL AND yandex_id IS NULL').fetchone()[0]
+    yandex_only = conn.execute('SELECT COUNT(*) FROM users WHERE yandex_id IS NOT NULL AND google_id IS NULL').fetchone()[0]
+    multi_oauth = conn.execute('SELECT COUNT(*) FROM users WHERE google_id IS NOT NULL AND yandex_id IS NOT NULL').fetchone()[0]
+
+    ai_today = conn.execute(
+        'SELECT COALESCE(SUM(daily_ai_count), 0) FROM users WHERE last_ai_date = ?', (today,)
+    ).fetchone()[0]
+    at_limit = conn.execute(
+        "SELECT COUNT(*) FROM users WHERE last_ai_date = ? AND daily_ai_count >= 15 AND (acc_type = 'BASIC' OR acc_type IS NULL)",
+        (today,)
+    ).fetchone()[0]
+
+    users = conn.execute('SELECT * FROM users ORDER BY created_at DESC').fetchall()
+    conn.close()
+
+    return {
+        'total': total, 'paid': paid, 'basic': basic,
+        'week': week, 'month': month,
+        'email_only': email_only, 'google_only': google_only,
+        'yandex_only': yandex_only, 'multi_oauth': multi_oauth,
+        'ai_today': ai_today, 'at_limit': at_limit,
+        'users': [dict(u) for u in users],
+    }
 
 if __name__ == "__main__":
     init_db()

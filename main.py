@@ -6,7 +6,7 @@ from flask import Flask, render_template, request, redirect, jsonify, session, u
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from werkzeug.security import check_password_hash
-from dbFuncs import init_db, add_user, get_user_by_email, get_or_create_user_oauth, get_ai_usage, increment_ai_count, update_user_name, update_user_email, update_user_password, delete_user
+from dbFuncs import init_db, add_user, get_user_by_email, get_or_create_user_oauth, get_ai_usage, increment_ai_count, update_user_name, update_user_email, update_user_password, delete_user, get_admin_stats, set_user_tier
 from datetime import datetime
 from ipTools import getCountryCode, getLanguage, getUserIp
 from functools import wraps
@@ -356,6 +356,50 @@ def sats_category(category):
     if not pats:
         return jsonify([])
     return jsonify([s for s in data if _cat_match(s['OBJECT_NAME'], pats)])
+
+ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', '')
+
+@app.route('/admin')
+@login_required
+def admin():
+    if not ADMIN_EMAIL or session.get('user_email') != ADMIN_EMAIL:
+        return '', 403
+    stats = get_admin_stats()
+
+    sat_path = ACTIVE_PATH
+    sat_count = 0
+    sat_age_h = None
+    sat_status = 'missing'
+    if os.path.exists(sat_path) and os.path.getsize(sat_path) > 0:
+        age_s = time.time() - os.path.getmtime(sat_path)
+        sat_age_h = round(age_s / 3600, 1)
+        sat_status = 'fresh' if age_s < CACHE_MAX_AGE else 'stale'
+        try:
+            with open(sat_path) as f:
+                sat_count = len(json.load(f))
+        except Exception:
+            sat_status = 'corrupted'
+
+    return render_template(
+        'admin.html',
+        stats=stats,
+        sat_count=sat_count,
+        sat_age_h=sat_age_h,
+        sat_status=sat_status,
+        cache_max_h=CACHE_MAX_AGE // 3600,
+        today=str(datetime.utcnow().date()),
+    )
+
+@app.route('/admin/set-tier', methods=['POST'])
+@login_required
+def admin_set_tier():
+    if not ADMIN_EMAIL or session.get('user_email') != ADMIN_EMAIL:
+        return '', 403
+    email = request.form.get('email', '').strip()
+    tier  = request.form.get('tier', '').strip()
+    if email and tier in ('BASIC', 'PAID'):
+        set_user_tier(email, tier)
+    return redirect('/admin')
 
 @app.route('/logout', methods = ['POST'])
 def logout():
