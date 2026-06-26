@@ -19,9 +19,13 @@
 
 body {
     background: var(--bg);
-    font-family: 'Orbitron', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     min-height: 100vh;
     overflow: hidden;
+}
+
+h1, h2, h3 {
+    font-family: 'Space Grotesk', sans-serif;
 }
 
 body::before {
@@ -126,7 +130,7 @@ body::before {
     border: 1px solid transparent;
     border-radius: 6px;
     color: var(--text-muted);
-    font-family: 'Orbitron', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 0.66rem;
     font-weight: 700;
     letter-spacing: 0.07em;
@@ -260,7 +264,7 @@ input[type="text"] {
     border-radius: 6px;
     padding: 0.6rem 0.75rem;
     color: var(--text);
-    font-family: 'Orbitron', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 0.65rem;
     letter-spacing: 0.05em;
     outline: none;

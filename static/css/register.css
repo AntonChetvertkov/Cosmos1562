@@ -17,13 +17,17 @@
 
 body {
     background: var(--bg);
-    font-family: 'Orbitron', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--text);
     padding: 0;
+}
+
+h1, h2 {
+    font-family: 'Space Grotesk', sans-serif;
 }
 
 @media (max-width: 768px) {
@@ -123,7 +127,7 @@ input[type="text"] {
     border-radius: 6px;
     padding: 0.6rem 0.75rem;
     color: var(--text);
-    font-family: 'Orbitron', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 0.82rem;
     letter-spacing: 0.04em;
     outline: none;
@@ -200,7 +204,7 @@ button[type="submit"] {
     border: 1px solid var(--cyan-dim);
     border-radius: 6px;
     color: var(--text-muted);
-    font-family: 'Orbitron', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 0.82rem;
     font-weight: 700;
     letter-spacing: 0.15em;
