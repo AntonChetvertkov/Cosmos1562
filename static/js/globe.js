@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as satellite from 'satellite.js';
 import { cosmodromes, capitals, getSatColour, getSatOperator } from '/static/js/data.js?v=4';
-import { getConstellationName, WEATHER, ALL_CONSTELLATION_NAMES, DEFAULT_OFF_CONSTELLATIONS } from '/static/js/constellations.js?v=4';
+import { getConstellationName, WEATHER, STATIONS, ALL_CONSTELLATION_NAMES, DEFAULT_OFF_CONSTELLATIONS } from '/static/js/constellations.js?v=4';
 
 const TRACK_STEP_SECONDS = 30;
 const TRACK_SURFACE_OFFSET = 1.001;
@@ -175,7 +175,7 @@ function placeSatMesh(sat_response, colour, isFree = false) {
     sat_meshes.push({ satrec: sat_rec, mesh: sat, trackLines: [] });
 }
 
-const WEATHER_CONSTELLATIONS = new Set(WEATHER);
+const FREE_CONSTELLATIONS = new Set([...WEATHER, ...STATIONS, 'STARLINK']);
 
 async function fetchCategory(category) {
     try {
@@ -185,7 +185,7 @@ async function fetchCategory(category) {
         if (!Array.isArray(data)) return 0;
         for (const sat of data) {
             const constName = getConstellationName(sat.OBJECT_NAME);
-            const isFree = WEATHER_CONSTELLATIONS.has(constName);
+            const isFree = FREE_CONSTELLATIONS.has(constName);
             placeSatMesh(sat, getSatColour(sat.OBJECT_NAME), isFree);
         }
         return data.length;
