@@ -1,6 +1,3 @@
-import eventlet
-eventlet.monkey_patch()
-
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -52,7 +49,7 @@ app.config.update(
 
 oauth = OAuth(app)
 csrf = CSRFProtect(app)
-socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins='*')
+socketio = SocketIO(app, async_mode='threading')
 init_db()
 
 limiter = Limiter(
