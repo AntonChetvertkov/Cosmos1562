@@ -443,6 +443,60 @@ h1, h2, h3 { font-family: 'Orbitron', sans-serif; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--cyan-dim); border-radius: 2px; }
 
+/* ── Group settings ─────────────────────────────────────── */
+#panel-header { display: flex; align-items: center; }
+#panel-header-info { flex: 1; min-width: 0; }
+
+#group-settings-btn {
+    background: transparent;
+    border: 1px solid var(--cyan-dim);
+    color: var(--cyan);
+    font-size: 1rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color 0.2s;
+}
+#group-settings-btn:hover { border-color: var(--cyan); }
+
+.gset-member {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--bg3);
+}
+.gset-member-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.78rem;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.gset-owner-tag {
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    flex-shrink: 0;
+}
+.gset-remove {
+    background: transparent;
+    border: 1px solid #ff556644;
+    color: #ff5566;
+    font-size: 0.7rem;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.gset-remove:hover { border-color: #ff5566; }
+
 /* ── Burger button (hidden on desktop) ──────────────────── */
 #burger { display: none; }
 #sidebar-backdrop { display: none; }

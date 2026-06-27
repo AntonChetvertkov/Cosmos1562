@@ -87,6 +87,7 @@ async function openConversation(convId) {
     if (conv) {
         document.getElementById('panel-header-name').textContent = conv.display_name;
         document.getElementById('panel-header-sub').textContent = conv.is_group ? 'Group chat' : conv.other_email || '';
+        document.getElementById('group-settings-btn').style.display = conv.is_group ? 'block' : 'none';
     }
 
     document.getElementById('panel-empty').style.display = 'none';
@@ -335,6 +336,102 @@ async function createGroup() {
     openConversation(data.conv_id);
 }
 
+/* ── Group settings ─────────────────────────────────────── */
+let gsetOwner = false;
+
+async function openGroupSettings() {
+    if (!activeConvId) return;
+    const errEl = document.getElementById('gset-error');
+    errEl.textContent = '';
+    const res = await fetch(`/chat/group/${activeConvId}/members`);
+    if (!res.ok) { return; }
+    const data = await res.json();
+    gsetOwner = data.is_owner;
+
+    document.getElementById('gset-name').value = data.name || '';
+    document.getElementById('gset-rename-row').style.display = gsetOwner ? 'block' : 'none';
+    document.getElementById('gset-add-row').style.display = gsetOwner ? 'block' : 'none';
+    document.getElementById('gset-delete').style.display = gsetOwner ? 'block' : 'none';
+
+    renderMembers(data.members, data.created_by);
+    document.getElementById('gset-modal').style.display = 'flex';
+}
+
+function renderMembers(members, ownerEmail) {
+    const el = document.getElementById('gset-members');
+    el.innerHTML = '';
+    for (const m of members) {
+        const row = document.createElement('div');
+        row.className = 'gset-member';
+        const isOwner = m.email === ownerEmail;
+        let html = `<span class="gset-member-name">${escHtml(m.name)}</span>`;
+        if (isOwner) html += `<span class="gset-owner-tag">Owner</span>`;
+        row.innerHTML = html;
+        if (gsetOwner && !isOwner) {
+            const btn = document.createElement('button');
+            btn.className = 'gset-remove';
+            btn.textContent = '✕';
+            btn.title = 'Remove';
+            btn.addEventListener('click', () => removeMember(m.email));
+            row.appendChild(btn);
+        }
+        el.appendChild(row);
+    }
+}
+
+async function removeMember(email) {
+    const res = await fetch(`/chat/group/${activeConvId}/remove`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) { document.getElementById('gset-error').textContent = data.error || 'Error'; return; }
+    openGroupSettings();
+}
+
+async function addMember() {
+    const email = document.getElementById('gset-add-email').value.trim();
+    const errEl = document.getElementById('gset-error');
+    if (!email) { errEl.textContent = 'Enter an email.'; return; }
+    const res = await fetch(`/chat/group/${activeConvId}/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Error'; return; }
+    document.getElementById('gset-add-email').value = '';
+    openGroupSettings();
+}
+
+async function renameGroup() {
+    const name = document.getElementById('gset-name').value.trim();
+    const errEl = document.getElementById('gset-error');
+    if (!name) { errEl.textContent = 'Enter a name.'; return; }
+    const res = await fetch(`/chat/group/${activeConvId}/rename`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Error'; return; }
+    document.getElementById('panel-header-name').textContent = name;
+    await loadConversations();
+}
+
+async function deleteGroup() {
+    if (!confirm('Delete this group for everyone? This cannot be undone.')) return;
+    const res = await fetch(`/chat/group/${activeConvId}/delete`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) { document.getElementById('gset-error').textContent = data.error || 'Error'; return; }
+    document.getElementById('gset-modal').style.display = 'none';
+    document.getElementById('panel-active').style.display = 'none';
+    document.getElementById('panel-empty').style.display = 'flex';
+    activeConvId = null;
+    await loadConversations();
+}
+
 /* ── Notifications ──────────────────────────────────────── */
 function requestNotifPermission() {
     if ('Notification' in window && Notification.permission === 'default') {
@@ -373,6 +470,21 @@ function bindUI() {
         document.getElementById('group-error').textContent = '';
     });
     document.getElementById('group-ok').addEventListener('click', createGroup);
+
+    // Group settings
+    document.getElementById('group-settings-btn').addEventListener('click', openGroupSettings);
+    document.getElementById('gset-close').addEventListener('click', () => {
+        document.getElementById('gset-modal').style.display = 'none';
+    });
+    document.getElementById('gset-rename').addEventListener('click', renameGroup);
+    document.getElementById('gset-add').addEventListener('click', addMember);
+    document.getElementById('gset-add-email').addEventListener('keydown', e => {
+        if (e.key === 'Enter') addMember();
+    });
+    document.getElementById('gset-delete').addEventListener('click', deleteGroup);
+    document.getElementById('gset-modal').addEventListener('click', e => {
+        if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+    });
 
     // Close modals on backdrop click
     document.getElementById('dm-modal').addEventListener('click', e => {

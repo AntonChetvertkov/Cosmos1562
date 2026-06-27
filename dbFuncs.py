@@ -122,6 +122,44 @@ def add_group_member(conv_id, email):
         pass
     conn.close()
 
+def get_conversation(conv_id):
+    conn = db_connect()
+    row = conn.execute('SELECT id, name, is_group, created_by FROM conversations WHERE id=?', (conv_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+def get_members(conv_id):
+    conn = db_connect()
+    rows = conn.execute('''
+        SELECT m.email, u.name
+        FROM conversation_members m
+        LEFT JOIN users u ON u.email = m.email
+        WHERE m.conv_id = ?
+        ORDER BY m.joined_at ASC
+    ''', (conv_id,)).fetchall()
+    conn.close()
+    return [{'email': r['email'], 'name': r['name'] or r['email']} for r in rows]
+
+def remove_group_member(conv_id, email):
+    conn = db_connect()
+    conn.execute('DELETE FROM conversation_members WHERE conv_id=? AND email=?', (conv_id, email))
+    conn.commit()
+    conn.close()
+
+def rename_group(conv_id, name):
+    conn = db_connect()
+    conn.execute('UPDATE conversations SET name=? WHERE id=?', (name, conv_id))
+    conn.commit()
+    conn.close()
+
+def delete_conversation(conv_id):
+    conn = db_connect()
+    conn.execute('DELETE FROM messages WHERE conv_id=?', (conv_id,))
+    conn.execute('DELETE FROM conversation_members WHERE conv_id=?', (conv_id,))
+    conn.execute('DELETE FROM conversations WHERE id=?', (conv_id,))
+    conn.commit()
+    conn.close()
+
 def get_user_conversations(email):
     conn = db_connect()
     rows = conn.execute('''
