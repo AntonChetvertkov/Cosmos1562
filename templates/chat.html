@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Space+Grotesk:wght@400;600&display=optional" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/chat.css?v=2">
+    <link rel="stylesheet" href="/static/css/chat.css?v=3">
 </head>
 <body>
     <div id="chat-layout">
@@ -28,8 +28,15 @@
             </div>
         </aside>
 
+        <!-- SIDEBAR BACKDROP (mobile drawer) -->
+        <div id="sidebar-backdrop"></div>
+
         <!-- MESSAGE PANEL -->
         <main id="message-panel">
+            <button id="burger" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+
             <div id="panel-empty">
                 <div id="panel-empty-icon">✦</div>
                 <div id="panel-empty-text">Select a conversation</div>
@@ -37,7 +44,6 @@
 
             <div id="panel-active" style="display:none;">
                 <div id="panel-header">
-                    <button id="mobile-back" style="display:none;">&#8592;</button>
                     <div id="panel-header-info">
                         <div id="panel-header-name"></div>
                         <div id="panel-header-sub"></div>

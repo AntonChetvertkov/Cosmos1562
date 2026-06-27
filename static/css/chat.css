@@ -443,54 +443,87 @@ h1, h2, h3 { font-family: 'Orbitron', sans-serif; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--cyan-dim); border-radius: 2px; }
 
+/* ── Burger button (hidden on desktop) ──────────────────── */
+#burger { display: none; }
+#sidebar-backdrop { display: none; }
+
 /* ── Mobile ─────────────────────────────────────────────── */
 @media (max-width: 700px) {
     html, body { font-size: 16px; }
 
     #chat-layout { position: relative; }
 
-    /* Sidebar takes full screen by default */
+    /* Sidebar = slide-out drawer from the left */
     #sidebar {
-        width: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 82%;
+        max-width: 340px;
         min-width: unset;
-        position: absolute;
+        z-index: 60;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+    }
+    #sidebar.open { transform: translateX(0); }
+
+    /* Dark backdrop behind the drawer */
+    #sidebar-backdrop {
+        display: block;
+        position: fixed;
         inset: 0;
-        z-index: 10;
+        background: rgba(0,0,0,0.6);
+        z-index: 50;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+    }
+    #sidebar-backdrop.open {
+        opacity: 1;
+        pointer-events: auto;
     }
 
-    /* Message panel takes full screen, hidden until conv selected */
+    /* Message panel = full screen, always visible */
     #message-panel {
         width: 100%;
-        position: absolute;
-        inset: 0;
+        position: relative;
         z-index: 5;
-        display: none;
-    }
-    #message-panel.mobile-active {
-        display: flex;
-        z-index: 20;
     }
 
-    /* Back button visible on mobile */
-    #mobile-back {
+    /* Floating burger button (top-left) */
+    #burger {
         display: flex;
-        align-items: center;
-        gap: 6px;
-        background: transparent;
-        border: none;
-        color: var(--cyan);
-        font-family: 'Orbitron', sans-serif;
-        font-size: 0.6rem;
-        letter-spacing: 0.1em;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        z-index: 30;
+        width: 38px;
+        height: 38px;
+        padding: 9px;
+        background: var(--bg2);
+        border: 1px solid var(--cyan-dim);
+        border-radius: 8px;
         cursor: pointer;
-        padding: 0;
-        margin-right: 12px;
-        flex-shrink: 0;
+    }
+    #burger span {
+        display: block;
+        height: 2px;
+        width: 100%;
+        background: var(--cyan);
+        border-radius: 2px;
     }
 
+    /* Make room for the burger in the panel header */
     #panel-header {
         display: flex;
         align-items: center;
+        padding-left: 64px;
+        min-height: 66px;
     }
     #panel-header-info { flex: 1; min-width: 0; }
 
