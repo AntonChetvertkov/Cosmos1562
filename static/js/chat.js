@@ -230,9 +230,17 @@ function sendMessage() {
 
 /* ── Socket events ──────────────────────────────────────── */
 function onNewMessage(msg) {
+    const fromOther = msg.sender_email !== ME;
+    const previewText = msg.has_file ? `📎 ${msg.file_name || 'File'}` : msg.content;
+
     if (msg.conv_id === activeConvId) {
         appendSingleMessage(msg);
         socket.emit('join_conv', { conv_id: activeConvId });
+        // Ping even when looking at the chat, if the window isn't focused
+        if (fromOther && document.hidden) {
+            playPing();
+            fireNotification(msg.sender_name || msg.sender_email, previewText);
+        }
     } else {
         // Update unread badge on sidebar
         const item = document.querySelector(`.conv-item[data-conv-id="${msg.conv_id}"]`);
@@ -250,9 +258,10 @@ function onNewMessage(msg) {
             const list = document.getElementById('conv-list');
             list.insertBefore(item, list.firstChild);
         }
-        // Browser notification
-        if (document.hidden) {
-            fireNotification(msg.sender_name || msg.sender_email, msg.content);
+        // Ping + notify for messages in other conversations
+        if (fromOther) {
+            playPing();
+            fireNotification(msg.sender_name || msg.sender_email, previewText);
         }
     }
 
@@ -260,7 +269,7 @@ function onNewMessage(msg) {
     const item = document.querySelector(`.conv-item[data-conv-id="${msg.conv_id}"]`);
     if (item) {
         const preview = item.querySelector('.conv-preview');
-        if (preview) preview.textContent = msg.content.slice(0, 40);
+        if (preview) preview.textContent = (previewText || '').slice(0, 40);
     }
 }
 
@@ -432,16 +441,55 @@ async function deleteGroup() {
     await loadConversations();
 }
 
-/* ── Notifications ──────────────────────────────────────── */
-function requestNotifPermission() {
-    if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
+/* ── Notifications + ping ────────────────────────────────── */
+let audioCtx = null;
+
+function initAudio() {
+    if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        catch (e) { /* no audio */ }
     }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playPing() {
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.type = 'sine';
+    o.frequency.setValueAtTime(880, t);
+    o.frequency.setValueAtTime(1175, t + 0.1);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+    o.start(t);
+    o.stop(t + 0.4);
+}
+
+// Browser permission + audio unlock must happen inside a user gesture.
+function requestNotifPermission() {
+    const unlock = () => {
+        initAudio();
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+        document.removeEventListener('click', unlock);
+        document.removeEventListener('keydown', unlock);
+        document.removeEventListener('touchstart', unlock);
+    };
+    document.addEventListener('click', unlock);
+    document.addEventListener('keydown', unlock);
+    document.addEventListener('touchstart', unlock);
 }
 
 function fireNotification(title, body) {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    new Notification(title, { body, icon: '/static/favicon.svg' });
+    try {
+        const n = new Notification(title, { body, icon: '/static/favicon.svg' });
+        n.onclick = () => { window.focus(); n.close(); };
+    } catch (e) { /* ignore */ }
 }
 
 /* ── UI bindings ────────────────────────────────────────── */
