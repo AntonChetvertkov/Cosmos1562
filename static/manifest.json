@@ -1,0 +1,17 @@
+{
+    "name": "Cosmos1562 Chat",
+    "short_name": "Cosmos Chat",
+    "start_url": "/chat",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#060d18",
+    "theme_color": "#060d18",
+    "icons": [
+        {
+            "src": "/static/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ]
+}

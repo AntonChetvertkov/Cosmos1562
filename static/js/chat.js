@@ -9,6 +9,7 @@ let hasMoreMsgs = false;
 
 /* ── Init ───────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
+    registerServiceWorker();
     requestNotifPermission();
     connectSocket();
     loadConversations();
@@ -237,9 +238,9 @@ function onNewMessage(msg) {
         appendSingleMessage(msg);
         socket.emit('join_conv', { conv_id: activeConvId });
         // Ping even when looking at the chat, if the window isn't focused
+        // (visual notification, if any, is handled by the service worker push)
         if (fromOther && document.hidden) {
             playPing();
-            fireNotification(msg.sender_name || msg.sender_email, previewText);
         }
     } else {
         // Update unread badge on sidebar
@@ -258,10 +259,9 @@ function onNewMessage(msg) {
             const list = document.getElementById('conv-list');
             list.insertBefore(item, list.firstChild);
         }
-        // Ping + notify for messages in other conversations
+        // Ping for messages in other conversations (notification via SW push)
         if (fromOther) {
             playPing();
-            fireNotification(msg.sender_name || msg.sender_email, previewText);
         }
     }
 
@@ -468,28 +468,66 @@ function playPing() {
     o.stop(t + 0.4);
 }
 
-// Browser permission + audio unlock must happen inside a user gesture.
+let swRegistration = null;
+
+// Register the service worker (needed for push on both desktop & mobile).
+async function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    try {
+        swRegistration = await navigator.serviceWorker.register('/sw.js');
+    } catch (e) {
+        console.warn('SW registration failed', e);
+    }
+}
+
+// Permission + audio unlock + push subscription must happen inside a user gesture.
 function requestNotifPermission() {
-    const unlock = () => {
-        initAudio();
-        if ('Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission();
-        }
+    const unlock = async () => {
         document.removeEventListener('click', unlock);
         document.removeEventListener('keydown', unlock);
         document.removeEventListener('touchstart', unlock);
+        initAudio();
+        if (!('Notification' in window)) return;
+        let perm = Notification.permission;
+        if (perm === 'default') perm = await Notification.requestPermission();
+        if (perm === 'granted') subscribeToPush();
     };
     document.addEventListener('click', unlock);
     document.addEventListener('keydown', unlock);
     document.addEventListener('touchstart', unlock);
 }
 
-function fireNotification(title, body) {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    const arr = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    return arr;
+}
+
+async function subscribeToPush() {
+    if (!swRegistration || !('PushManager' in window)) return;
     try {
-        const n = new Notification(title, { body, icon: '/static/favicon.svg' });
-        n.onclick = () => { window.focus(); n.close(); };
-    } catch (e) { /* ignore */ }
+        const res = await fetch('/chat/vapid-public-key');
+        const { key, enabled } = await res.json();
+        if (!enabled || !key) return;
+
+        let sub = await swRegistration.pushManager.getSubscription();
+        if (!sub) {
+            sub = await swRegistration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(key),
+            });
+        }
+        await fetch('/chat/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(sub),
+        });
+    } catch (e) {
+        console.warn('Push subscribe failed', e);
+    }
 }
 
 /* ── UI bindings ────────────────────────────────────────── */

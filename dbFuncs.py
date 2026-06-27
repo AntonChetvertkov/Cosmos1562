@@ -68,6 +68,16 @@ def init_db():
             cursor.execute(f'ALTER TABLE messages ADD COLUMN {col} {defn}')
         except sqlite3.OperationalError:
             pass
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            email      TEXT NOT NULL,
+            endpoint   TEXT UNIQUE NOT NULL,
+            subscription TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     conn.commit()
     conn.close()
 
@@ -284,6 +294,40 @@ def purge_read_files(conv_id, member_emails):
     conn.commit()
     conn.close()
     return to_delete
+
+# ── Push subscriptions ───────────────────────────────────────────────────────
+
+def save_push_subscription(email, sub):
+    endpoint = sub.get('endpoint')
+    if not endpoint:
+        return
+    conn = db_connect()
+    conn.execute(
+        '''INSERT INTO push_subscriptions (email, endpoint, subscription) VALUES (?,?,?)
+           ON CONFLICT(endpoint) DO UPDATE SET email=excluded.email, subscription=excluded.subscription''',
+        (email, endpoint, json.dumps(sub))
+    )
+    conn.commit()
+    conn.close()
+
+def get_subscriptions_for_emails(emails):
+    if not emails:
+        return []
+    conn = db_connect()
+    qs = ','.join('?' * len(emails))
+    rows = conn.execute(
+        f'SELECT email, endpoint, subscription FROM push_subscriptions WHERE email IN ({qs})',
+        list(emails)
+    ).fetchall()
+    conn.close()
+    return [{'email': r['email'], 'endpoint': r['endpoint'],
+             'subscription': json.loads(r['subscription'])} for r in rows]
+
+def delete_push_subscription(endpoint):
+    conn = db_connect()
+    conn.execute('DELETE FROM push_subscriptions WHERE endpoint=?', (endpoint,))
+    conn.commit()
+    conn.close()
 
 def mark_read(conv_id, reader_email):
     conn = db_connect()
