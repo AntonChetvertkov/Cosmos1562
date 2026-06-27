@@ -527,6 +527,35 @@ def chat_subscribe():
     save_push_subscription(session['user_email'], sub)
     return jsonify({'ok': True})
 
+@app.route('/chat/test-push', methods=['POST'])
+@csrf.exempt
+@login_required
+def chat_test_push():
+    if not PUSH_ENABLED:
+        return jsonify({'error': 'push not configured on server'}), 503
+    email = session['user_email']
+    subs = get_subscriptions_for_emails([email])
+    if not subs:
+        return jsonify({'error': 'no subscription on this device'}), 404
+    payload = json.dumps({'title': 'Cosmos1562', 'body': 'Test notification ✓', 'url': '/chat'})
+    sent, errors = 0, []
+    for s in subs:
+        try:
+            webpush(subscription_info=s['subscription'], data=payload,
+                    vapid_private_key=VAPID_PRIVATE_KEY,
+                    vapid_claims={'sub': VAPID_CLAIM_EMAIL})
+            sent += 1
+        except WebPushException as ex:
+            status = getattr(ex.response, 'status_code', None)
+            if status in (404, 410):
+                delete_push_subscription(s['endpoint'])
+            errors.append(str(status))
+        except Exception as ex:
+            errors.append(str(ex))
+    if sent:
+        return jsonify({'ok': True, 'sent': sent})
+    return jsonify({'error': 'all sends failed: ' + ','.join(errors)}), 500
+
 @app.route('/chat/conversations')
 @login_required
 def chat_conversations():

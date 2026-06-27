@@ -443,6 +443,23 @@ h1, h2, h3 { font-family: 'Orbitron', sans-serif; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--cyan-dim); border-radius: 2px; }
 
+/* ── Enable-notifications button ─────────────────────────── */
+#notif-btn {
+    margin: 8px 12px;
+    padding: 9px;
+    background: transparent;
+    border: 1px solid var(--cyan-dim);
+    color: var(--cyan);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.2s, opacity 0.2s;
+}
+#notif-btn:hover { border-color: var(--cyan); }
+#notif-btn.granted { opacity: 0.5; border-color: var(--bg3); color: var(--text-muted); }
+
 /* ── Attach button + file bubbles ───────────────────────── */
 #attach-btn {
     background: transparent;

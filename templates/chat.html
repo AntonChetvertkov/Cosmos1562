@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Space+Grotesk:wght@400;600&display=optional" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/chat.css?v=5">
+    <link rel="stylesheet" href="/static/css/chat.css?v=6">
 </head>
 <body>
     <div id="chat-layout">
@@ -28,6 +28,7 @@
                 </div>
             </div>
             <div id="conv-list"></div>
+            <button id="notif-btn" title="Enable notifications">🔔 Enable notifications</button>
             <div id="sidebar-footer">
                 <span id="my-name">{{ user_name or user_email }}</span>
                 <a href="/home" id="back-btn">← Globe</a>
@@ -135,6 +136,6 @@
 
     <script>window.MY_EMAIL = "{{ user_email }}";</script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="/static/js/chat.js?v=7"></script>
+    <script src="/static/js/chat.js?v=8"></script>
 </body>
 </html>
