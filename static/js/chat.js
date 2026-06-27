@@ -92,10 +92,8 @@ async function openConversation(convId) {
     document.getElementById('panel-empty').style.display = 'none';
     document.getElementById('panel-active').style.display = 'flex';
 
-    // Mobile: show message panel over sidebar
-    const isMobile = window.innerWidth <= 700;
-    document.getElementById('message-panel').classList.toggle('mobile-active', isMobile);
-    document.getElementById('mobile-back').style.display = isMobile ? 'flex' : 'none';
+    // Mobile: close the drawer once a chat is picked
+    closeDrawer();
     document.getElementById('typing-indicator').style.display = 'none';
 
     const msgList = document.getElementById('messages-list');
@@ -395,11 +393,12 @@ function bindUI() {
         onInputTyping();
     });
 
-    // Mobile back button
-    document.getElementById('mobile-back').addEventListener('click', () => {
-        document.getElementById('message-panel').classList.remove('mobile-active');
-        activeConvId = null;
-    });
+    // Mobile drawer (burger menu)
+    document.getElementById('burger').addEventListener('click', toggleDrawer);
+    document.getElementById('sidebar-backdrop').addEventListener('click', closeDrawer);
+
+    // Open the drawer on first load if nothing is selected (mobile)
+    if (window.innerWidth <= 700) openDrawer();
 
     // Load more
     document.getElementById('load-more-btn').addEventListener('click', async () => {
@@ -407,6 +406,20 @@ function bindUI() {
         const msgs = await fetchMessages(activeConvId, oldestMsgId);
         if (msgs) renderMessages(msgs, true);
     });
+}
+
+/* ── Mobile drawer ──────────────────────────────────────── */
+function openDrawer() {
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('sidebar-backdrop').classList.add('open');
+}
+function closeDrawer() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-backdrop').classList.remove('open');
+}
+function toggleDrawer() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebar-backdrop').classList.toggle('open');
 }
 
 /* ── Helpers ────────────────────────────────────────────── */
