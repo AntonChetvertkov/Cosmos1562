@@ -49,7 +49,7 @@ app.config.update(
 
 oauth = OAuth(app)
 csrf = CSRFProtect(app)
-socketio = SocketIO(app, async_mode='threading', manage_session=False)
+socketio = SocketIO(app, async_mode='threading', manage_session=False, cors_allowed_origins='*')
 init_db()
 
 limiter = Limiter(
