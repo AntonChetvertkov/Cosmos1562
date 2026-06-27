@@ -443,6 +443,64 @@ h1, h2, h3 { font-family: 'Orbitron', sans-serif; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--cyan-dim); border-radius: 2px; }
 
+/* ── Attach button + file bubbles ───────────────────────── */
+#attach-btn {
+    background: transparent;
+    border: 1px solid var(--cyan-dim);
+    color: var(--cyan);
+    font-size: 1rem;
+    width: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    align-self: flex-end;
+    height: 40px;
+    transition: border-color 0.2s;
+}
+#attach-btn:hover { border-color: var(--cyan); }
+
+.msg-file {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
+}
+.msg-file-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+.msg-file-info { min-width: 0; }
+.msg-file-name {
+    font-size: 0.78rem;
+    color: var(--cyan);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+}
+.msg-file-size {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+.msg-file-expired {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+.msg-image {
+    max-width: 240px;
+    max-height: 240px;
+    border-radius: 8px;
+    display: block;
+    cursor: pointer;
+}
+.msg-caption {
+    margin-top: 6px;
+    font-size: 0.82rem;
+}
+
 /* ── Group settings ─────────────────────────────────────── */
 #panel-header { display: flex; align-items: center; }
 #panel-header-info { flex: 1; min-width: 0; }

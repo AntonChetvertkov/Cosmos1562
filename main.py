@@ -2,17 +2,21 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, render_template, request, redirect, jsonify, session, url_for, send_from_directory, Response
+from flask import Flask, render_template, request, redirect, jsonify, session, url_for, send_from_directory, send_file, Response
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from werkzeug.security import check_password_hash
+from werkzeug.utils import secure_filename
+import uuid
+import mimetypes
 from dbFuncs import (init_db, add_user, get_user_by_email, get_or_create_user_oauth,
                      get_ai_usage, increment_ai_count, update_user_name, update_user_email,
                      update_user_password, delete_user, get_admin_stats, set_user_tier,
                      is_member, get_or_create_dm, create_group, add_group_member,
                      get_user_conversations, get_messages, save_message, mark_read,
                      get_conversation, get_members, remove_group_member, rename_group,
-                     delete_conversation)
+                     delete_conversation, get_member_emails, get_message_file,
+                     purge_read_files)
 from datetime import datetime
 from ipTools import getCountryCode, getLanguage, getUserIp
 from functools import wraps
@@ -47,7 +51,11 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     SESSION_COOKIE_SECURE=not DEBUG_MODE,
+    MAX_CONTENT_LENGTH=50 * 1024 * 1024,  # 50 MB cap for chat file uploads
 )
+
+CHAT_FILES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'chat_files')
+os.makedirs(CHAT_FILES_DIR, exist_ok=True)
 
 oauth = OAuth(app)
 csrf = CSRFProtect(app)
@@ -489,6 +497,16 @@ def chat_conversations():
     convs = get_user_conversations(session['user_email'])
     return jsonify(convs)
 
+def _read_and_purge(conv_id, email):
+    """Mark conv read for this user, then delete any files everyone has now read."""
+    mark_read(conv_id, email)
+    paths = purge_read_files(conv_id, get_member_emails(conv_id))
+    for p in paths:
+        try:
+            os.remove(p)
+        except OSError:
+            pass
+
 @app.route('/chat/<int:conv_id>/messages')
 @login_required
 def chat_messages(conv_id):
@@ -497,8 +515,49 @@ def chat_messages(conv_id):
         return jsonify({'error': 'forbidden'}), 403
     before_id = request.args.get('before_id', type=int)
     msgs = get_messages(conv_id, email, limit=50, before_id=before_id)
-    mark_read(conv_id, email)
+    _read_and_purge(conv_id, email)
     return jsonify(msgs)
+
+@app.route('/chat/<int:conv_id>/upload', methods=['POST'])
+@csrf.exempt
+@login_required
+def chat_upload(conv_id):
+    email = session['user_email']
+    if not is_member(conv_id, email):
+        return jsonify({'error': 'forbidden'}), 403
+    f = request.files.get('file')
+    if not f or not f.filename:
+        return jsonify({'error': 'no file'}), 400
+
+    orig_name = secure_filename(f.filename) or 'file'
+    f.seek(0, os.SEEK_END)
+    size = f.tell()
+    f.seek(0)
+    if size > 50 * 1024 * 1024:
+        return jsonify({'error': 'file too large (max 50MB)'}), 400
+
+    stored = f"{uuid.uuid4().hex}_{orig_name}"
+    path = os.path.join(CHAT_FILES_DIR, stored)
+    f.save(path)
+
+    mime = f.mimetype or mimetypes.guess_type(orig_name)[0] or 'application/octet-stream'
+    caption = (request.form.get('content') or '').strip()
+    msg = save_message(conv_id, email, caption,
+                       file_path=path, file_name=orig_name, file_size=size, file_mime=mime)
+    socketio.emit('new_message', msg, to=f"conv_{conv_id}")
+    return jsonify(msg)
+
+@app.route('/chat/file/<int:msg_id>')
+@login_required
+def chat_file(msg_id):
+    email = session['user_email']
+    info = get_message_file(msg_id)
+    if not info or not is_member(info['conv_id'], email):
+        return jsonify({'error': 'forbidden'}), 403
+    if not info['file_path'] or not os.path.exists(info['file_path']):
+        return jsonify({'error': 'file expired'}), 404
+    return send_file(info['file_path'], as_attachment=True,
+                     download_name=info['file_name'], mimetype=info['file_mime'])
 
 @app.route('/chat/dm', methods=['POST'])
 @csrf.exempt
@@ -619,7 +678,7 @@ def on_join_conv(data):
     conv_id = int(data.get('conv_id', 0))
     if is_member(conv_id, email):
         join_room(f"conv_{conv_id}")
-        mark_read(conv_id, email)
+        _read_and_purge(conv_id, email)
 
 @socketio.on('send_message')
 def on_send_message(data):

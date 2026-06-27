@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Space+Grotesk:wght@400;600&display=optional" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/chat.css?v=4">
+    <link rel="stylesheet" href="/static/css/chat.css?v=5">
 </head>
 <body>
     <div id="chat-layout">
@@ -60,6 +60,8 @@
                     </div>
                 </div>
                 <div id="input-bar">
+                    <input type="file" id="file-input" style="display:none;">
+                    <button id="attach-btn" title="Attach file">&#128206;</button>
                     <textarea id="msg-input" placeholder="Type a message..." rows="1"></textarea>
                     <button id="send-btn">Send</button>
                 </div>
@@ -127,6 +129,6 @@
 
     <script>window.MY_EMAIL = "{{ user_email }}";</script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="/static/js/chat.js?v=4"></script>
+    <script src="/static/js/chat.js?v=5"></script>
 </body>
 </html>
