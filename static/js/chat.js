@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     connectSocket();
     loadConversations();
     bindUI();
+    updateNotifButton();
 });
 
 function connectSocket() {
@@ -507,11 +508,19 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 async function subscribeToPush() {
-    if (!swRegistration || !('PushManager' in window)) return;
+    if (!swRegistration) {
+        // SW may not be ready yet — wait for it
+        if ('serviceWorker' in navigator) {
+            swRegistration = await navigator.serviceWorker.ready.catch(() => null);
+        }
+    }
+    if (!swRegistration || !('PushManager' in window)) {
+        return { ok: false, reason: 'Push not supported on this browser' };
+    }
     try {
         const res = await fetch('/chat/vapid-public-key');
         const { key, enabled } = await res.json();
-        if (!enabled || !key) return;
+        if (!enabled || !key) return { ok: false, reason: 'Push not configured on server' };
 
         let sub = await swRegistration.pushManager.getSubscription();
         if (!sub) {
@@ -525,8 +534,51 @@ async function subscribeToPush() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(sub),
         });
+        return { ok: true };
     } catch (e) {
         console.warn('Push subscribe failed', e);
+        return { ok: false, reason: (e && e.message) || 'subscribe failed' };
+    }
+}
+
+function updateNotifButton() {
+    const btn = document.getElementById('notif-btn');
+    if (!btn) return;
+    if (!('Notification' in window)) { btn.style.display = 'none'; return; }
+    if (Notification.permission === 'granted') {
+        btn.textContent = '🔔 Notifications on (tap to test)';
+        btn.classList.add('granted');
+    } else {
+        btn.textContent = '🔔 Enable notifications';
+        btn.classList.remove('granted');
+    }
+}
+
+async function onNotifButton() {
+    initAudio();
+    if (!('Notification' in window)) {
+        alert('This browser does not support notifications.');
+        return;
+    }
+    if (Notification.permission === 'denied') {
+        alert('Notifications are blocked. Enable them in your browser/site settings, then reload.');
+        return;
+    }
+    let perm = Notification.permission;
+    if (perm !== 'granted') perm = await Notification.requestPermission();
+    updateNotifButton();
+    if (perm !== 'granted') { alert('Permission not granted.'); return; }
+
+    const r = await subscribeToPush();
+    if (!r.ok) { alert('Could not enable push: ' + r.reason); return; }
+
+    // Fire a test push so the user can confirm delivery on this device
+    const res = await fetch('/chat/test-push', { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+        alert('Subscribed! A test notification was sent — you should see it shortly.');
+    } else {
+        alert('Subscribed, but test push failed: ' + (data.error || res.status));
     }
 }
 
@@ -582,6 +634,9 @@ function bindUI() {
 
     // Send
     document.getElementById('send-btn').addEventListener('click', sendMessage);
+
+    // Enable-notifications button
+    document.getElementById('notif-btn').addEventListener('click', onNotifButton);
 
     // File attach
     document.getElementById('attach-btn').addEventListener('click', () => {
