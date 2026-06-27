@@ -31,8 +31,8 @@ h1, h2, h3 { font-family: 'Orbitron', sans-serif; }
 
 /* ── Sidebar ────────────────────────────────────────────── */
 #sidebar {
-    width: 260px;
-    min-width: 220px;
+    width: 320px;
+    min-width: 280px;
     background: var(--bg2);
     border-right: 1px solid var(--cyan-dim);
     display: flex;
@@ -116,16 +116,12 @@ h1, h2, h3 { font-family: 'Orbitron', sans-serif; }
     font-size: 0.78rem;
     font-weight: 600;
     color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    word-break: break-word;
 }
 .conv-preview {
     font-size: 0.66rem;
     color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    word-break: break-word;
     margin-top: 2px;
 }
 
