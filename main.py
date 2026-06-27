@@ -10,7 +10,9 @@ from dbFuncs import (init_db, add_user, get_user_by_email, get_or_create_user_oa
                      get_ai_usage, increment_ai_count, update_user_name, update_user_email,
                      update_user_password, delete_user, get_admin_stats, set_user_tier,
                      is_member, get_or_create_dm, create_group, add_group_member,
-                     get_user_conversations, get_messages, save_message, mark_read)
+                     get_user_conversations, get_messages, save_message, mark_read,
+                     get_conversation, get_members, remove_group_member, rename_group,
+                     delete_conversation)
 from datetime import datetime
 from ipTools import getCountryCode, getLanguage, getUserIp
 from functools import wraps
@@ -526,17 +528,70 @@ def chat_group():
     return jsonify({'conv_id': conv_id})
 
 @app.route('/chat/group/<int:conv_id>/add', methods=['POST'])
+@csrf.exempt
 @login_required
 def chat_group_add(conv_id):
-    from dbFuncs import get_user_by_email as _gube
     me = session['user_email']
     data = request.get_json() or {}
     email = data.get('email', '').strip().lower()
     if not is_member(conv_id, me):
         return jsonify({'error': 'forbidden'}), 403
-    if not email or not _gube(email):
+    if not email or not get_user_by_email(email):
         return jsonify({'error': 'user not found'}), 404
     add_group_member(conv_id, email)
+    return jsonify({'ok': True})
+
+@app.route('/chat/group/<int:conv_id>/members', methods=['GET'])
+@login_required
+def chat_group_members(conv_id):
+    me = session['user_email']
+    if not is_member(conv_id, me):
+        return jsonify({'error': 'forbidden'}), 403
+    conv = get_conversation(conv_id)
+    return jsonify({
+        'members': get_members(conv_id),
+        'created_by': conv['created_by'] if conv else '',
+        'name': conv['name'] if conv else '',
+        'is_owner': bool(conv and conv['created_by'] == me),
+    })
+
+@app.route('/chat/group/<int:conv_id>/remove', methods=['POST'])
+@csrf.exempt
+@login_required
+def chat_group_remove(conv_id):
+    me = session['user_email']
+    conv = get_conversation(conv_id)
+    if not conv or not conv['is_group'] or conv['created_by'] != me:
+        return jsonify({'error': 'forbidden'}), 403
+    email = (request.get_json() or {}).get('email', '').strip().lower()
+    if email == conv['created_by']:
+        return jsonify({'error': 'cannot remove the owner'}), 400
+    remove_group_member(conv_id, email)
+    return jsonify({'ok': True})
+
+@app.route('/chat/group/<int:conv_id>/rename', methods=['POST'])
+@csrf.exempt
+@login_required
+def chat_group_rename(conv_id):
+    me = session['user_email']
+    conv = get_conversation(conv_id)
+    if not conv or not conv['is_group'] or conv['created_by'] != me:
+        return jsonify({'error': 'forbidden'}), 403
+    name = (request.get_json() or {}).get('name', '').strip()
+    if not name:
+        return jsonify({'error': 'name required'}), 400
+    rename_group(conv_id, name)
+    return jsonify({'ok': True})
+
+@app.route('/chat/group/<int:conv_id>/delete', methods=['POST'])
+@csrf.exempt
+@login_required
+def chat_group_delete(conv_id):
+    me = session['user_email']
+    conv = get_conversation(conv_id)
+    if not conv or not conv['is_group'] or conv['created_by'] != me:
+        return jsonify({'error': 'forbidden'}), 403
+    delete_conversation(conv_id)
     return jsonify({'ok': True})
 
 # ── SocketIO events ───────────────────────────────────────────────────────────

@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Space+Grotesk:wght@400;600&display=optional" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/chat.css?v=3">
+    <link rel="stylesheet" href="/static/css/chat.css?v=4">
 </head>
 <body>
     <div id="chat-layout">
@@ -48,6 +48,7 @@
                         <div id="panel-header-name"></div>
                         <div id="panel-header-sub"></div>
                     </div>
+                    <button id="group-settings-btn" title="Group settings" style="display:none;">&#9881;</button>
                 </div>
                 <div id="messages-scroll">
                     <div id="load-more-wrap" style="display:none;">
@@ -93,8 +94,39 @@
         </div>
     </div>
 
+    <!-- GROUP SETTINGS MODAL -->
+    <div class="modal-backdrop" id="gset-modal" style="display:none;">
+        <div class="modal">
+            <div class="modal-title">Group Settings</div>
+
+            <div id="gset-rename-row" style="display:none;">
+                <div style="display:flex;gap:8px;">
+                    <input class="modal-input" id="gset-name" type="text" placeholder="Group name">
+                    <button class="modal-btn-ok" id="gset-rename" style="flex-shrink:0;">Rename</button>
+                </div>
+            </div>
+
+            <div style="font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-top:4px;">Members</div>
+            <div id="gset-members" style="max-height:240px;overflow-y:auto;"></div>
+
+            <div id="gset-add-row" style="display:none;">
+                <div style="display:flex;gap:8px;">
+                    <input class="modal-input" id="gset-add-email" type="email" placeholder="Add member by email">
+                    <button class="modal-btn-ok" id="gset-add" style="flex-shrink:0;">Add</button>
+                </div>
+            </div>
+
+            <div class="modal-error" id="gset-error"></div>
+
+            <div class="modal-actions" style="justify-content:space-between;">
+                <button class="modal-btn-cancel" id="gset-delete" style="display:none;border-color:#ff5566;color:#ff5566;">Delete Group</button>
+                <button class="modal-btn-cancel" id="gset-close">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>window.MY_EMAIL = "{{ user_email }}";</script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="/static/js/chat.js?v=3"></script>
+    <script src="/static/js/chat.js?v=4"></script>
 </body>
 </html>
