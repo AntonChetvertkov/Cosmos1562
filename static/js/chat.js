@@ -91,6 +91,11 @@ async function openConversation(convId) {
 
     document.getElementById('panel-empty').style.display = 'none';
     document.getElementById('panel-active').style.display = 'flex';
+
+    // Mobile: show message panel over sidebar
+    const isMobile = window.innerWidth <= 700;
+    document.getElementById('message-panel').classList.toggle('mobile-active', isMobile);
+    document.getElementById('mobile-back').style.display = isMobile ? 'flex' : 'none';
     document.getElementById('typing-indicator').style.display = 'none';
 
     const msgList = document.getElementById('messages-list');
@@ -388,6 +393,12 @@ function bindUI() {
     input.addEventListener('input', () => {
         autoResizeInput(input);
         onInputTyping();
+    });
+
+    // Mobile back button
+    document.getElementById('mobile-back').addEventListener('click', () => {
+        document.getElementById('message-panel').classList.remove('mobile-active');
+        activeConvId = null;
     });
 
     // Load more

@@ -444,9 +444,62 @@ h1, h2, h3 { font-family: 'Orbitron', sans-serif; }
 ::-webkit-scrollbar-thumb { background: var(--cyan-dim); border-radius: 2px; }
 
 /* ── Mobile ─────────────────────────────────────────────── */
-@media (max-width: 600px) {
-    #sidebar { width: 200px; min-width: 160px; }
-    .msg-bubble { max-width: 85%; font-size: 0.78rem; }
+@media (max-width: 700px) {
+    html, body { font-size: 16px; }
+
+    #chat-layout { position: relative; }
+
+    /* Sidebar takes full screen by default */
+    #sidebar {
+        width: 100%;
+        min-width: unset;
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+    }
+
+    /* Message panel takes full screen, hidden until conv selected */
+    #message-panel {
+        width: 100%;
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        display: none;
+    }
+    #message-panel.mobile-active {
+        display: flex;
+        z-index: 20;
+    }
+
+    /* Back button visible on mobile */
+    #mobile-back {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: transparent;
+        border: none;
+        color: var(--cyan);
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.6rem;
+        letter-spacing: 0.1em;
+        cursor: pointer;
+        padding: 0;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+
+    #panel-header {
+        display: flex;
+        align-items: center;
+    }
+    #panel-header-info { flex: 1; min-width: 0; }
+
+    .msg-bubble { max-width: 85%; }
     #input-bar { padding: 10px 12px; }
-    .modal { width: 90vw; padding: 20px; }
+    .modal { width: 94vw; padding: 20px 16px; }
+
+    #sidebar-footer { font-size: 0.7rem; }
+    .conv-name { font-size: 0.85rem; }
+    .conv-preview { font-size: 0.72rem; }
+    .conv-item { padding: 12px 14px; }
 }
