@@ -62,6 +62,12 @@ def init_db():
             read_by      TEXT DEFAULT '[]'
         )
     ''')
+    for col, defn in [('file_path', 'TEXT'), ('file_name', 'TEXT'),
+                      ('file_size', 'INTEGER'), ('file_mime', 'TEXT')]:
+        try:
+            cursor.execute(f'ALTER TABLE messages ADD COLUMN {col} {defn}')
+        except sqlite3.OperationalError:
+            pass
     conn.commit()
     conn.close()
 
@@ -140,6 +146,12 @@ def get_members(conv_id):
     conn.close()
     return [{'email': r['email'], 'name': r['name'] or r['email']} for r in rows]
 
+def get_member_emails(conv_id):
+    conn = db_connect()
+    rows = conn.execute('SELECT email FROM conversation_members WHERE conv_id=?', (conv_id,)).fetchall()
+    conn.close()
+    return [r['email'] for r in rows]
+
 def remove_group_member(conv_id, email):
     conn = db_connect()
     conn.execute('DELETE FROM conversation_members WHERE conv_id=? AND email=?', (conv_id, email))
@@ -192,35 +204,46 @@ def get_user_conversations(email):
     conn.close()
     return result
 
+def _msg_to_dict(r):
+    d = dict(r)
+    d['has_file'] = bool(d.get('file_name'))
+    d['file_expired'] = bool(d.get('file_name')) and not d.get('file_path')
+    d.pop('file_path', None)  # never expose the on-disk path to clients
+    return d
+
 def get_messages(conv_id, email, limit=50, before_id=None):
     conn = db_connect()
+    cols = '''m.id, m.conv_id, m.sender_email, m.content, m.sent_at, m.read_by,
+              m.file_path, m.file_name, m.file_size, m.file_mime, u.name AS sender_name'''
     if before_id:
-        rows = conn.execute('''
-            SELECT m.id, m.conv_id, m.sender_email, m.content, m.sent_at, m.read_by,
-                   u.name AS sender_name
+        rows = conn.execute(f'''
+            SELECT {cols}
             FROM messages m LEFT JOIN users u ON u.email=m.sender_email
             WHERE m.conv_id=? AND m.id<?
             ORDER BY m.sent_at DESC LIMIT ?
         ''', (conv_id, before_id, limit)).fetchall()
     else:
-        rows = conn.execute('''
-            SELECT m.id, m.conv_id, m.sender_email, m.content, m.sent_at, m.read_by,
-                   u.name AS sender_name
+        rows = conn.execute(f'''
+            SELECT {cols}
             FROM messages m LEFT JOIN users u ON u.email=m.sender_email
             WHERE m.conv_id=?
             ORDER BY m.sent_at DESC LIMIT ?
         ''', (conv_id, limit)).fetchall()
     conn.close()
-    return [dict(r) for r in reversed(rows)]
+    return [_msg_to_dict(r) for r in reversed(rows)]
 
-def save_message(conv_id, sender_email, content):
+def save_message(conv_id, sender_email, content,
+                 file_path=None, file_name=None, file_size=None, file_mime=None):
     conn = db_connect()
     sender_name = conn.execute('SELECT name FROM users WHERE email=?', (sender_email,)).fetchone()
     sender_name = sender_name['name'] if sender_name else sender_email
     cursor = conn.cursor()
     cursor.execute(
-        'INSERT INTO messages (conv_id, sender_email, content, read_by) VALUES (?,?,?,?)',
-        (conv_id, sender_email, content, json.dumps([sender_email]))
+        '''INSERT INTO messages (conv_id, sender_email, content, read_by,
+               file_path, file_name, file_size, file_mime)
+           VALUES (?,?,?,?,?,?,?,?)''',
+        (conv_id, sender_email, content, json.dumps([sender_email]),
+         file_path, file_name, file_size, file_mime)
     )
     msg_id = cursor.lastrowid
     conn.commit()
@@ -230,7 +253,37 @@ def save_message(conv_id, sender_email, content):
         'id': msg_id, 'conv_id': conv_id,
         'sender_email': sender_email, 'sender_name': sender_name,
         'content': content, 'sent_at': row['sent_at'],
+        'has_file': bool(file_name), 'file_expired': False,
+        'file_name': file_name, 'file_size': file_size, 'file_mime': file_mime,
     }
+
+def get_message_file(msg_id):
+    """Return (file_path, file_name, file_mime) for a message, or None."""
+    conn = db_connect()
+    row = conn.execute(
+        'SELECT conv_id, file_path, file_name, file_mime FROM messages WHERE id=?', (msg_id,)
+    ).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+def purge_read_files(conv_id, member_emails):
+    """Delete files whose message has been read by every member.
+    Returns list of on-disk paths to unlink."""
+    conn = db_connect()
+    rows = conn.execute(
+        'SELECT id, read_by, file_path FROM messages WHERE conv_id=? AND file_path IS NOT NULL',
+        (conv_id,)
+    ).fetchall()
+    to_delete = []
+    members = set(member_emails)
+    for r in rows:
+        rb = set(json.loads(r['read_by'] or '[]'))
+        if members.issubset(rb):
+            to_delete.append(r['file_path'])
+            conn.execute('UPDATE messages SET file_path=NULL WHERE id=?', (r['id'],))
+    conn.commit()
+    conn.close()
+    return to_delete
 
 def mark_read(conv_id, reader_email):
     conn = db_connect()

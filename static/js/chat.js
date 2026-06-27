@@ -168,7 +168,7 @@ function appendMsgGroups(msgs, container) {
 
         const bubble = document.createElement('div');
         bubble.className = 'msg-bubble';
-        bubble.textContent = msg.content;
+        fillBubble(bubble, msg);
         lastGroup.appendChild(bubble);
 
         const timeEl = document.createElement('div');
@@ -203,7 +203,7 @@ function appendSingleMessage(msg) {
 
     const bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
-    bubble.textContent = msg.content;
+    fillBubble(bubble, msg);
     group.appendChild(bubble);
 
     const timeEl = document.createElement('div');
@@ -496,6 +496,17 @@ function bindUI() {
 
     // Send
     document.getElementById('send-btn').addEventListener('click', sendMessage);
+
+    // File attach
+    document.getElementById('attach-btn').addEventListener('click', () => {
+        document.getElementById('file-input').click();
+    });
+    document.getElementById('file-input').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (file) uploadFile(file);
+        e.target.value = '';  // allow re-selecting the same file
+    });
+
     const input = document.getElementById('msg-input');
     input.addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -518,6 +529,83 @@ function bindUI() {
         const msgs = await fetchMessages(activeConvId, oldestMsgId);
         if (msgs) renderMessages(msgs, true);
     });
+}
+
+/* ── Bubble rendering (text + files) ────────────────────── */
+function fillBubble(bubble, msg) {
+    if (msg.has_file) {
+        if (msg.file_expired) {
+            const exp = document.createElement('div');
+            exp.className = 'msg-file-expired';
+            exp.textContent = `📎 ${msg.file_name} (expired)`;
+            bubble.appendChild(exp);
+        } else if ((msg.file_mime || '').startsWith('image/')) {
+            const img = document.createElement('img');
+            img.className = 'msg-image';
+            img.src = `/chat/file/${msg.id}`;
+            img.alt = msg.file_name;
+            img.addEventListener('click', () => window.open(`/chat/file/${msg.id}`, '_blank'));
+            bubble.appendChild(img);
+        } else {
+            const a = document.createElement('a');
+            a.className = 'msg-file';
+            a.href = `/chat/file/${msg.id}`;
+            a.innerHTML = `
+                <span class="msg-file-icon">📄</span>
+                <span class="msg-file-info">
+                    <span class="msg-file-name">${escHtml(msg.file_name)}</span>
+                    <span class="msg-file-size">${formatBytes(msg.file_size)}</span>
+                </span>`;
+            bubble.appendChild(a);
+        }
+        if (msg.content) {
+            const cap = document.createElement('div');
+            cap.className = 'msg-caption';
+            cap.textContent = msg.content;
+            bubble.appendChild(cap);
+        }
+    } else {
+        bubble.textContent = msg.content;
+    }
+}
+
+function formatBytes(n) {
+    if (!n) return '';
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+    return (n / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+/* ── File upload ────────────────────────────────────────── */
+async function uploadFile(file) {
+    if (!activeConvId || !file) return;
+    if (file.size > 50 * 1024 * 1024) {
+        alert('File too large (max 50MB).');
+        return;
+    }
+    const sendBtn = document.getElementById('send-btn');
+    const attachBtn = document.getElementById('attach-btn');
+    attachBtn.disabled = true;
+    const oldLabel = sendBtn.textContent;
+    sendBtn.textContent = '...';
+
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('content', document.getElementById('msg-input').value.trim());
+
+    try {
+        const res = await fetch(`/chat/${activeConvId}/upload`, { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || 'Upload failed'); return; }
+        document.getElementById('msg-input').value = '';
+        autoResizeInput(document.getElementById('msg-input'));
+        // message arrives via socket new_message
+    } catch (e) {
+        alert('Upload failed');
+    } finally {
+        attachBtn.disabled = false;
+        sendBtn.textContent = oldLabel;
+    }
 }
 
 /* ── Mobile drawer ──────────────────────────────────────── */
