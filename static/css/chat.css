@@ -17,7 +17,7 @@ html, body {
     background: var(--bg);
     color: var(--text);
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 14px;
+    font-size: 28px;
 }
 
 h1, h2, h3 { font-family: 'Orbitron', sans-serif; }
