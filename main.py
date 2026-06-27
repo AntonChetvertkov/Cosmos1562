@@ -16,7 +16,8 @@ from dbFuncs import (init_db, add_user, get_user_by_email, get_or_create_user_oa
                      get_user_conversations, get_messages, save_message, mark_read,
                      get_conversation, get_members, remove_group_member, rename_group,
                      delete_conversation, get_member_emails, get_message_file,
-                     purge_read_files)
+                     purge_read_files, save_push_subscription,
+                     get_subscriptions_for_emails, delete_push_subscription)
 from datetime import datetime
 from ipTools import getCountryCode, getLanguage, getUserIp
 from functools import wraps
@@ -56,6 +57,14 @@ app.config.update(
 
 CHAT_FILES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'chat_files')
 os.makedirs(CHAT_FILES_DIR, exist_ok=True)
+
+# Web Push (VAPID) — keys generated once and stored in .env (see /chat notes)
+VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY', '')
+VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY', '')
+VAPID_CLAIM_EMAIL = os.getenv('VAPID_CLAIM_EMAIL', 'mailto:admin@cosmos1562.space')
+PUSH_ENABLED = bool(VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY)
+if PUSH_ENABLED:
+    from pywebpush import webpush, WebPushException
 
 oauth = OAuth(app)
 csrf = CSRFProtect(app)
@@ -491,6 +500,33 @@ def chat_page():
         user_email=session['user_email'],
         user_name=_name)
 
+@app.route('/sw.js')
+def service_worker():
+    # Served from root so its scope covers /chat
+    resp = send_from_directory(app.static_folder + '/js', 'sw.js')
+    resp.headers['Service-Worker-Allowed'] = '/'
+    resp.headers['Cache-Control'] = 'no-cache'
+    return resp
+
+@app.route('/manifest.json')
+def web_manifest():
+    return send_from_directory(app.static_folder, 'manifest.json')
+
+@app.route('/chat/vapid-public-key')
+@login_required
+def vapid_public_key():
+    return jsonify({'key': VAPID_PUBLIC_KEY, 'enabled': PUSH_ENABLED})
+
+@app.route('/chat/subscribe', methods=['POST'])
+@csrf.exempt
+@login_required
+def chat_subscribe():
+    sub = request.get_json(silent=True) or {}
+    if not sub.get('endpoint'):
+        return jsonify({'error': 'invalid subscription'}), 400
+    save_push_subscription(session['user_email'], sub)
+    return jsonify({'ok': True})
+
 @app.route('/chat/conversations')
 @login_required
 def chat_conversations():
@@ -506,6 +542,41 @@ def _read_and_purge(conv_id, email):
             os.remove(p)
         except OSError:
             pass
+
+def _send_push_to_members(conv_id, sender_email, msg):
+    """Send a Web Push notification to every member except the sender."""
+    if not PUSH_ENABLED:
+        return
+    recipients = [e for e in get_member_emails(conv_id) if e != sender_email]
+    subs = get_subscriptions_for_emails(recipients)
+    if not subs:
+        return
+    body = msg.get('content') or ''
+    if msg.get('has_file'):
+        body = f"📎 {msg.get('file_name') or 'File'}" + (f"  {body}" if body else "")
+    payload = json.dumps({
+        'title': msg.get('sender_name') or sender_email,
+        'body': body[:140] or 'New message',
+        'conv_id': conv_id,
+        'url': '/chat',
+    })
+    for s in subs:
+        try:
+            webpush(
+                subscription_info=s['subscription'],
+                data=payload,
+                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_claims={'sub': VAPID_CLAIM_EMAIL},
+            )
+        except WebPushException as ex:
+            status = getattr(ex.response, 'status_code', None)
+            if status in (404, 410):
+                delete_push_subscription(s['endpoint'])
+        except Exception:
+            pass
+
+def push_async(conv_id, sender_email, msg):
+    socketio.start_background_task(_send_push_to_members, conv_id, sender_email, msg)
 
 @app.route('/chat/<int:conv_id>/messages')
 @login_required
@@ -545,6 +616,7 @@ def chat_upload(conv_id):
     msg = save_message(conv_id, email, caption,
                        file_path=path, file_name=orig_name, file_size=size, file_mime=mime)
     socketio.emit('new_message', msg, to=f"conv_{conv_id}")
+    push_async(conv_id, email, msg)
     return jsonify(msg)
 
 @app.route('/chat/file/<int:msg_id>')
@@ -691,6 +763,7 @@ def on_send_message(data):
         return
     msg = save_message(conv_id, email, content)
     emit('new_message', msg, to=f"conv_{conv_id}")
+    push_async(conv_id, email, msg)
 
 @socketio.on('typing')
 def on_typing(data):
