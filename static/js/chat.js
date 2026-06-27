@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function connectSocket() {
-    socket = io({ transports: ['websocket', 'polling'], query: { email: ME } });
+    socket = io({ transports: ['websocket', 'polling'] });
 
     socket.on('connect', () => {
         if (activeConvId) socket.emit('join_conv', { conv_id: activeConvId });

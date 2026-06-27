@@ -19,7 +19,7 @@ import json
 import time
 from authlib.integrations.flask_client import OAuth
 from aiFuncs import aiInteract
-from flask_socketio import SocketIO, emit, join_room
+from flask_socketio import SocketIO, emit, join_room, disconnect as sock_disconnect
 
 DEBUG_MODE = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
 
@@ -539,20 +539,24 @@ def chat_group_add(conv_id):
 
 # ── SocketIO events ───────────────────────────────────────────────────────────
 
-def _socket_email():
-    return session.get('user_email') or request.args.get('email', '')
+_socket_users = {}  # sid -> email
 
 @socketio.on('connect')
 def on_connect():
-    email = _socket_email()
+    email = session.get('user_email')
     if not email:
         return False
+    _socket_users[request.sid] = email
     for conv in get_user_conversations(email):
         join_room(f"conv_{conv['id']}")
 
+@socketio.on('disconnect')
+def on_disconnect():
+    _socket_users.pop(request.sid, None)
+
 @socketio.on('join_conv')
 def on_join_conv(data):
-    email = _socket_email()
+    email = _socket_users.get(request.sid)
     if not email:
         return
     conv_id = int(data.get('conv_id', 0))
@@ -562,7 +566,7 @@ def on_join_conv(data):
 
 @socketio.on('send_message')
 def on_send_message(data):
-    email = _socket_email()
+    email = _socket_users.get(request.sid)
     if not email:
         return
     conv_id = int(data.get('conv_id', 0))
@@ -574,12 +578,12 @@ def on_send_message(data):
 
 @socketio.on('typing')
 def on_typing(data):
-    email = _socket_email()
+    email = _socket_users.get(request.sid)
     if not email:
         return
     conv_id = int(data.get('conv_id', 0))
     if is_member(conv_id, email):
-        name = session.get('user_name') or email
+        name = email
         emit('typing', {'conv_id': conv_id, 'sender_name': name},
              to=f"conv_{conv_id}", include_self=False)
 
