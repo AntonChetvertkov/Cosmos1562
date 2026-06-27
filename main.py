@@ -475,9 +475,11 @@ def auth_callback_yandex():
 @app.route('/chat')
 @login_required
 def chat_page():
+    _u = get_user_by_email(session['user_email'])
+    _name = (_u['name'] if _u and _u['name'] else '') or session['user_email']
     return render_template('chat.html',
         user_email=session['user_email'],
-        user_name=session.get('user_name', ''))
+        user_name=_name)
 
 @app.route('/chat/conversations')
 @login_required
@@ -583,7 +585,8 @@ def on_typing(data):
         return
     conv_id = int(data.get('conv_id', 0))
     if is_member(conv_id, email):
-        name = email
+        _u = get_user_by_email(email)
+        name = (_u['name'] if _u and _u['name'] else '') or email
         emit('typing', {'conv_id': conv_id, 'sender_name': name},
              to=f"conv_{conv_id}", include_self=False)
 
