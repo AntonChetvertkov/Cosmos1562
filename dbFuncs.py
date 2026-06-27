@@ -1,4 +1,5 @@
 import sqlite3
+import json
 from pathlib import Path
 from datetime import date
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -33,6 +34,177 @@ def init_db():
             cursor.execute(f'ALTER TABLE users ADD COLUMN {col} {defn}')
         except sqlite3.OperationalError:
             pass
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS conversations (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            name       TEXT,
+            is_group   INTEGER DEFAULT 0,
+            created_by TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS conversation_members (
+            conv_id   INTEGER REFERENCES conversations(id) ON DELETE CASCADE,
+            email     TEXT NOT NULL,
+            joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (conv_id, email)
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS messages (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            conv_id      INTEGER REFERENCES conversations(id) ON DELETE CASCADE,
+            sender_email TEXT NOT NULL,
+            content      TEXT NOT NULL,
+            sent_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            read_by      TEXT DEFAULT '[]'
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+
+# ── Chat helpers ─────────────────────────────────────────────────────────────
+
+def is_member(conv_id, email):
+    conn = db_connect()
+    row = conn.execute(
+        'SELECT 1 FROM conversation_members WHERE conv_id=? AND email=?', (conv_id, email)
+    ).fetchone()
+    conn.close()
+    return row is not None
+
+def get_or_create_dm(email_a, email_b):
+    conn = db_connect()
+    row = conn.execute('''
+        SELECT c.id FROM conversations c
+        JOIN conversation_members m1 ON m1.conv_id=c.id AND m1.email=?
+        JOIN conversation_members m2 ON m2.conv_id=c.id AND m2.email=?
+        WHERE c.is_group=0
+        LIMIT 1
+    ''', (email_a, email_b)).fetchone()
+    if row:
+        conn.close()
+        return row['id']
+    cursor = conn.cursor()
+    cursor.execute(
+        'INSERT INTO conversations (name, is_group, created_by) VALUES (NULL, 0, ?)', (email_a,)
+    )
+    conv_id = cursor.lastrowid
+    cursor.execute('INSERT INTO conversation_members (conv_id, email) VALUES (?,?)', (conv_id, email_a))
+    cursor.execute('INSERT INTO conversation_members (conv_id, email) VALUES (?,?)', (conv_id, email_b))
+    conn.commit()
+    conn.close()
+    return conv_id
+
+def create_group(name, creator_email, member_emails):
+    conn = db_connect()
+    cursor = conn.cursor()
+    cursor.execute(
+        'INSERT INTO conversations (name, is_group, created_by) VALUES (?,1,?)', (name, creator_email)
+    )
+    conv_id = cursor.lastrowid
+    emails = list({creator_email} | set(member_emails))
+    for e in emails:
+        cursor.execute('INSERT INTO conversation_members (conv_id, email) VALUES (?,?)', (conv_id, e))
+    conn.commit()
+    conn.close()
+    return conv_id
+
+def add_group_member(conv_id, email):
+    conn = db_connect()
+    try:
+        conn.execute('INSERT INTO conversation_members (conv_id, email) VALUES (?,?)', (conv_id, email))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        pass
+    conn.close()
+
+def get_user_conversations(email):
+    conn = db_connect()
+    rows = conn.execute('''
+        SELECT c.id, c.name, c.is_group, c.created_by,
+               (SELECT content FROM messages WHERE conv_id=c.id ORDER BY sent_at DESC LIMIT 1) AS last_msg,
+               (SELECT sent_at FROM messages WHERE conv_id=c.id ORDER BY sent_at DESC LIMIT 1) AS last_at,
+               (SELECT COUNT(*) FROM messages WHERE conv_id=c.id
+                AND json_extract(read_by,'$') NOT LIKE '%'||?||'%'
+                AND sender_email!=?) AS unread
+        FROM conversations c
+        JOIN conversation_members m ON m.conv_id=c.id AND m.email=?
+        ORDER BY last_at DESC NULLS LAST
+    ''', (email, email, email)).fetchall()
+
+    result = []
+    for r in rows:
+        conv = dict(r)
+        if not conv['is_group']:
+            other = conn.execute('''
+                SELECT u.name, u.email FROM users u
+                JOIN conversation_members m ON m.email=u.email
+                WHERE m.conv_id=? AND m.email!=?
+            ''', (conv['id'], email)).fetchone()
+            conv['display_name'] = (other['name'] or other['email']) if other else 'Unknown'
+            conv['other_email'] = other['email'] if other else ''
+        else:
+            conv['display_name'] = conv['name'] or 'Group'
+            conv['other_email'] = ''
+        result.append(conv)
+    conn.close()
+    return result
+
+def get_messages(conv_id, email, limit=50, before_id=None):
+    conn = db_connect()
+    if before_id:
+        rows = conn.execute('''
+            SELECT m.id, m.conv_id, m.sender_email, m.content, m.sent_at, m.read_by,
+                   u.name AS sender_name
+            FROM messages m LEFT JOIN users u ON u.email=m.sender_email
+            WHERE m.conv_id=? AND m.id<?
+            ORDER BY m.sent_at DESC LIMIT ?
+        ''', (conv_id, before_id, limit)).fetchall()
+    else:
+        rows = conn.execute('''
+            SELECT m.id, m.conv_id, m.sender_email, m.content, m.sent_at, m.read_by,
+                   u.name AS sender_name
+            FROM messages m LEFT JOIN users u ON u.email=m.sender_email
+            WHERE m.conv_id=?
+            ORDER BY m.sent_at DESC LIMIT ?
+        ''', (conv_id, limit)).fetchall()
+    conn.close()
+    return [dict(r) for r in reversed(rows)]
+
+def save_message(conv_id, sender_email, content):
+    conn = db_connect()
+    sender_name = conn.execute('SELECT name FROM users WHERE email=?', (sender_email,)).fetchone()
+    sender_name = sender_name['name'] if sender_name else sender_email
+    cursor = conn.cursor()
+    cursor.execute(
+        'INSERT INTO messages (conv_id, sender_email, content, read_by) VALUES (?,?,?,?)',
+        (conv_id, sender_email, content, json.dumps([sender_email]))
+    )
+    msg_id = cursor.lastrowid
+    conn.commit()
+    row = conn.execute('SELECT sent_at FROM messages WHERE id=?', (msg_id,)).fetchone()
+    conn.close()
+    return {
+        'id': msg_id, 'conv_id': conv_id,
+        'sender_email': sender_email, 'sender_name': sender_name,
+        'content': content, 'sent_at': row['sent_at'],
+    }
+
+def mark_read(conv_id, reader_email):
+    conn = db_connect()
+    rows = conn.execute(
+        "SELECT id, read_by FROM messages WHERE conv_id=? AND sender_email!=? AND read_by NOT LIKE ?",
+        (conv_id, reader_email, f'%{reader_email}%')
+    ).fetchall()
+    for r in rows:
+        rb = json.loads(r['read_by'] or '[]')
+        if reader_email not in rb:
+            rb.append(reader_email)
+            conn.execute('UPDATE messages SET read_by=? WHERE id=?', (json.dumps(rb), r['id']))
     conn.commit()
     conn.close()
 

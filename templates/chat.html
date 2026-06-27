@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmos1562 — Chat</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Space+Grotesk:wght@400;600&display=optional" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/chat.css">
+</head>
+<body>
+    <div id="chat-layout">
+        <!-- SIDEBAR -->
+        <aside id="sidebar">
+            <div id="sidebar-header">
+                <span id="sidebar-title">MESSAGES</span>
+                <div id="sidebar-actions">
+                    <button class="action-btn" id="new-dm-btn" title="New DM">＋ DM</button>
+                    <button class="action-btn" id="new-group-btn" title="New Group">＋ Group</button>
+                </div>
+            </div>
+            <div id="conv-list"></div>
+            <div id="sidebar-footer">
+                <span id="my-name">{{ user_name or user_email }}</span>
+                <a href="/home" id="back-btn">← Globe</a>
+            </div>
+        </aside>
+
+        <!-- MESSAGE PANEL -->
+        <main id="message-panel">
+            <div id="panel-empty">
+                <div id="panel-empty-icon">✦</div>
+                <div id="panel-empty-text">Select a conversation</div>
+            </div>
+
+            <div id="panel-active" style="display:none;">
+                <div id="panel-header">
+                    <div id="panel-header-name"></div>
+                    <div id="panel-header-sub"></div>
+                </div>
+                <div id="messages-scroll">
+                    <div id="load-more-wrap" style="display:none;">
+                        <button id="load-more-btn">Load older messages</button>
+                    </div>
+                    <div id="messages-list"></div>
+                    <div id="typing-indicator" style="display:none;">
+                        <span id="typing-text"></span>
+                    </div>
+                </div>
+                <div id="input-bar">
+                    <textarea id="msg-input" placeholder="Type a message..." rows="1"></textarea>
+                    <button id="send-btn">Send</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- NEW DM MODAL -->
+    <div class="modal-backdrop" id="dm-modal" style="display:none;">
+        <div class="modal">
+            <div class="modal-title">New Direct Message</div>
+            <input class="modal-input" id="dm-email" type="email" placeholder="Their Cosmos1562 email">
+            <div class="modal-error" id="dm-error"></div>
+            <div class="modal-actions">
+                <button class="modal-btn-cancel" id="dm-cancel">Cancel</button>
+                <button class="modal-btn-ok" id="dm-ok">Open Chat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW GROUP MODAL -->
+    <div class="modal-backdrop" id="group-modal" style="display:none;">
+        <div class="modal">
+            <div class="modal-title">New Group Chat</div>
+            <input class="modal-input" id="group-name" type="text" placeholder="Group name">
+            <textarea class="modal-input" id="group-emails" placeholder="Member emails, one per line" rows="4"></textarea>
+            <div class="modal-error" id="group-error"></div>
+            <div class="modal-actions">
+                <button class="modal-btn-cancel" id="group-cancel">Cancel</button>
+                <button class="modal-btn-ok" id="group-ok">Create Group</button>
+            </div>
+        </div>
+    </div>
+
+    <script>window.MY_EMAIL = "{{ user_email }}";</script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="/static/js/chat.js"></script>
+</body>
+</html>

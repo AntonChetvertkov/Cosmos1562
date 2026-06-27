@@ -6,7 +6,11 @@ from flask import Flask, render_template, request, redirect, jsonify, session, u
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from werkzeug.security import check_password_hash
-from dbFuncs import init_db, add_user, get_user_by_email, get_or_create_user_oauth, get_ai_usage, increment_ai_count, update_user_name, update_user_email, update_user_password, delete_user, get_admin_stats, set_user_tier
+from dbFuncs import (init_db, add_user, get_user_by_email, get_or_create_user_oauth,
+                     get_ai_usage, increment_ai_count, update_user_name, update_user_email,
+                     update_user_password, delete_user, get_admin_stats, set_user_tier,
+                     is_member, get_or_create_dm, create_group, add_group_member,
+                     get_user_conversations, get_messages, save_message, mark_read)
 from datetime import datetime
 from ipTools import getCountryCode, getLanguage, getUserIp
 from functools import wraps
@@ -15,6 +19,7 @@ import json
 import time
 from authlib.integrations.flask_client import OAuth
 from aiFuncs import aiInteract
+from flask_socketio import SocketIO, emit, join_room
 
 DEBUG_MODE = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
 
@@ -44,6 +49,7 @@ app.config.update(
 
 oauth = OAuth(app)
 csrf = CSRFProtect(app)
+socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins='*')
 init_db()
 
 limiter = Limiter(
@@ -464,7 +470,116 @@ def auth_callback_yandex():
     else:
         return redirect('/?error=Failed to create user account')
 
+# ── Chat HTTP routes ──────────────────────────────────────────────────────────
+
+@app.route('/chat')
+@login_required
+def chat_page():
+    return render_template('chat.html',
+        user_email=session['user_email'],
+        user_name=session.get('user_name', ''))
+
+@app.route('/chat/conversations')
+@login_required
+def chat_conversations():
+    convs = get_user_conversations(session['user_email'])
+    return jsonify(convs)
+
+@app.route('/chat/<int:conv_id>/messages')
+@login_required
+def chat_messages(conv_id):
+    email = session['user_email']
+    if not is_member(conv_id, email):
+        return jsonify({'error': 'forbidden'}), 403
+    before_id = request.args.get('before_id', type=int)
+    msgs = get_messages(conv_id, email, limit=50, before_id=before_id)
+    mark_read(conv_id, email)
+    return jsonify(msgs)
+
+@app.route('/chat/dm', methods=['POST'])
+@login_required
+def chat_dm():
+    data = request.get_json()
+    target = (data or {}).get('email', '').strip().lower()
+    if not target:
+        return jsonify({'error': 'email required'}), 400
+    from dbFuncs import get_user_by_email as _gube
+    if not _gube(target):
+        return jsonify({'error': 'user not found'}), 404
+    me = session['user_email']
+    conv_id = get_or_create_dm(me, target)
+    return jsonify({'conv_id': conv_id})
+
+@app.route('/chat/group', methods=['POST'])
+@login_required
+def chat_group():
+    data = request.get_json() or {}
+    name = data.get('name', '').strip()
+    emails = [e.strip().lower() for e in data.get('emails', []) if e.strip()]
+    if not name or not emails:
+        return jsonify({'error': 'name and emails required'}), 400
+    conv_id = create_group(name, session['user_email'], emails)
+    return jsonify({'conv_id': conv_id})
+
+@app.route('/chat/group/<int:conv_id>/add', methods=['POST'])
+@login_required
+def chat_group_add(conv_id):
+    from dbFuncs import get_user_by_email as _gube
+    me = session['user_email']
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    if not is_member(conv_id, me):
+        return jsonify({'error': 'forbidden'}), 403
+    if not email or not _gube(email):
+        return jsonify({'error': 'user not found'}), 404
+    add_group_member(conv_id, email)
+    return jsonify({'ok': True})
+
+# ── SocketIO events ───────────────────────────────────────────────────────────
+
+@socketio.on('connect')
+def on_connect():
+    if not session.get('authenticated'):
+        return False
+    email = session['user_email']
+    for conv in get_user_conversations(email):
+        join_room(f"conv_{conv['id']}")
+
+@socketio.on('join_conv')
+def on_join_conv(data):
+    if not session.get('authenticated'):
+        return
+    conv_id = int(data.get('conv_id', 0))
+    email = session['user_email']
+    if is_member(conv_id, email):
+        join_room(f"conv_{conv_id}")
+        mark_read(conv_id, email)
+
+@socketio.on('send_message')
+def on_send_message(data):
+    if not session.get('authenticated'):
+        return
+    conv_id = int(data.get('conv_id', 0))
+    content = (data.get('content') or '').strip()
+    email = session['user_email']
+    if not content or not is_member(conv_id, email):
+        return
+    msg = save_message(conv_id, email, content)
+    emit('new_message', msg, to=f"conv_{conv_id}")
+
+@socketio.on('typing')
+def on_typing(data):
+    if not session.get('authenticated'):
+        return
+    conv_id = int(data.get('conv_id', 0))
+    email = session['user_email']
+    if is_member(conv_id, email):
+        name = session.get('user_name') or email
+        emit('typing', {'conv_id': conv_id, 'sender_name': name},
+             to=f"conv_{conv_id}", include_self=False)
+
+# ─────────────────────────────────────────────────────────────────────────────
+
 if __name__ == '__main__':
     init_db()
-    debug_mode = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
-    app.run(host="0.0.0.0", port=5000)
+    socketio.run(app, host="0.0.0.0", port=5000)
