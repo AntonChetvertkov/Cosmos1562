@@ -539,31 +539,34 @@ def chat_group_add(conv_id):
 
 # ── SocketIO events ───────────────────────────────────────────────────────────
 
+def _socket_email():
+    return session.get('user_email') or request.args.get('email', '')
+
 @socketio.on('connect')
 def on_connect():
-    if not session.get('authenticated'):
+    email = _socket_email()
+    if not email:
         return False
-    email = session['user_email']
     for conv in get_user_conversations(email):
         join_room(f"conv_{conv['id']}")
 
 @socketio.on('join_conv')
 def on_join_conv(data):
-    if not session.get('authenticated'):
+    email = _socket_email()
+    if not email:
         return
     conv_id = int(data.get('conv_id', 0))
-    email = session['user_email']
     if is_member(conv_id, email):
         join_room(f"conv_{conv_id}")
         mark_read(conv_id, email)
 
 @socketio.on('send_message')
 def on_send_message(data):
-    if not session.get('authenticated'):
+    email = _socket_email()
+    if not email:
         return
     conv_id = int(data.get('conv_id', 0))
     content = (data.get('content') or '').strip()
-    email = session['user_email']
     if not content or not is_member(conv_id, email):
         return
     msg = save_message(conv_id, email, content)
@@ -571,10 +574,10 @@ def on_send_message(data):
 
 @socketio.on('typing')
 def on_typing(data):
-    if not session.get('authenticated'):
+    email = _socket_email()
+    if not email:
         return
     conv_id = int(data.get('conv_id', 0))
-    email = session['user_email']
     if is_member(conv_id, email):
         name = session.get('user_name') or email
         emit('typing', {'conv_id': conv_id, 'sender_name': name},
