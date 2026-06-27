@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as satellite from 'satellite.js';
 import { cosmodromes, capitals, getSatColour, getSatOperator } from '/static/js/data.js?v=4';
-import { getConstellationName, WEATHER, STATIONS, ALL_CONSTELLATION_NAMES, DEFAULT_OFF_CONSTELLATIONS } from '/static/js/constellations.js?v=4';
+import { getConstellationName, WEATHER, STATIONS, ALL_CONSTELLATION_NAMES, DEFAULT_OFF_CONSTELLATIONS } from '/static/js/constellations.js?v=5';
 
 const TRACK_STEP_SECONDS = 30;
 const TRACK_SURFACE_OFFSET = 1.001;

@@ -532,7 +532,7 @@
 
         <script>window.IS_AUTHENTICATED = {{ 'true' if is_authenticated else 'false' }};</script>
         {% if is_authenticated %}<script>posthog.identify('{{ user_email }}', {name: '{{ user_name }}', plan: '{{ "paid" if is_paid else "basic" }}'});</script>{% endif %}
-        <script type="module" src="/static/js/globe.js?v=4"></script>
+        <script type="module" src="/static/js/globe.js?v=5"></script>
         <script type="module" src="/static/js/ui.js?v=5"></script>
     </body>
 </html>
