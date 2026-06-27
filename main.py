@@ -497,6 +497,7 @@ def chat_messages(conv_id):
     return jsonify(msgs)
 
 @app.route('/chat/dm', methods=['POST'])
+@csrf.exempt
 @login_required
 def chat_dm():
     data = request.get_json()
@@ -511,6 +512,7 @@ def chat_dm():
     return jsonify({'conv_id': conv_id})
 
 @app.route('/chat/group', methods=['POST'])
+@csrf.exempt
 @login_required
 def chat_group():
     data = request.get_json() or {}
