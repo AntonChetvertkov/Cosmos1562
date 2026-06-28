@@ -572,6 +572,218 @@ h1, h2, h3 { font-family: 'Orbitron', sans-serif; }
 }
 .gset-remove:hover { border-color: #ff5566; }
 
+/* ── Call button in header ──────────────────────────────── */
+#call-btn {
+    background: transparent;
+    border: 1px solid var(--cyan-dim);
+    color: var(--cyan);
+    font-size: 0.9rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-right: 6px;
+    transition: border-color 0.2s;
+}
+#call-btn:hover { border-color: var(--cyan); }
+
+/* ── Record button ──────────────────────────────────────── */
+#record-btn {
+    background: transparent;
+    border: 1px solid var(--cyan-dim);
+    color: var(--cyan);
+    font-size: 1rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    align-self: flex-end;
+    transition: border-color 0.2s, color 0.2s;
+}
+#record-btn:hover { border-color: var(--cyan); }
+#record-btn.recording {
+    color: #ff5566;
+    border-color: #ff5566;
+    animation: recPulse 1s ease-in-out infinite;
+}
+@keyframes recPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+}
+
+/* ── Audio message bubble ───────────────────────────────── */
+.msg-audio {
+    display: block;
+    width: 220px;
+    max-width: 100%;
+    height: 36px;
+    accent-color: var(--cyan);
+}
+
+/* ── Call overlays ──────────────────────────────────────── */
+#call-incoming,
+#call-active {
+    position: fixed;
+    inset: 0;
+    background: rgba(6,13,24,0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+#call-incoming-box,
+#call-active-box {
+    background: var(--bg2);
+    border: 1px solid var(--cyan-dim);
+    border-radius: 16px;
+    padding: 36px 40px;
+    min-width: 280px;
+    max-width: 360px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+}
+
+#call-incoming-avatar,
+#call-active-avatar {
+    font-size: 1.8rem;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 2px solid var(--cyan-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#call-incoming #call-incoming-avatar {
+    animation: callPulse 1.5s ease-in-out infinite;
+}
+@keyframes callPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,200,255,0.3); }
+    50% { box-shadow: 0 0 0 14px rgba(0,200,255,0); }
+}
+
+#call-incoming-name,
+#call-active-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    color: var(--cyan);
+}
+
+#call-incoming-sub {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+}
+
+#call-timer {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+}
+
+#call-incoming-actions {
+    display: flex;
+    gap: 14px;
+    margin-top: 8px;
+}
+
+#call-accept-btn {
+    background: #00c853;
+    color: #050510;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 10px 22px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+#call-accept-btn:hover { opacity: 0.85; }
+
+#call-reject-btn {
+    background: transparent;
+    color: #ff5566;
+    border: 1px solid #ff556688;
+    border-radius: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    padding: 10px 22px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+#call-reject-btn:hover { border-color: #ff5566; }
+
+#call-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+#call-active.calling #call-mute-btn,
+#call-active.calling #call-video-btn { display: none; }
+
+#call-mute-btn,
+#call-video-btn {
+    background: transparent;
+    border: 1px solid var(--cyan-dim);
+    color: var(--text);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    padding: 9px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+#call-mute-btn:hover, #call-video-btn:hover { border-color: var(--cyan); }
+
+#call-end-btn {
+    background: #ff5566;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+#call-end-btn:hover { opacity: 0.85; }
+
+#call-remote-video {
+    width: 100%;
+    max-height: 200px;
+    border-radius: 8px;
+    background: #000;
+}
+#call-local-video {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 120px;
+    height: 90px;
+    border-radius: 8px;
+    background: #000;
+    border: 1px solid var(--cyan-dim);
+    z-index: 1001;
+}
+
 /* ── Burger button (hidden on desktop) ──────────────────── */
 #burger { display: none; }
 #sidebar-backdrop { display: none; }

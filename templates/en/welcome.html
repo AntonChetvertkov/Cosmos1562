@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Orbitron:wght@400..900&family=Space+Grotesk:wght@400;600&display=optional" rel="stylesheet">
-    <link rel="stylesheet" href="static/css/welcome.css?v=5">
+    <link rel="stylesheet" href="static/css/welcome.css?v=6">
 </head>
 <body>
     <div id="lang-selector">
@@ -29,12 +29,19 @@
         <div id="login_form">
             <form id="login" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ next_url or '' }}">
                 <label for="email">Email</label>
                 <input type="email" id="email_field" name="email" placeholder="Enter your email" required>
                 <br>
                 <label for="password">Password</label>
-                <input type="password" id="password_field" name="password" placeholder="Enter your password" required>
-                <br>
+                <div class="pw-wrap">
+                    <input type="password" id="password_field" name="password" placeholder="Enter your password" required>
+                    <button type="button" class="pw-toggle" onclick="togglePw()" title="Show password">👁</button>
+                </div>
+                <div class="remember-row">
+                    <input type="checkbox" id="remember_me" name="remember_me" value="1">
+                    <label for="remember_me">Remember me</label>
+                </div>
                 <button type="submit">Log in</button>
                 <a href="/register" class="register-btn">Register</a>
                 <br>
@@ -103,6 +110,10 @@
         <button onclick="acceptCookies()" style="background:#00c8ff;color:#050510;border:none;padding:8px 20px;font-family:'Orbitron',sans-serif;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;border-radius:4px;white-space:nowrap;">Accept</button>
     </div>
     <script>
+        function togglePw() {
+            const f = document.getElementById('password_field');
+            f.type = f.type === 'password' ? 'text' : 'password';
+        }
         function acceptCookies() {
             document.cookie = 'cosmos_consent=1; max-age=31536000; path=/; SameSite=Lax';
             document.getElementById('cookie-banner').style.display = 'none';

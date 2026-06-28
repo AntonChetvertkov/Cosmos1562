@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Space+Grotesk:wght@400;600&display=optional" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/chat.css?v=6">
+    <link rel="stylesheet" href="/static/css/chat.css?v=7">
 </head>
 <body>
     <div id="chat-layout">
@@ -55,6 +55,7 @@
                         <div id="panel-header-name"></div>
                         <div id="panel-header-sub"></div>
                     </div>
+                    <button id="call-btn" title="Voice call" style="display:none;">📞</button>
                     <button id="group-settings-btn" title="Group settings" style="display:none;">&#9881;</button>
                 </div>
                 <div id="messages-scroll">
@@ -69,6 +70,7 @@
                 <div id="input-bar">
                     <input type="file" id="file-input" style="display:none;">
                     <button id="attach-btn" title="Attach file">&#128206;</button>
+                    <button id="record-btn" title="Voice message">🎙</button>
                     <textarea id="msg-input" placeholder="Type a message..." rows="1"></textarea>
                     <button id="send-btn">Send</button>
                 </div>
@@ -125,6 +127,10 @@
                 </div>
             </div>
 
+            <div id="gset-invite-row" style="display:none;">
+                <button class="modal-btn-cancel" id="gset-copy-link-btn" style="width:100%;">Copy Invite Link</button>
+            </div>
+
             <div class="modal-error" id="gset-error"></div>
 
             <div class="modal-actions" style="justify-content:space-between;">
@@ -134,8 +140,38 @@
         </div>
     </div>
 
+    <!-- INCOMING CALL OVERLAY -->
+    <div id="call-incoming" style="display:none;">
+        <div id="call-incoming-box">
+            <div id="call-incoming-avatar">📞</div>
+            <div id="call-incoming-name"></div>
+            <div id="call-incoming-sub">Incoming call</div>
+            <div id="call-incoming-actions">
+                <button id="call-reject-btn">✕ Decline</button>
+                <button id="call-accept-btn">✓ Accept</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- IN-CALL OVERLAY -->
+    <div id="call-active" style="display:none;">
+        <div id="call-active-box">
+            <div id="call-active-avatar">📞</div>
+            <div id="call-active-name"></div>
+            <div id="call-timer">Calling...</div>
+            <audio id="call-remote-audio" autoplay></audio>
+            <video id="call-remote-video" autoplay playsinline style="display:none;"></video>
+            <video id="call-local-video" autoplay playsinline muted style="display:none;"></video>
+            <div id="call-controls">
+                <button id="call-mute-btn">🎙 Mute</button>
+                <button id="call-video-btn">📷 Video</button>
+                <button id="call-end-btn">✕ End</button>
+            </div>
+        </div>
+    </div>
+
     <script>window.MY_EMAIL = "{{ user_email }}";</script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="/static/js/chat.js?v=8"></script>
+    <script src="/static/js/chat.js?v=9"></script>
 </body>
 </html>
