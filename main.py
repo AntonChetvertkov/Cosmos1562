@@ -17,8 +17,9 @@ from dbFuncs import (init_db, add_user, get_user_by_email, get_or_create_user_oa
                      get_conversation, get_members, remove_group_member, rename_group,
                      delete_conversation, get_member_emails, get_message_file,
                      purge_read_files, save_push_subscription,
-                     get_subscriptions_for_emails, delete_push_subscription)
-from datetime import datetime
+                     get_subscriptions_for_emails, delete_push_subscription,
+                     get_or_create_invite_token, get_conv_by_invite_token)
+from datetime import datetime, timedelta
 from ipTools import getCountryCode, getLanguage, getUserIp
 from functools import wraps
 import requests
@@ -47,6 +48,8 @@ if not SECRET_KEY or SECRET_KEY == 'dev-key-change-in-production':
             "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
         )
 app.secret_key = SECRET_KEY
+
+app.permanent_session_lifetime = timedelta(days=30)
 
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
@@ -87,7 +90,7 @@ def login_required(f):
         if 'authenticated' not in session:
             if request.path.startswith('/ai/') or request.is_json:
                 return jsonify({'error': 'Authentication required'}), 401
-            return redirect('/')
+            return redirect(url_for('index', next=request.path))
         return f(*args, **kwargs)
     return decorated
 
@@ -179,20 +182,27 @@ def index():
         lang = auto_lang
 
     show_google = country_code != 'RU'
+    next_url = request.args.get('next', '').strip()
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
+        remember = bool(request.form.get('remember_me'))
+        next_url = request.form.get('next', '').strip()
         user = get_user_by_email(email)
         if user and check_password_hash(user['password'], password):
+            session.permanent = remember
             session['authenticated'] = True
             session['user_email'] = email
             session['user_lang'] = lang
+            if next_url and next_url.startswith('/') and not next_url.startswith('//'):
+                return redirect(next_url)
             return redirect('/home')
         else:
-            return render_template(get_template('welcome.html', lang), error="Invalid email or password", lang=lang, show_google=show_google)
+            return render_template(get_template('welcome.html', lang), error="Invalid email or password",
+                                   lang=lang, show_google=show_google, next_url=next_url)
     if 'authenticated' in session:
         return redirect('/home')
-    return render_template(get_template('welcome.html', lang), lang=lang, show_google=show_google)
+    return render_template(get_template('welcome.html', lang), lang=lang, show_google=show_google, next_url=next_url)
 
 FREE_AI_LIMIT = 15
 
@@ -743,6 +753,26 @@ def chat_group_rename(conv_id):
     rename_group(conv_id, name)
     return jsonify({'ok': True})
 
+@app.route('/chat/group/<int:conv_id>/invite-link', methods=['GET'])
+@login_required
+def chat_invite_link(conv_id):
+    me = session['user_email']
+    conv = get_conversation(conv_id)
+    if not conv or not conv['is_group'] or conv['created_by'] != me:
+        return jsonify({'error': 'forbidden'}), 403
+    token = get_or_create_invite_token(conv_id)
+    link = f"{request.host_url}chat/join/{token}"
+    return jsonify({'link': link})
+
+@app.route('/chat/join/<token>')
+@login_required
+def chat_join(token):
+    conv = get_conv_by_invite_token(token)
+    if not conv:
+        return "Invalid or expired invite link.", 404
+    add_group_member(conv['id'], session['user_email'])
+    return redirect('/chat')
+
 @app.route('/chat/group/<int:conv_id>/delete', methods=['POST'])
 @csrf.exempt
 @login_required
@@ -805,6 +835,49 @@ def on_typing(data):
         name = (_u['name'] if _u and _u['name'] else '') or email
         emit('typing', {'conv_id': conv_id, 'sender_name': name},
              to=f"conv_{conv_id}", include_self=False)
+
+# ── Call signaling (WebRTC relay) ─────────────────────────────────────────────
+
+def _relay_call(event, data):
+    """Validate membership and relay a call event to the other party in the room."""
+    email = _socket_users.get(request.sid)
+    if not email:
+        return
+    conv_id = data.get('conv_id')
+    if not conv_id or not is_member(int(conv_id), email):
+        return
+    emit(event, data, to=f"conv_{conv_id}", skip_sid=request.sid)
+
+@socketio.on('call_invite')
+def on_call_invite(data):
+    email = _socket_users.get(request.sid)
+    if not email:
+        return
+    conv_id = data.get('conv_id')
+    if not conv_id or not is_member(int(conv_id), email):
+        return
+    _u = get_user_by_email(email)
+    data['caller_name'] = (_u['name'] if _u and _u['name'] else '') or email
+    data['caller_email'] = email
+    emit('call_invite', data, to=f"conv_{conv_id}", skip_sid=request.sid)
+
+@socketio.on('call_accepted')
+def on_call_accepted(data): _relay_call('call_accepted', data)
+
+@socketio.on('call_rejected')
+def on_call_rejected(data): _relay_call('call_rejected', data)
+
+@socketio.on('call_offer')
+def on_call_offer(data): _relay_call('call_offer', data)
+
+@socketio.on('call_answer')
+def on_call_answer(data): _relay_call('call_answer', data)
+
+@socketio.on('call_ice')
+def on_call_ice(data): _relay_call('call_ice', data)
+
+@socketio.on('call_end')
+def on_call_end(data): _relay_call('call_end', data)
 
 # ─────────────────────────────────────────────────────────────────────────────
 

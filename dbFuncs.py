@@ -69,6 +69,11 @@ def init_db():
         except sqlite3.OperationalError:
             pass
 
+    try:
+        cursor.execute('ALTER TABLE conversations ADD COLUMN invite_token TEXT')
+    except sqlite3.OperationalError:
+        pass
+
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS push_subscriptions (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -294,6 +299,29 @@ def purge_read_files(conv_id, member_emails):
     conn.commit()
     conn.close()
     return to_delete
+
+# ── Invite links ─────────────────────────────────────────────────────────────
+
+def get_or_create_invite_token(conv_id):
+    import uuid as _uuid
+    conn = db_connect()
+    row = conn.execute('SELECT invite_token FROM conversations WHERE id=?', (conv_id,)).fetchone()
+    if row and row['invite_token']:
+        conn.close()
+        return row['invite_token']
+    token = _uuid.uuid4().hex
+    conn.execute('UPDATE conversations SET invite_token=? WHERE id=?', (token, conv_id))
+    conn.commit()
+    conn.close()
+    return token
+
+def get_conv_by_invite_token(token):
+    conn = db_connect()
+    row = conn.execute(
+        'SELECT id, name, is_group FROM conversations WHERE invite_token=? AND is_group=1', (token,)
+    ).fetchone()
+    conn.close()
+    return dict(row) if row else None
 
 # ── Push subscriptions ───────────────────────────────────────────────────────
 
