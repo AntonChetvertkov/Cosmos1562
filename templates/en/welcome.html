@@ -7,7 +7,7 @@
     <title>Cosmos1562 — Live Satellite Tracker</title>
     <meta name="description" content="Track satellites in real time — ISS, Starlink, GNSS, weather and more. Free live 3D globe with AI assistant.">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7518808989426617" crossorigin="anonymous"></script>
+    {% if show_google %}<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7518808989426617" crossorigin="anonymous"></script>{% endif %}
     <link rel="stylesheet" href="static/css/welcome.css?v=6">
     <link rel="canonical" href="https://cosmos1562.space/">
     <link rel="alternate" hreflang="en" href="https://cosmos1562.space/?lang=en">
@@ -50,7 +50,6 @@
                     <a href="/auth/login/yandex" class="oauth-btn oauth-yandex">
                         <img src="{{ url_for('static', filename='img/Yandex.png') }}" class="oauth-icon">
                     </a>
-                    <br>
                     {% if show_google %}
                     <a href="/auth/login/google" class="oauth-btn oauth-google">
                         <img src="{{ url_for('static', filename='img/Google.png') }}" class="oauth-icon">

@@ -485,6 +485,14 @@ button[type="submit"]:hover {
     text-transform: none;
 }
 
+.oauth-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+}
+
 .oauth-btn {
     display: flex;
     flex-direction: column;
