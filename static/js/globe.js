@@ -3285,9 +3285,9 @@ function placeSatMesh(sat_response, colour, isFree = false) {
 
 const FREE_CONSTELLATIONS = new Set([...WEATHER, ...STATIONS, 'STARLINK']);
 
-async function fetchCategory(category) {
+async function fetchCategory(category, attempt = 0) {
     try {
-        const response = await fetch(`/dynamic/sats/${category}`);
+        const response = await fetch(`/dynamic/sats/${category}.json`);
         if (!response.ok) return 0;
         const data = await response.json();
         if (!Array.isArray(data)) return 0;
@@ -3298,6 +3298,10 @@ async function fetchCategory(category) {
         }
         return data.length;
     } catch (e) {
+        if (attempt < 3) {
+            await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+            return fetchCategory(category, attempt + 1);
+        }
         console.warn(`fetchCategory(${category}) failed:`, e);
         return 0;
     }
