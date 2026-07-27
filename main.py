@@ -107,9 +107,40 @@ _CATEGORIES = {
 }
 _ALL_PATTERNS = [p for pats in _CATEGORIES.values() for p in pats]
 
+_mem_cache = {}
+
 def _cat_match(name, patterns):
     n = name.upper()
     return any(p in n for p in patterns)
+
+def _split_and_cache(data):
+    os.makedirs("dynamic/sats", exist_ok=True)
+    for cat, pats in _CATEGORIES.items():
+        filtered = [s for s in data if _cat_match(s['OBJECT_NAME'], pats)]
+        path = f"dynamic/sats/{cat}.json"
+        with open(path, "w") as f:
+            json.dump(filtered, f)
+        _mem_cache[cat] = filtered
+    other = [s for s in data if not _cat_match(s['OBJECT_NAME'], _ALL_PATTERNS)]
+    with open("dynamic/sats/other.json", "w") as f:
+        json.dump(other, f)
+    _mem_cache['other'] = other
+
+def _load_category(category):
+    if category in _mem_cache:
+        return _mem_cache[category]
+    path = f"dynamic/sats/{category}.json"
+    if os.path.exists(path) and os.path.getsize(path) > 0:
+        active_age = time.time() - os.path.getmtime(ACTIVE_PATH) if os.path.exists(ACTIVE_PATH) else 999999
+        if active_age < CACHE_MAX_AGE:
+            try:
+                with open(path, "r") as f:
+                    data = json.load(f)
+                _mem_cache[category] = data
+                return data
+            except json.JSONDecodeError:
+                pass
+    return None
 
 def get_satellite_data(PATH, URL):
     if os.path.exists(PATH) and os.path.getsize(PATH) > 0:
@@ -129,8 +160,10 @@ def get_satellite_data(PATH, URL):
 
         os.makedirs(os.path.dirname(PATH), exist_ok=True)
         with open(PATH, "w") as f:
-            json.dump(data, f, indent=4, sort_keys=True)
+            json.dump(data, f)
 
+        _mem_cache.clear()
+        _split_and_cache(data)
         return data
     except Exception as e:
         print(f"Error fetching {URL}: {type(e).__name__}: {e}")
@@ -360,12 +393,15 @@ def active():
 @app.route('/dynamic/sats/<category>')
 @limiter.limit(SAT_DATA_LIMIT)
 def sats_category(category):
+    if category not in _CATEGORIES and category != 'other':
+        return jsonify([])
+    cached = _load_category(category)
+    if cached is not None:
+        return jsonify(cached)
     data = get_satellite_data(ACTIVE_PATH, ACTIVE_URL)
     if category == 'other':
         return jsonify([s for s in data if not _cat_match(s['OBJECT_NAME'], _ALL_PATTERNS)])
     pats = _CATEGORIES.get(category)
-    if not pats:
-        return jsonify([])
     return jsonify([s for s in data if _cat_match(s['OBJECT_NAME'], pats)])
 
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', '')
@@ -474,6 +510,20 @@ def auth_callback_yandex():
         return redirect('/home')
     else:
         return redirect('/?error=Failed to create user account')
+
+def _warm_category_cache():
+    if os.path.exists(ACTIVE_PATH) and os.path.getsize(ACTIVE_PATH) > 0:
+        age = time.time() - os.path.getmtime(ACTIVE_PATH)
+        if age < CACHE_MAX_AGE:
+            try:
+                with open(ACTIVE_PATH, "r") as f:
+                    data = json.load(f)
+                _split_and_cache(data)
+                print(f"Category cache warmed ({len(data)} sats)")
+            except Exception as e:
+                print(f"Cache warm failed: {e}")
+
+_warm_category_cache()
 
 if __name__ == '__main__':
     init_db()
