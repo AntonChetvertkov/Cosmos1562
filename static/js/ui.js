@@ -1,4 +1,4 @@
-import { addCityMarkerToScene, toggleConstellation, focusSat, toggleCountryFilter, toggleOrbitFilter } from '/static/js/globe.js?v=4';
+import { addCityMarkerToScene, toggleConstellation, focusSat, toggleCountryFilter, toggleOrbitFilter } from '/static/js/globe.js?v=6';
 import { createConstellationPanel } from '/static/js/constellations.js?v=5';
 
 const IS_AUTHENTICATED = window.IS_AUTHENTICATED === true;

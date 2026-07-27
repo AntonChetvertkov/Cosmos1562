@@ -44,8 +44,7 @@
         {
             "imports": {
                 "three": "/static/js/vendor/three.module.js",
-                "three/addons/controls/OrbitControls.js": "/static/js/vendor/OrbitControls.js",
-                "satellite.js": "/static/js/vendor/satellite.js"
+                "three/addons/controls/OrbitControls.js": "/static/js/vendor/OrbitControls.js"
             }
         }
         </script>
@@ -533,7 +532,7 @@
 
         <script>window.IS_AUTHENTICATED = {{ 'true' if is_authenticated else 'false' }};</script>
         {% if is_authenticated and show_google %}<script>posthog.identify('{{ user_email }}', {name: '{{ user_name }}', plan: '{{ "paid" if is_paid else "basic" }}'});</script>{% endif %}
-        <script type="module" src="/static/js/globe.js?v=6"></script>
+        <script type="module" src="/static/js/globe.js?v=7"></script>
         <script type="module" src="/static/js/ui.js?v=5"></script>
     </body>
 </html>
