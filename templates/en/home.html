@@ -8,10 +8,8 @@
         <meta name="description" content="Track satellites in real time — ISS, Starlink, GNSS, weather and more. Free live 3D globe with AI assistant.">
         <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7518808989426617" crossorigin="anonymous"></script>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@400;600&display=optional" rel="stylesheet">
         <link rel="stylesheet" href="/static/css/home.css">
+        <link rel="canonical" href="https://cosmos1562.space/home">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <style>
             #response-message::-webkit-scrollbar { width: 8px; }
@@ -45,9 +43,9 @@
         <script type="importmap">
         {
             "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/",
-                "satellite.js": "https://cdn.jsdelivr.net/npm/satellite.js@7.0.0/dist/index.min.js"
+                "three": "/static/js/vendor/three.module.js",
+                "three/addons/controls/OrbitControls.js": "/static/js/vendor/OrbitControls.js",
+                "satellite.js": "/static/js/vendor/satellite.js"
             }
         }
         </script>
@@ -77,6 +75,9 @@
                 <span class="btn-icon">⬬</span>
                 <span class="btn-label">Chat</span>
             </button>
+            <button class="sidebar-btn" id="timewarp-btn">
+                <span class="btn-icon">⏱</span>
+                <span class="btn-label">Timewarp</span>
             <div class="sidebar-divider"></div>
             <button class="sidebar-btn">
                 <span class="btn-icon">⚙</span>
