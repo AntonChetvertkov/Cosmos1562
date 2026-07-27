@@ -251,16 +251,16 @@ const _hideLoader = () => {
     }
 };
 
-// Fire all category fetches in parallel — each renders as it arrives
 Promise.all([
     fetchCategory('stations').then(_updateLoader),
     fetchCategory('gnss').then(_updateLoader),
     fetchCategory('weather').then(_updateLoader),
     fetchCategory('resource').then(_updateLoader),
+]).then(() => Promise.all([
     fetchCategory('commercial').then(_updateLoader),
     fetchCategory('other').then(_updateLoader),
     fetchCategory('starlink').then(_updateLoader),
-]).then(_hideLoader);
+])).then(_hideLoader);
 
 const popup = document.createElement('div');
 popup.style.cssText = `
