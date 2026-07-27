@@ -5,6 +5,7 @@ load_dotenv()
 from flask import Flask, render_template, request, redirect, jsonify, session, url_for, send_from_directory, send_file, Response
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
+from flask_compress import Compress
 from werkzeug.security import check_password_hash
 from dbFuncs import (init_db, add_user, get_user_by_email, get_or_create_user_oauth,
                      get_ai_usage, increment_ai_count, update_user_name, update_user_email,
@@ -26,6 +27,7 @@ YANDEX_CLIENT_ID = os.getenv('YANDEX_CLIENT_ID')
 YANDEX_CLIENT_SECRET = os.getenv('YANDEX_CLIENT_SECRET')
 
 app = Flask(__name__)
+Compress(app)
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 if not SECRET_KEY or SECRET_KEY == 'dev-key-change-in-production':
