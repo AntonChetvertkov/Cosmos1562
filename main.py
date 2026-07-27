@@ -109,21 +109,28 @@ _CATEGORIES = {
 }
 _ALL_PATTERNS = [p for pats in _CATEGORIES.values() for p in pats]
 
+_SAT_FIELDS = {'OBJECT_NAME','NORAD_CAT_ID','EPOCH','MEAN_MOTION_DOT','MEAN_MOTION_DDOT',
+               'BSTAR','INCLINATION','RA_OF_ASC_NODE','ECCENTRICITY','ARG_OF_PERICENTER',
+               'MEAN_ANOMALY','MEAN_MOTION'}
+
 _mem_cache = {}
 
 def _cat_match(name, patterns):
     n = name.upper()
     return any(p in n for p in patterns)
 
+def _slim(sat):
+    return {k: sat[k] for k in _SAT_FIELDS if k in sat}
+
 def _split_and_cache(data):
     os.makedirs("dynamic/sats", exist_ok=True)
     for cat, pats in _CATEGORIES.items():
-        filtered = [s for s in data if _cat_match(s['OBJECT_NAME'], pats)]
+        filtered = [_slim(s) for s in data if _cat_match(s['OBJECT_NAME'], pats)]
         path = f"dynamic/sats/{cat}.json"
         with open(path, "w") as f:
             json.dump(filtered, f)
         _mem_cache[cat] = filtered
-    other = [s for s in data if not _cat_match(s['OBJECT_NAME'], _ALL_PATTERNS)]
+    other = [_slim(s) for s in data if not _cat_match(s['OBJECT_NAME'], _ALL_PATTERNS)]
     with open("dynamic/sats/other.json", "w") as f:
         json.dump(other, f)
     _mem_cache['other'] = other
