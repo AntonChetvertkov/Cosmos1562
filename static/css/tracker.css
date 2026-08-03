@@ -128,19 +128,21 @@ body::before {
 
 body.tier-anon #tracker-grid,
 body.tier-free #tracker-grid {
-    grid-template-columns: 300px 1fr 160px;
+    padding-right: 196px;
 }
 
 .ad-rail {
-    grid-column: 3;
-    grid-row: 1 / -1;
-    position: sticky;
+    position: fixed;
     top: 0;
+    right: 0;
+    width: 160px;
     height: 100vh;
-    align-self: start;
+    z-index: 5;
     display: flex;
     align-items: flex-start;
     justify-content: center;
+    background: var(--panel-bg);
+    border-left: 1px solid var(--cyan-dim);
 }
 
 .panel {
@@ -488,7 +490,7 @@ body.tier-free #tracker-grid {
 @media (max-width: 1100px) {
     body.tier-anon #tracker-grid,
     body.tier-free #tracker-grid {
-        grid-template-columns: 300px 1fr;
+        padding-right: 18px;
     }
     .ad-rail {
         display: none;

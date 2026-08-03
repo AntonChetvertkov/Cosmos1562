@@ -8,7 +8,7 @@
         <meta name="description" content="Прогноз пролётов и отслеживание спутников в реальном времени — любительские, МКС, ГНСС, метеоспутники и другие.">
         <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
         {% if show_google %}<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7518808989426617" crossorigin="anonymous"></script>{% endif %}
-        <link rel="stylesheet" href="/static/css/tracker.css?v=4">
+        <link rel="stylesheet" href="/static/css/tracker.css?v=5">
         <link rel="canonical" href="https://cosmos1562.space/tracker">
         <meta name="csrf-token" content="{{ csrf_token() }}">
     </head>
@@ -29,7 +29,7 @@
         </div>
 
         {% set lookahead_max = {'anon': 24, 'free': 72, 'pro': 336}[tier] %}
-        <script>window.TRACKER_TIER = "{{ tier }}"; window.VAPID_PUBLIC_KEY = "{{ vapid_public_key }}";</script>
+        <script>window.TRACKER_TIER = "{{ tier }}"; window.TRACKER_LANG = "{{ lang }}"; window.VAPID_PUBLIC_KEY = "{{ vapid_public_key }}";</script>
 
         <main id="tracker-grid">
             <section id="station-panel" class="panel">

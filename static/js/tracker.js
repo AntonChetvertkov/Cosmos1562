@@ -630,8 +630,15 @@ function finalizePass(p) {
     };
 }
 
+const IS_RU = window.TRACKER_LANG === 'ru';
+const DISPLAY_TZ = IS_RU ? 'Europe/Moscow' : 'UTC';
+const DISPLAY_TZ_LABEL = IS_RU ? 'MSK' : 'UTC';
+
 function formatTime(date) {
-    return date.toLocaleString(document.documentElement.lang || undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleString(IS_RU ? 'ru-RU' : 'en-US', {
+        timeZone: DISPLAY_TZ,
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
 }
 
 function formatDuration(seconds) {
@@ -832,12 +839,7 @@ if (alertsBtn) {
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(vapidKey),
             });
-            let timezone = null;
-            try {
-                timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            } catch {
-                timezone = null;
-            }
+            const timezone = DISPLAY_TZ;
             const res = await fetch('/api/push/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
@@ -864,13 +866,7 @@ if (loginPopupClose) loginPopupClose.addEventListener('click', () => {
 });
 
 const tzNameEl = document.getElementById('tz-name');
-if (tzNameEl) {
-    try {
-        tzNameEl.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    } catch {
-        tzNameEl.textContent = 'local time';
-    }
-}
+if (tzNameEl) tzNameEl.textContent = DISPLAY_TZ_LABEL;
 
 updateStationDisplay();
 if (station) syncStationToServer(station);

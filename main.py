@@ -351,6 +351,7 @@ def tracker():
         is_authenticated='authenticated' in session,
         show_google=show_google,
         tier=tier,
+        lang=lang,
         vapid_public_key=VAPID_PUBLIC_KEY or '',
     )
 
