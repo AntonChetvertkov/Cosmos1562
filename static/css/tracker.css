@@ -153,12 +153,11 @@ body.tier-free #tracker-grid {
 
 #station-panel { grid-column: 1; grid-row: 1; }
 #radar-panel { grid-column: 1; grid-row: 2; }
-#satellites-panel { grid-column: 1; grid-row: 3; }
-body.tier-anon #satellites-panel { grid-row: 2; }
+#live-panel { grid-column: 1; grid-row: 3; }
 
-#passes-panel { grid-column: 2; grid-row: 1; }
-#track-map-panel { grid-column: 2; grid-row: 2; }
-#live-panel { grid-column: 2; grid-row: 3; }
+#satellites-panel { grid-column: 2; grid-row: 1; }
+#passes-panel { grid-column: 2; grid-row: 2; }
+#track-map-panel { grid-column: 2; grid-row: 3; }
 
 .panel-title {
     font-family: 'Orbitron', sans-serif;
