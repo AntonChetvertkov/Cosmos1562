@@ -52,6 +52,11 @@ static/geolite/
 chat_files/
 
 # -----------------------------
+# Satellite data cache (regenerated on server start)
+# -----------------------------
+dynamic/sats/*.json
+
+# -----------------------------
 # Misc
 # -----------------------------
 *.tmp
