@@ -8,7 +8,7 @@
         <meta name="description" content="Ground station pass predictions and real-time satellite tracking — amateur, ISS, GNSS, weather and more.">
         <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
         {% if show_google %}<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7518808989426617" crossorigin="anonymous"></script>{% endif %}
-        <link rel="stylesheet" href="/static/css/tracker.css?v=6">
+        <link rel="stylesheet" href="/static/css/tracker.css?v=7">
         <link rel="canonical" href="https://cosmos1562.space/tracker">
         <meta name="csrf-token" content="{{ csrf_token() }}">
     </head>
@@ -118,6 +118,7 @@
                 <div class="track-map-controls">
                     <label for="passes-ahead">Passes ahead: <span id="passes-ahead-value">3</span></label>
                     <input type="range" id="passes-ahead" min="1" max="10" step="1" value="3">
+                    <button id="track-map-fullscreen" class="action-btn" style="width:auto;padding:6px 12px;">⛶ Fullscreen</button>
                 </div>
                 <canvas id="track-map" width="960" height="480" style="display:none;"></canvas>
                 <div id="track-map-empty" class="empty-msg">Select a satellite and set a ground station to see the ground track.</div>

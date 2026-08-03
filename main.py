@@ -14,7 +14,7 @@ from dbFuncs import (init_db, add_user, get_user_by_email, get_or_create_user_oa
                      add_push_subscription, get_users_with_alerts, get_favorites_for_user_id,
                      get_push_subscriptions_for_user_id, remove_push_subscription)
 from datetime import datetime, timedelta
-from ipTools import getCountryCode, getLanguage, getUserIp
+from ipTools import getCountryCode, getLanguage, getUserIp, getIpLocation
 from functools import wraps
 import requests
 import json
@@ -495,6 +495,13 @@ def account_favorite_notify(favorite_id):
     data = request.get_json(silent=True) or {}
     set_favorite_notify(session['user_email'], favorite_id, bool(data.get('notify_push')))
     return jsonify({'status': 'ok'})
+
+@app.route('/api/station-ip-location')
+def station_ip_location():
+    loc = getIpLocation(getUserIp())
+    if not loc:
+        return jsonify({'error': 'unavailable'}), 404
+    return jsonify(loc)
 
 @app.route('/push/vapid-public-key')
 def push_vapid_public_key():

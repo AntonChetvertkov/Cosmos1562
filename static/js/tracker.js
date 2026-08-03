@@ -770,14 +770,20 @@ function recompute() {
         if (HAS_EXTRAS) {
             document.getElementById('live-sat-name').textContent = '';
             document.getElementById('track-map-sat-name').textContent = '';
-            document.getElementById('track-map-empty').style.display = 'block';
-            document.getElementById('track-map').style.display = 'none';
             document.getElementById('radar-sat-name').textContent = '';
             document.getElementById('radar-empty').style.display = 'block';
             document.getElementById('radar-canvas').style.display = 'none';
             ['live-az', 'live-el', 'live-range', 'live-alt', 'live-vel', 'live-next'].forEach(id => {
                 document.getElementById(id).textContent = '—';
             });
+            if (station) {
+                document.getElementById('track-map-empty').style.display = 'none';
+                document.getElementById('track-map').style.display = 'block';
+                drawTrackMap([], station, null);
+            } else {
+                document.getElementById('track-map-empty').style.display = 'block';
+                document.getElementById('track-map').style.display = 'none';
+            }
         }
         return;
     }
@@ -806,6 +812,31 @@ function recompute() {
 }
 
 document.getElementById('recompute-passes').addEventListener('click', recompute);
+
+const trackMapFullscreenBtn = document.getElementById('track-map-fullscreen');
+if (trackMapFullscreenBtn) {
+    trackMapFullscreenBtn.addEventListener('click', () => {
+        const canvas = document.getElementById('track-map');
+        if (!canvas) return;
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        } else if (canvas.requestFullscreen) {
+            canvas.requestFullscreen();
+        }
+    });
+    document.addEventListener('fullscreenchange', () => {
+        const canvas = document.getElementById('track-map');
+        if (!canvas) return;
+        if (document.fullscreenElement === canvas) {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        } else {
+            canvas.width = 960;
+            canvas.height = 480;
+        }
+        recompute();
+    });
+}
 
 function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);

@@ -133,13 +133,20 @@ body.tier-free #tracker-grid {
 
 .ad-rail {
     position: fixed;
-    top: 18px;
+    top: 0;
     right: 18px;
     width: 160px;
+    height: 100vh;
     z-index: 5;
     display: flex;
     align-items: flex-start;
     justify-content: center;
+    pointer-events: none;
+}
+
+.ad-rail .ad-slot {
+    pointer-events: auto;
+    margin-top: 18px;
 }
 
 .panel {
@@ -451,6 +458,12 @@ body.tier-free #tracker-grid {
     display: block;
     border: 1px solid var(--cyan-dim);
     border-radius: 6px;
+    background: var(--bg);
+}
+
+#track-map:fullscreen {
+    width: 100vw;
+    height: 100vh;
     background: var(--bg);
 }
 
