@@ -509,7 +509,13 @@ function drawTrackMapMulti(sats, st) {
     }
 }
 
-function drawRadar(azDeg, elDeg) {
+function polarProject(azDeg, elDeg, cx, cy, radius) {
+    const r = radius * (1 - Math.max(0, elDeg) / 90);
+    const a = (azDeg - 90) * Math.PI / 180;
+    return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+}
+
+function drawRadar(azDeg, elDeg, track) {
     const canvas = document.getElementById('radar-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -541,11 +547,29 @@ function drawRadar(azDeg, elDeg) {
     ctx.fillText('E', cx + radius + 12, cy + 4);
     ctx.fillText('W', cx - radius - 12, cy + 4);
 
+    if (track && track.length > 1) {
+        ctx.strokeStyle = '#ff8800';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        track.forEach((pt, i) => {
+            const p = polarProject(pt.az, pt.el, cx, cy, radius);
+            if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+        });
+        ctx.stroke();
+
+        const start = polarProject(track[0].az, track[0].el, cx, cy, radius);
+        const end = polarProject(track[track.length - 1].az, track[track.length - 1].el, cx, cy, radius);
+        ctx.fillStyle = '#ff8800';
+        ctx.beginPath();
+        ctx.arc(start.x, start.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(end.x, end.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
     if (azDeg != null && elDeg != null && elDeg >= 0) {
-        const r = radius * (1 - elDeg / 90);
-        const a = (azDeg - 90) * Math.PI / 180;
-        const x = cx + r * Math.cos(a);
-        const y = cy + r * Math.sin(a);
+        const { x, y } = polarProject(azDeg, elDeg, cx, cy, radius);
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(x, y, 6, 0, Math.PI * 2);
@@ -645,6 +669,15 @@ function renderPasses(passes) {
     }
 }
 
+function computeRadarTrack(satrec, st, aos, los, stepSeconds = 15) {
+    const points = [];
+    for (let t = new Date(aos); t <= los; t = new Date(t.getTime() + stepSeconds * 1000)) {
+        const la = lookAnglesAt(satrec, t, st);
+        if (la && la.elevation >= 0) points.push({ az: la.azimuth, el: la.elevation });
+    }
+    return points;
+}
+
 function nextPassLabel() {
     const now = new Date();
     const active = currentPasses.find(p => p.aos <= now && p.los >= now);
@@ -708,7 +741,7 @@ function startTrackingLoop(st) {
                 document.getElementById('live-range').textContent = `${la.range.toFixed(0)} km`;
                 document.getElementById('live-alt').textContent = `${la.altitude.toFixed(0)} km`;
                 document.getElementById('live-vel').textContent = la.velocity ? `${la.velocity.toFixed(2)} km/s` : '—';
-                drawRadar(la.azimuth, la.elevation);
+                drawRadar(la.azimuth, la.elevation, selectedSat.radarTrack);
             }
         }
         document.getElementById('live-next').textContent = nextPassLabel();
@@ -755,6 +788,13 @@ function recompute() {
         ? computeMultiPasses(favoriteSatObjs, station, { minElevationDeg: minEl, lookaheadHours: hours })
         : computePasses(selectedSat.satrec, station, { minElevationDeg: minEl, lookaheadHours: hours }).map(p => ({ ...p, satName: selectedSat.name }));
     renderPasses(currentPasses);
+    if (!multiMode && selectedSat) {
+        const now = new Date();
+        const relevantPass = currentPasses.find(p => p.los >= now);
+        selectedSat.radarTrack = relevantPass
+            ? computeRadarTrack(selectedSat.satrec, station, relevantPass.aos, relevantPass.los)
+            : null;
+    }
     startTrackingLoop(station);
 }
 
@@ -822,6 +862,15 @@ const loginPopupClose = document.getElementById('login-popup-close');
 if (loginPopupClose) loginPopupClose.addEventListener('click', () => {
     document.getElementById('login-popup').style.display = 'none';
 });
+
+const tzNameEl = document.getElementById('tz-name');
+if (tzNameEl) {
+    try {
+        tzNameEl.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+        tzNameEl.textContent = 'local time';
+    }
+}
 
 updateStationDisplay();
 if (station) syncStationToServer(station);
