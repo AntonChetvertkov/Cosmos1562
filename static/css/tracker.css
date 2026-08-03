@@ -151,6 +151,15 @@ body.tier-free #tracker-grid {
     grid-column: 2 / 3;
 }
 
+#station-panel { grid-column: 1; grid-row: 1; }
+#radar-panel { grid-column: 1; grid-row: 2; }
+#satellites-panel { grid-column: 1; grid-row: 3; }
+body.tier-anon #satellites-panel { grid-row: 2; }
+
+#passes-panel { grid-column: 2; grid-row: 1; }
+#track-map-panel { grid-column: 2; grid-row: 2; }
+#live-panel { grid-column: 2; grid-row: 3; }
+
 .panel-title {
     font-family: 'Orbitron', sans-serif;
     font-size: 0.68rem;
@@ -570,7 +579,10 @@ body.tier-free #tracker-grid {
     body.tier-free #tracker-grid {
         grid-template-columns: 1fr;
     }
-    .panel.wide {
+    .panel.wide,
+    #station-panel, #radar-panel, #satellites-panel,
+    #passes-panel, #track-map-panel, #live-panel {
         grid-column: 1;
+        grid-row: auto;
     }
 }
