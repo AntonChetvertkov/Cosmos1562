@@ -12,7 +12,7 @@
         <link rel="canonical" href="https://cosmos1562.space/tracker">
         <meta name="csrf-token" content="{{ csrf_token() }}">
     </head>
-    <body>
+    <body class="tier-{{ tier }}">
         <div id="topbar">
             <div class="topbar-title">COSMOS1562<span class="topbar-sub">Трекер</span></div>
             <nav class="topbar-nav">
@@ -72,12 +72,14 @@
                 <ul id="sat-list" class="sat-list"></ul>
             </section>
 
-            {% if tier == 'free' %}
-            <div class="ad-slot ad-slot-side">
-                {% if show_google %}
-                <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7518808989426617" data-ad-format="auto" data-full-width-responsive="true"></ins>
-                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-                {% endif %}
+            {% if tier != 'pro' %}
+            <div class="ad-rail">
+                <div class="ad-slot ad-slot-rail">
+                    {% if show_google %}
+                    <ins class="adsbygoogle" style="display:inline-block;width:160px;height:600px" data-ad-client="ca-pub-7518808989426617" data-ad-slot="0000000000"></ins>
+                    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                    {% endif %}
+                </div>
             </div>
             {% endif %}
 
@@ -94,7 +96,7 @@
                 </div>
                 <table id="passes-table" style="display:none;">
                     <thead>
-                        <tr><th>AOS</th><th>Макс. высота</th><th>LOS</th><th>Длительность</th><th>Направление</th></tr>
+                        <tr><th>Спутник</th><th>AOS</th><th>Макс. высота</th><th>LOS</th><th>Длительность</th><th>Направление</th></tr>
                     </thead>
                     <tbody id="passes-body"></tbody>
                 </table>

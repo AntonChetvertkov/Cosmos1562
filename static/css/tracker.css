@@ -126,6 +126,19 @@ body::before {
     margin: 0 auto;
 }
 
+body.tier-anon #tracker-grid,
+body.tier-free #tracker-grid {
+    grid-template-columns: 300px 1fr 160px;
+}
+
+.ad-rail {
+    grid-column: 3;
+    grid-row: 1 / -1;
+    position: sticky;
+    top: 18px;
+    align-self: start;
+}
+
 .panel {
     background: var(--panel-bg);
     border: 1px solid var(--cyan-dim);
@@ -439,13 +452,24 @@ body::before {
     overflow: hidden;
 }
 
-.ad-slot-side {
-    min-height: 300px;
+.ad-slot-rail {
+    width: 160px;
+    min-height: 600px;
 }
 
 .ad-slot-banner {
     min-height: 160px;
     margin-bottom: 14px;
+}
+
+@media (max-width: 1100px) {
+    body.tier-anon #tracker-grid,
+    body.tier-free #tracker-grid {
+        grid-template-columns: 300px 1fr;
+    }
+    .ad-rail {
+        display: none;
+    }
 }
 
 .live-grid {
@@ -541,7 +565,9 @@ body::before {
 }
 
 @media (max-width: 900px) {
-    #tracker-grid {
+    #tracker-grid,
+    body.tier-anon #tracker-grid,
+    body.tier-free #tracker-grid {
         grid-template-columns: 1fr;
     }
     .panel.wide {

@@ -25,6 +25,11 @@ let currentPasses = [];
 let liveInterval = null;
 let favoriteNames = new Set();
 let favoritesById = {};
+let favoriteSatObjs = [];
+let ommLookupPromise = null;
+
+const TRACK_COLORS = ['#00c8ff', '#ff8800', '#00ff88', '#ff4477', '#aa88ff', '#ffee44', '#44ffee', '#ff6644'];
+const OMM_CATEGORIES = ['gnss', 'weather', 'stations', 'resource', 'starlink', 'commercial', 'other'];
 
 function csrfHeaders() {
     const meta = document.querySelector('meta[name="csrf-token"]');
@@ -188,7 +193,25 @@ function renderSatList(list) {
     }
 }
 
+async function getOmmLookup() {
+    if (!ommLookupPromise) {
+        ommLookupPromise = Promise.all(OMM_CATEGORIES.map(c =>
+            fetch(`/dynamic/sats/${c}`).then(r => r.json()).catch(() => [])
+        )).then(results => {
+            const lookup = {};
+            for (const list of results) {
+                for (const rec of list) {
+                    if (rec.NORAD_CAT_ID) lookup[String(rec.NORAD_CAT_ID)] = rec;
+                }
+            }
+            return lookup;
+        });
+    }
+    return ommLookupPromise;
+}
+
 async function loadFavorites() {
+    favoriteSatObjs = [];
     if (!HAS_EXTRAS) return;
     try {
         const res = await fetch('/account/favorites');
@@ -197,6 +220,22 @@ async function loadFavorites() {
         favoriteNames = new Set(favs.map(f => f.sat_name));
         favoritesById = {};
         for (const f of favs) favoritesById[f.sat_name] = f.id;
+
+        const needsOmm = favs.some(f => f.sat_source === 'omm');
+        const lookup = needsOmm ? await getOmmLookup() : null;
+        for (const f of favs) {
+            let satrec = null;
+            try {
+                if (f.sat_source === 'tle' && f.line1 && f.line2) {
+                    satrec = twoline2satrec(f.line1, f.line2);
+                } else if (f.sat_source === 'omm' && lookup && lookup[String(f.norad_id)]) {
+                    satrec = json2satrec(lookup[String(f.norad_id)]);
+                }
+            } catch {
+                satrec = null;
+            }
+            if (satrec) favoriteSatObjs.push({ name: f.sat_name, satrec, minElevation: f.min_elevation || 10 });
+        }
     } catch {
         favoriteNames = new Set();
     }
@@ -220,12 +259,11 @@ async function toggleFavorite(sat) {
             headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
             body: JSON.stringify(body),
         });
-        if (res.ok) {
-            favoriteNames.add(sat.name);
-            await loadFavorites();
-        }
+        if (res.ok) favoriteNames.add(sat.name);
     }
+    await loadFavorites();
     renderSatList(allSats);
+    recompute();
 }
 
 async function switchCategory(cat) {
@@ -255,7 +293,6 @@ function selectSatellite(sat) {
     selectedSat = sat;
     document.querySelectorAll('#sat-list li').forEach(li => li.classList.toggle('active', li.dataset.name === sat.name));
     if (!sat.satrec) sat.satrec = buildSatrec(sat);
-    updateGroundTrack(sat);
     recompute();
 }
 
@@ -263,7 +300,14 @@ const passesAheadInput = document.getElementById('passes-ahead');
 if (passesAheadInput) {
     passesAheadInput.addEventListener('input', e => {
         document.getElementById('passes-ahead-value').textContent = e.target.value;
-        if (selectedSat) updateGroundTrack(selectedSat);
+        const passesAhead = parseFloat(e.target.value) || 3;
+        if (favoriteSatObjs.length > 0) {
+            for (const s of favoriteSatObjs) {
+                s.groundTrack = computeGroundTrack(s.satrec, orbitalPeriodSeconds(s.satrec) * passesAhead);
+            }
+        } else if (selectedSat) {
+            updateGroundTrack(selectedSat);
+        }
     });
 }
 
@@ -398,6 +442,53 @@ function drawTrackMap(segments, st, currentPoint) {
     }
 }
 
+function drawTrackMapMulti(sats, st) {
+    const canvas = document.getElementById('track-map');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = '#060d18';
+    ctx.fillRect(0, 0, width, height);
+    if (mapImageReady) {
+        ctx.drawImage(mapImage, 0, 0, width, height);
+    }
+
+    sats.forEach((s, idx) => {
+        if (!s.groundTrack) return;
+        const color = TRACK_COLORS[idx % TRACK_COLORS.length];
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        for (const seg of s.groundTrack) {
+            ctx.beginPath();
+            seg.forEach((pt, i) => {
+                const p = projectPoint(pt.lon, pt.lat, width, height);
+                if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+            });
+            ctx.stroke();
+        }
+        if (s.currentPoint) {
+            const p = projectPoint(s.currentPoint.lon, s.currentPoint.lat, width, height);
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '11px sans-serif';
+            ctx.fillText(s.name, p.x + 8, p.y - 8);
+        }
+    });
+
+    if (st) {
+        const p = projectPoint(st.lon, st.lat, width, height);
+        ctx.fillStyle = '#00c8ff';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
 function drawRadar(azDeg, elDeg) {
     const canvas = document.getElementById('radar-canvas');
     if (!canvas) return;
@@ -475,6 +566,16 @@ function computePasses(satrec, st, { minElevationDeg = 10, lookaheadHours = 48, 
     return passes;
 }
 
+function computeMultiPasses(sats, st, opts) {
+    const all = [];
+    for (const s of sats) {
+        const passes = computePasses(s.satrec, st, { ...opts, minElevationDeg: s.minElevation || opts.minElevationDeg });
+        for (const p of passes) all.push({ ...p, satName: s.name });
+    }
+    all.sort((a, b) => a.aos - b.aos);
+    return all;
+}
+
 function finalizePass(p) {
     return {
         aos: p.aos,
@@ -507,13 +608,14 @@ function renderPasses(passes) {
     if (passes.length === 0) {
         const tr = document.createElement('tr');
         const cell = td('No passes above minimum elevation in this window.');
-        cell.colSpan = 5;
+        cell.colSpan = 6;
         tr.appendChild(cell);
         tbody.appendChild(tr);
         return;
     }
     for (const p of passes) {
         const tr = document.createElement('tr');
+        tr.appendChild(td(p.satName || ''));
         tr.appendChild(td(formatTime(p.aos)));
         tr.appendChild(td(`${p.maxElevation.toFixed(1)}°`));
         tr.appendChild(td(formatTime(p.los)));
@@ -537,27 +639,59 @@ function stopLiveTracking() {
     liveInterval = null;
 }
 
-function startLiveTracking(sat, satrec, st) {
+function startTrackingLoop(st) {
     stopLiveTracking();
     if (!HAS_EXTRAS) return;
-    document.getElementById('live-sat-name').textContent = ` — ${sat.name}`;
-    document.getElementById('track-map-sat-name').textContent = ` — ${sat.name}`;
+    const multiMode = favoriteSatObjs.length > 0;
+
     document.getElementById('track-map-empty').style.display = 'none';
     document.getElementById('track-map').style.display = 'block';
-    document.getElementById('radar-sat-name').textContent = ` — ${sat.name}`;
-    document.getElementById('radar-empty').style.display = 'none';
-    document.getElementById('radar-canvas').style.display = 'block';
+    document.getElementById('track-map-sat-name').textContent = multiMode
+        ? ` — ${favoriteSatObjs.length} starred`
+        : (selectedSat ? ` — ${selectedSat.name}` : '');
+
+    if (multiMode) {
+        const passesAhead = parseFloat(document.getElementById('passes-ahead')?.value) || 3;
+        for (const s of favoriteSatObjs) {
+            s.groundTrack = computeGroundTrack(s.satrec, orbitalPeriodSeconds(s.satrec) * passesAhead);
+        }
+    } else if (selectedSat) {
+        updateGroundTrack(selectedSat);
+    }
+
+    if (selectedSat) {
+        document.getElementById('live-sat-name').textContent = ` — ${selectedSat.name}`;
+        document.getElementById('radar-sat-name').textContent = ` — ${selectedSat.name}`;
+        document.getElementById('radar-empty').style.display = 'none';
+        document.getElementById('radar-canvas').style.display = 'block';
+    }
+
     const update = () => {
-        const la = lookAnglesAt(satrec, new Date(), st);
-        if (!la) return;
-        document.getElementById('live-az').textContent = `${la.azimuth.toFixed(1)}°`;
-        document.getElementById('live-el').textContent = `${la.elevation.toFixed(1)}°`;
-        document.getElementById('live-range').textContent = `${la.range.toFixed(0)} km`;
-        document.getElementById('live-alt').textContent = `${la.altitude.toFixed(0)} km`;
-        document.getElementById('live-vel').textContent = la.velocity ? `${la.velocity.toFixed(2)} km/s` : '—';
+        const now = new Date();
+
+        if (multiMode) {
+            for (const s of favoriteSatObjs) {
+                const la = lookAnglesAt(s.satrec, now, st);
+                s.currentPoint = la ? { lon: la.lon, lat: la.lat } : null;
+            }
+            drawTrackMapMulti(favoriteSatObjs, st);
+        } else if (selectedSat && selectedSat.groundTrack) {
+            const la = lookAnglesAt(selectedSat.satrec, now, st);
+            if (la) drawTrackMap(selectedSat.groundTrack, st, { lon: la.lon, lat: la.lat });
+        }
+
+        if (selectedSat) {
+            const la = lookAnglesAt(selectedSat.satrec, now, st);
+            if (la) {
+                document.getElementById('live-az').textContent = `${la.azimuth.toFixed(1)}°`;
+                document.getElementById('live-el').textContent = `${la.elevation.toFixed(1)}°`;
+                document.getElementById('live-range').textContent = `${la.range.toFixed(0)} km`;
+                document.getElementById('live-alt').textContent = `${la.altitude.toFixed(0)} km`;
+                document.getElementById('live-vel').textContent = la.velocity ? `${la.velocity.toFixed(2)} km/s` : '—';
+                drawRadar(la.azimuth, la.elevation);
+            }
+        }
         document.getElementById('live-next').textContent = nextPassLabel();
-        drawTrackMap(sat.groundTrack, st, { lon: la.lon, lat: la.lat });
-        drawRadar(la.azimuth, la.elevation);
     };
     update();
     liveInterval = setInterval(update, 1000);
@@ -566,7 +700,9 @@ function startLiveTracking(sat, satrec, st) {
 function recompute() {
     const passesEmpty = document.getElementById('passes-empty');
     const passesTable = document.getElementById('passes-table');
-    if (!selectedSat || !station) {
+    const multiMode = favoriteSatObjs.length > 0;
+
+    if (!station || (!selectedSat && !multiMode)) {
         passesEmpty.style.display = 'block';
         passesTable.style.display = 'none';
         document.getElementById('passes-sat-name').textContent = '';
@@ -587,15 +723,19 @@ function recompute() {
     }
     passesEmpty.style.display = 'none';
     passesTable.style.display = '';
-    document.getElementById('passes-sat-name').textContent = ` — ${selectedSat.name}`;
+    document.getElementById('passes-sat-name').textContent = multiMode
+        ? ` — ${favoriteSatObjs.length} starred`
+        : ` — ${selectedSat.name}`;
     const maxHours = TIER_LOOKAHEAD_HOURS[TIER] || 24;
     const minEl = parseFloat(document.getElementById('min-elevation').value) || 10;
     const rawHours = parseFloat(document.getElementById('lookahead-hours').value) || maxHours;
     const hours = Math.min(maxHours, Math.max(1, rawHours));
     document.getElementById('lookahead-hours').value = hours;
-    currentPasses = computePasses(selectedSat.satrec, station, { minElevationDeg: minEl, lookaheadHours: hours });
+    currentPasses = multiMode
+        ? computeMultiPasses(favoriteSatObjs, station, { minElevationDeg: minEl, lookaheadHours: hours })
+        : computePasses(selectedSat.satrec, station, { minElevationDeg: minEl, lookaheadHours: hours }).map(p => ({ ...p, satName: selectedSat.name }));
     renderPasses(currentPasses);
-    startLiveTracking(selectedSat, selectedSat.satrec, station);
+    startTrackingLoop(station);
 }
 
 document.getElementById('recompute-passes').addEventListener('click', recompute);
