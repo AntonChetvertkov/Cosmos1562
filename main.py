@@ -808,7 +808,7 @@ def _send_push(subs, title, aos_dt):
 
 def _check_pass_alerts():
     now = datetime.utcnow()
-    soon = now + timedelta(minutes=8)
+    horizon = now + timedelta(minutes=10)
     for user in get_users_with_alerts():
         favorites = get_favorites_for_user_id(user['id'])
         if not favorites:
@@ -821,16 +821,13 @@ def _check_pass_alerts():
             if not satrec:
                 continue
             min_el = fav['min_elevation'] or 10
-            el_now = _elevation_at(satrec, now, user['station_lat'], user['station_lon'], user['station_alt'])
-            el_soon = _elevation_at(satrec, soon, user['station_lat'], user['station_lon'], user['station_alt'])
-            if el_now is None or el_soon is None:
+            aos_dt = _find_aos_time(satrec, now, horizon, min_el, user['station_lat'], user['station_lon'], user['station_alt'])
+            if not aos_dt:
                 continue
-            about_to_rise = el_now < min_el <= el_soon
             key = fav['id']
-            slot = now.strftime('%Y-%m-%d %H')
-            if about_to_rise and _notified_passes.get(key) != slot:
+            slot = aos_dt.strftime('%Y-%m-%d %H:%M')
+            if _notified_passes.get(key) != slot:
                 _notified_passes[key] = slot
-                aos_dt = _find_aos_time(satrec, now, soon, min_el, user['station_lat'], user['station_lon'], user['station_alt'])
                 _send_push(subs, f"{fav['sat_name']} pass starting soon", aos_dt)
 
 if VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY:
