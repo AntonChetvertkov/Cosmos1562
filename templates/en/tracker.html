@@ -56,6 +56,14 @@
                 <div id="station-msg" class="station-msg"></div>
             </section>
 
+            {% if tier != 'anon' %}
+            <section id="radar-panel" class="panel">
+                <h2 class="panel-title">Radar<span id="radar-sat-name"></span></h2>
+                <canvas id="radar-canvas" width="360" height="360" style="display:none;"></canvas>
+                <div id="radar-empty" class="empty-msg">Select a satellite and set a ground station to see the radar.</div>
+            </section>
+            {% endif %}
+
             <section id="satellites-panel" class="panel">
                 <h2 class="panel-title">Satellites</h2>
                 <div class="cat-tabs" id="cat-tabs">
@@ -94,6 +102,7 @@
                     </label>
                     <button id="recompute-passes" class="action-btn">Recompute</button>
                 </div>
+                <div class="tz-label">Times shown in <span id="tz-name">—</span></div>
                 <table id="passes-table" style="display:none;">
                     <thead>
                         <tr><th>Satellite</th><th>AOS</th><th>Max El</th><th>LOS</th><th>Duration</th><th>Direction</th></tr>
@@ -112,12 +121,6 @@
                 </div>
                 <canvas id="track-map" width="960" height="480" style="display:none;"></canvas>
                 <div id="track-map-empty" class="empty-msg">Select a satellite and set a ground station to see the ground track.</div>
-            </section>
-
-            <section id="radar-panel" class="panel">
-                <h2 class="panel-title">Radar<span id="radar-sat-name"></span></h2>
-                <canvas id="radar-canvas" width="360" height="360" style="display:none;"></canvas>
-                <div id="radar-empty" class="empty-msg">Select a satellite and set a ground station to see the radar.</div>
             </section>
 
             <section id="live-panel" class="panel wide">

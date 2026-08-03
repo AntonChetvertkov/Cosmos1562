@@ -325,6 +325,12 @@ if (passesAheadInput) {
     });
 }
 
+function applyRefraction(elevationDeg) {
+    if (elevationDeg > 20 || elevationDeg < -1) return elevationDeg;
+    const r = 1.02 / Math.tan((elevationDeg + 10.3 / (elevationDeg + 5.11)) * Math.PI / 180) / 60;
+    return elevationDeg + r;
+}
+
 function lookAnglesAt(satrec, date, st) {
     const pv = propagate(satrec, date);
     if (!pv || !pv.position) return null;
@@ -341,7 +347,7 @@ function lookAnglesAt(satrec, date, st) {
     const speed = vel ? Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z) : null;
     return {
         azimuth: (look.azimuth * 180 / Math.PI + 360) % 360,
-        elevation: look.elevation * 180 / Math.PI,
+        elevation: applyRefraction(look.elevation * 180 / Math.PI),
         range: look.rangeSat,
         altitude: geo.height,
         velocity: speed,
@@ -816,6 +822,15 @@ const loginPopupClose = document.getElementById('login-popup-close');
 if (loginPopupClose) loginPopupClose.addEventListener('click', () => {
     document.getElementById('login-popup').style.display = 'none';
 });
+
+const tzNameEl = document.getElementById('tz-name');
+if (tzNameEl) {
+    try {
+        tzNameEl.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+        tzNameEl.textContent = 'local time';
+    }
+}
 
 updateStationDisplay();
 if (station) syncStationToServer(station);

@@ -710,6 +710,7 @@ _warm_amateur_cache()
 _EARTH_A = 6378.137
 _EARTH_B = 6356.7523142
 _notified_passes = {}
+_last_check_time = None
 
 def _gmst(jd_ut1):
     tut1 = (jd_ut1 - 2451545.0) / 36525.0
@@ -788,9 +789,14 @@ def _find_aos_time(satrec, start, end, min_el, lat, lon, alt, step_seconds=30):
         t += timedelta(seconds=step_seconds)
     return None
 
-def _send_push(subs, title, aos_dt):
+def _send_push(subs, title, aos_dt=None, static_body=None):
     for sub in subs:
-        body = f"AOS at {_format_local_time(aos_dt, sub['timezone'])}" if aos_dt else "Pass starting soon."
+        if static_body:
+            body = static_body
+        elif aos_dt:
+            body = f"AOS at {_format_local_time(aos_dt, sub['timezone'])}"
+        else:
+            body = "Pass update."
         try:
             webpush(
                 subscription_info={
@@ -807,7 +813,9 @@ def _send_push(subs, title, aos_dt):
             print(f"Push failed: {e}")
 
 def _check_pass_alerts():
+    global _last_check_time
     now = datetime.utcnow()
+    scan_start = _last_check_time or (now - timedelta(minutes=5))
     horizon = now + timedelta(minutes=10)
     for user in get_users_with_alerts():
         favorites = get_favorites_for_user_id(user['id'])
@@ -821,14 +829,25 @@ def _check_pass_alerts():
             if not satrec:
                 continue
             min_el = fav['min_elevation'] or 10
-            aos_dt = _find_aos_time(satrec, now, horizon, min_el, user['station_lat'], user['station_lon'], user['station_alt'])
-            if not aos_dt:
-                continue
-            key = fav['id']
-            slot = aos_dt.strftime('%Y-%m-%d %H:%M')
-            if _notified_passes.get(key) != slot:
-                _notified_passes[key] = slot
-                _send_push(subs, f"{fav['sat_name']} pass starting soon", aos_dt)
+            lat, lon, alt = user['station_lat'], user['station_lon'], user['station_alt']
+
+            entered_dt = _find_aos_time(satrec, scan_start, now, min_el, lat, lon, alt, step_seconds=15)
+            if entered_dt:
+                enter_key = f"{fav['id']}_enter"
+                enter_slot = entered_dt.strftime('%Y-%m-%d %H:%M')
+                if _notified_passes.get(enter_key) != enter_slot:
+                    _notified_passes[enter_key] = enter_slot
+                    _send_push(subs, f"{fav['sat_name']} is visible now",
+                               static_body="Satellite has risen above your elevation threshold.")
+
+            aos_dt = _find_aos_time(satrec, now, horizon, min_el, lat, lon, alt)
+            if aos_dt:
+                warn_key = f"{fav['id']}_warn"
+                warn_slot = aos_dt.strftime('%Y-%m-%d %H:%M')
+                if _notified_passes.get(warn_key) != warn_slot:
+                    _notified_passes[warn_key] = warn_slot
+                    _send_push(subs, f"{fav['sat_name']} pass starting soon", aos_dt=aos_dt)
+    _last_check_time = now
 
 if VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY:
     _scheduler = BackgroundScheduler()
