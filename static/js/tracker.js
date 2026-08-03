@@ -823,15 +823,6 @@ if (loginPopupClose) loginPopupClose.addEventListener('click', () => {
     document.getElementById('login-popup').style.display = 'none';
 });
 
-const tzNameEl = document.getElementById('tz-name');
-if (tzNameEl) {
-    try {
-        tzNameEl.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    } catch {
-        tzNameEl.textContent = 'local time';
-    }
-}
-
 updateStationDisplay();
 if (station) syncStationToServer(station);
 loadFavorites().then(() => {

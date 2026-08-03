@@ -730,6 +730,12 @@ def _geodetic_to_ecf(lat, lon, height):
     z = (normal * (1 - e2) + height) * math.sin(lat)
     return x, y, z
 
+def _apply_refraction(elevation_deg):
+    if elevation_deg > 20 or elevation_deg < -1:
+        return elevation_deg
+    r = 1.02 / math.tan(math.radians(elevation_deg + 10.3 / (elevation_deg + 5.11))) / 60
+    return elevation_deg + r
+
 def _elevation_at(satrec, dt, lat_deg, lon_deg, alt_m):
     jd, fr = sgp4_jday(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second + dt.microsecond / 1e6)
     error, position, _velocity = satrec.sgp4(jd, fr)
@@ -750,7 +756,7 @@ def _elevation_at(satrec, dt, lat_deg, lon_deg, alt_m):
     rng = math.sqrt(top_s ** 2 + top_e ** 2 + top_z ** 2)
     if rng == 0:
         return None
-    return math.degrees(math.asin(top_z / rng))
+    return _apply_refraction(math.degrees(math.asin(top_z / rng)))
 
 def _build_satrec_from_favorite(fav):
     if fav['sat_source'] == 'tle' and fav['line1'] and fav['line2']:
