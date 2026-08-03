@@ -62,6 +62,11 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    for col, defn in [('timezone', 'TEXT')]:
+        try:
+            cursor.execute(f'ALTER TABLE push_subscriptions ADD COLUMN {col} {defn}')
+        except sqlite3.OperationalError:
+            pass
     conn.commit()
     conn.close()
 
@@ -298,15 +303,15 @@ def set_favorite_notify(email, favorite_id, notify_push):
     conn.commit()
     conn.close()
 
-def add_push_subscription(email, endpoint, p256dh, auth):
+def add_push_subscription(email, endpoint, p256dh, auth, timezone=None):
     user_id = get_user_id_by_email(email)
     if not user_id:
         return False
     conn = db_connect()
     conn.execute('''
-        INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth) VALUES (?, ?, ?, ?)
-        ON CONFLICT(endpoint) DO UPDATE SET user_id = excluded.user_id, p256dh = excluded.p256dh, auth = excluded.auth
-    ''', (user_id, endpoint, p256dh, auth))
+        INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth, timezone) VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(endpoint) DO UPDATE SET user_id = excluded.user_id, p256dh = excluded.p256dh, auth = excluded.auth, timezone = excluded.timezone
+    ''', (user_id, endpoint, p256dh, auth, timezone))
     conn.commit()
     conn.close()
     return True

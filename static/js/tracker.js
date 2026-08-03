@@ -72,7 +72,21 @@ function applyStation(s) {
     station = s;
     saveStation(station);
     updateStationDisplay();
+    syncStationToServer(s);
     recompute();
+}
+
+async function syncStationToServer(s) {
+    if (!HAS_EXTRAS) return;
+    try {
+        await fetch('/account/station', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+            body: JSON.stringify({ name: s.name, lat: s.lat, lon: s.lon, alt: s.alt }),
+        });
+    } catch {
+        showStationMsg('Saved locally, but could not sync to your account for alerts.', true);
+    }
 }
 
 document.getElementById('geo-btn').addEventListener('click', () => {
@@ -772,10 +786,16 @@ if (alertsBtn) {
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(vapidKey),
             });
+            let timezone = null;
+            try {
+                timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            } catch {
+                timezone = null;
+            }
             const res = await fetch('/api/push/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-                body: JSON.stringify({ subscription: sub.toJSON() }),
+                body: JSON.stringify({ subscription: sub.toJSON(), timezone }),
             });
             showStationMsg(res.ok ? 'Pass alerts enabled — favorite a satellite to get notified.' : 'Could not enable alerts.', !res.ok);
         } catch {
@@ -798,6 +818,7 @@ if (loginPopupClose) loginPopupClose.addEventListener('click', () => {
 });
 
 updateStationDisplay();
+if (station) syncStationToServer(station);
 loadFavorites().then(() => {
     switchCategory(currentCategory).then(() => {
         if (station) recompute();

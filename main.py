@@ -20,6 +20,7 @@ import requests
 import json
 import time
 import math
+from zoneinfo import ZoneInfo
 from authlib.integrations.flask_client import OAuth
 from aiFuncs import aiInteract
 from sgp4.api import Satrec, jday as sgp4_jday
@@ -507,7 +508,8 @@ def push_subscribe():
     keys = sub.get('keys') or {}
     if not endpoint or not keys.get('p256dh') or not keys.get('auth'):
         return jsonify({'error': 'Invalid subscription'}), 400
-    add_push_subscription(session['user_email'], endpoint, keys['p256dh'], keys['auth'])
+    timezone = data.get('timezone')
+    add_push_subscription(session['user_email'], endpoint, keys['p256dh'], keys['auth'], timezone)
     return jsonify({'status': 'ok'})
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -768,8 +770,27 @@ def _build_satrec_from_favorite(fav):
         return sat
     return None
 
-def _send_push(subs, title, body):
+def _format_local_time(dt_utc, tz_name):
+    if tz_name:
+        try:
+            local = dt_utc.replace(tzinfo=ZoneInfo('UTC')).astimezone(ZoneInfo(tz_name))
+            return local.strftime('%H:%M')
+        except Exception:
+            pass
+    return dt_utc.strftime('%H:%M UTC')
+
+def _find_aos_time(satrec, start, end, min_el, lat, lon, alt, step_seconds=30):
+    t = start
+    while t <= end:
+        el = _elevation_at(satrec, t, lat, lon, alt)
+        if el is not None and el >= min_el:
+            return t
+        t += timedelta(seconds=step_seconds)
+    return None
+
+def _send_push(subs, title, aos_dt):
     for sub in subs:
+        body = f"AOS at {_format_local_time(aos_dt, sub['timezone'])}" if aos_dt else "Pass starting soon."
         try:
             webpush(
                 subscription_info={
@@ -809,8 +830,8 @@ def _check_pass_alerts():
             slot = now.strftime('%Y-%m-%d %H')
             if about_to_rise and _notified_passes.get(key) != slot:
                 _notified_passes[key] = slot
-                _send_push(subs, f"{fav['sat_name']} pass starting soon",
-                           "Elevation will exceed your alert threshold within ~8 minutes.")
+                aos_dt = _find_aos_time(satrec, now, soon, min_el, user['station_lat'], user['station_lon'], user['station_alt'])
+                _send_push(subs, f"{fav['sat_name']} pass starting soon", aos_dt)
 
 if VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY:
     _scheduler = BackgroundScheduler()
