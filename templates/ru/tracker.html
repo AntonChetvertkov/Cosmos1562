@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        {% if show_google %}<script>!function(t,e){var o,n,p,r;e.__SV||(window.posthog&&window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="xi Si init Ni ji pr qi Ui $i capture calculateEventProperties Zi register register_once register_for_session unregister unregister_for_session Yi getFeatureFlag getFeatureFlagPayload getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey displaySurvey cancelPendingSurvey canRenderSurvey canRenderSurveyAsync Ki identify setPersonProperties unsetPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset setIdentity clearIdentity get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException addExceptionStep captureLog startExceptionAutocapture stopExceptionAutocapture loadToolbar get_property getSessionProperty Qi Wi createPersonProfile setInternalOrTestUser Ji Fi tn opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing get_explicit_consent_status is_capturing clear_opt_in_out_capturing zi debug mr it getPageViewId captureTraceFeedback captureTraceMetric Ri".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);posthog.init('phc_AjnYLKYcknK3wbzJFtrA28X3R3RjBTbXWUcwa6soRnUM',{api_host:'https://eu.i.posthog.com',defaults:'2026-05-30',person_profiles:'identified_only'});</script>{% endif %}
+        <title>Cosmos1562 — Трекер спутников</title>
+        <meta name="description" content="Прогноз пролётов и отслеживание спутников в реальном времени — любительские, МКС, ГНСС, метеоспутники и другие.">
+        <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+        {% if show_google %}<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7518808989426617" crossorigin="anonymous"></script>{% endif %}
+        <link rel="stylesheet" href="/static/css/tracker.css">
+        <link rel="canonical" href="https://cosmos1562.space/tracker">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+    </head>
+    <body>
+        <div id="topbar">
+            <div class="topbar-title">COSMOS1562<span class="topbar-sub">Трекер</span></div>
+            <nav class="topbar-nav">
+                <a href="/globe" class="topbar-link">3D-глобус · Демо</a>
+                {% if is_authenticated %}
+                <form method="post" action="/logout" class="inline-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="topbar-link">Выйти</button>
+                </form>
+                {% else %}
+                <button type="button" class="topbar-link" id="login-btn">Войти</button>
+                {% endif %}
+            </nav>
+        </div>
+
+        {% set lookahead_max = {'anon': 24, 'free': 72, 'pro': 336}[tier] %}
+        <script>window.TRACKER_TIER = "{{ tier }}"; window.VAPID_PUBLIC_KEY = "{{ vapid_public_key }}";</script>
+
+        <main id="tracker-grid">
+            <section id="station-panel" class="panel">
+                <h2 class="panel-title">Наземная станция</h2>
+                <div id="station-current">
+                    <div class="station-name" id="station-name-display">Не задано</div>
+                    <div class="station-coords" id="station-coords-display">— , —</div>
+                </div>
+                <div class="station-actions">
+                    <button id="geo-btn" class="action-btn">Определить автоматически</button>
+                    <button id="ip-btn" class="action-btn">Определить по IP</button>
+                    <button id="manual-btn" class="action-btn">Ввести вручную</button>
+                    {% if tier != 'anon' %}
+                    <button id="alerts-btn" class="action-btn">Включить уведомления</button>
+                    {% endif %}
+                </div>
+                <div id="manual-form" class="manual-form" hidden>
+                    <input type="text" id="manual-name" placeholder="Название станции">
+                    <input type="number" id="manual-lat" placeholder="Широта" step="any" min="-90" max="90">
+                    <input type="number" id="manual-lon" placeholder="Долгота" step="any" min="-180" max="180">
+                    <input type="number" id="manual-alt" placeholder="Высота (м)" step="any" value="0">
+                    <button id="manual-save" class="action-btn primary">Сохранить</button>
+                </div>
+                <div id="station-msg" class="station-msg"></div>
+            </section>
+
+            <section id="satellites-panel" class="panel">
+                <h2 class="panel-title">Спутники</h2>
+                <div class="cat-tabs" id="cat-tabs">
+                    <button class="cat-tab active" data-cat="amateur">Любительские</button>
+                    <button class="cat-tab" data-cat="stations">Станции</button>
+                    <button class="cat-tab" data-cat="gnss">ГНСС</button>
+                    <button class="cat-tab" data-cat="weather">Погодные</button>
+                    <button class="cat-tab" data-cat="resource">ДЗЗ</button>
+                    <button class="cat-tab" data-cat="starlink">Starlink</button>
+                    <button class="cat-tab" data-cat="commercial">Коммерческие</button>
+                    <button class="cat-tab" data-cat="other">Другие</button>
+                </div>
+                <input type="text" id="sat-search" placeholder="Поиск спутника...">
+                <ul id="sat-list" class="sat-list"></ul>
+            </section>
+
+            {% if tier == 'free' %}
+            <div class="ad-slot ad-slot-side">
+                {% if show_google %}
+                <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7518808989426617" data-ad-format="auto" data-full-width-responsive="true"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <section id="passes-panel" class="panel wide">
+                <h2 class="panel-title">Ближайшие пролёты<span id="passes-sat-name"></span></h2>
+                <div class="passes-controls">
+                    <label>Мин. высота (°)
+                        <input type="number" id="min-elevation" value="10" min="0" max="89" {% if tier == 'anon' %}disabled{% endif %}>
+                    </label>
+                    <label>Горизонт (ч)
+                        <input type="number" id="lookahead-hours" value="{{ lookahead_max if tier == 'anon' else [48, lookahead_max]|min }}" min="1" max="{{ lookahead_max }}" {% if tier == 'anon' %}disabled{% endif %}>
+                    </label>
+                    <button id="recompute-passes" class="action-btn">Пересчитать</button>
+                </div>
+                <table id="passes-table" style="display:none;">
+                    <thead>
+                        <tr><th>AOS</th><th>Макс. высота</th><th>LOS</th><th>Длительность</th><th>Направление</th></tr>
+                    </thead>
+                    <tbody id="passes-body"></tbody>
+                </table>
+                <div id="passes-empty" class="empty-msg">Выберите спутник, чтобы увидеть пролёты.</div>
+            </section>
+
+            {% if tier != 'anon' %}
+            <section id="track-map-panel" class="panel wide">
+                <h2 class="panel-title">Наземная траектория<span id="track-map-sat-name"></span></h2>
+                <div class="track-map-controls">
+                    <label for="passes-ahead">Витков вперёд: <span id="passes-ahead-value">3</span></label>
+                    <input type="range" id="passes-ahead" min="1" max="10" step="1" value="3">
+                </div>
+                <canvas id="track-map" width="960" height="480" style="display:none;"></canvas>
+                <div id="track-map-empty" class="empty-msg">Выберите спутник и укажите наземную станцию, чтобы увидеть наземную траекторию.</div>
+            </section>
+
+            <section id="radar-panel" class="panel">
+                <h2 class="panel-title">Радар<span id="radar-sat-name"></span></h2>
+                <canvas id="radar-canvas" width="360" height="360" style="display:none;"></canvas>
+                <div id="radar-empty" class="empty-msg">Выберите спутник и укажите наземную станцию, чтобы увидеть радар.</div>
+            </section>
+
+            <section id="live-panel" class="panel wide">
+                <h2 class="panel-title">Отслеживание в реальном времени<span id="live-sat-name"></span></h2>
+                <div class="live-grid">
+                    <div class="live-stat"><span class="live-label">Азимут</span><span class="live-value" id="live-az">—</span></div>
+                    <div class="live-stat"><span class="live-label">Высота</span><span class="live-value" id="live-el">—</span></div>
+                    <div class="live-stat"><span class="live-label">Дальность</span><span class="live-value" id="live-range">—</span></div>
+                    <div class="live-stat"><span class="live-label">Высота орбиты</span><span class="live-value" id="live-alt">—</span></div>
+                    <div class="live-stat"><span class="live-label">Скорость</span><span class="live-value" id="live-vel">—</span></div>
+                    <div class="live-stat"><span class="live-label">Следующий AOS / LOS</span><span class="live-value" id="live-next">—</span></div>
+                </div>
+            </section>
+            {% else %}
+            <section id="track-map-panel" class="panel wide">
+                <h2 class="panel-title">Наземная траектория</h2>
+                <div class="ad-slot ad-slot-banner">
+                    {% if show_google %}
+                    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7518808989426617" data-ad-format="auto" data-full-width-responsive="true"></ins>
+                    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                    {% endif %}
+                </div>
+                <div class="empty-msg">Войдите, чтобы открыть карту наземной траектории, радар и отслеживание в реальном времени.</div>
+            </section>
+            {% endif %}
+        </main>
+
+        <footer class="lang-footer">
+            <select onchange="if(this.value) window.location.href = window.location.pathname + '?lang=' + this.value;">
+                <option value="">Язык</option>
+                <option value="en">English</option>
+                <option value="ru" selected>Русский</option>
+            </select>
+        </footer>
+
+        <div id="cookie-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#0a1628;border-top:1px solid #1a4a6b;padding:14px 24px;z-index:9999;font-family:'Orbitron',sans-serif;font-size:0.55rem;letter-spacing:0.08em;color:#a8d4e8;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+            <span>Мы используем куки для аналитики и рекламы. <a href="/AUP" style="color:#00c8ff;">Политика использования файлов cookie</a></span>
+            <button onclick="acceptCookies()" style="background:#00c8ff;color:#050510;border:none;padding:8px 20px;font-family:'Orbitron',sans-serif;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;border-radius:4px;white-space:nowrap;">Принять</button>
+        </div>
+        <script>
+            function acceptCookies() {
+                document.cookie = 'cosmos_consent=1; max-age=31536000; path=/; SameSite=Lax';
+                document.getElementById('cookie-banner').style.display = 'none';
+            }
+            if (!document.cookie.split('; ').find(r => r.startsWith('cosmos_consent='))) {
+                document.getElementById('cookie-banner').style.display = 'flex';
+            }
+        </script>
+
+        <div id="login-popup" style="display:none; position:fixed; inset:0; z-index:9998; background:rgba(3,5,16,0.8); align-items:center; justify-content:center;">
+            <div style="background:#0a1628; border:1px solid #1a4a6b; border-radius:10px; padding:28px 32px; min-width:320px; max-width:90vw; font-family:'Orbitron',sans-serif;">
+                <div style="font-size:0.8rem; letter-spacing:0.18em; text-transform:uppercase; color:#00c8ff; margin-bottom:20px; text-align:center;">Войдите, чтобы продолжить</div>
+                <form method="post" action="/">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="next" value="/tracker">
+                    <input type="email" name="email" placeholder="Email" required class="popup-input">
+                    <input type="password" name="password" placeholder="Пароль" required class="popup-input">
+                    <button type="submit" class="popup-btn">Войти</button>
+                </form>
+                <a href="/register" class="popup-btn">Регистрация</a>
+                <div style="display:flex; gap:12px; justify-content:center; margin-top:6px;">
+                    <a href="/auth/login/yandex"><img src="{{ url_for('static', filename='img/Yandex.png') }}" style="width:46px; border-radius:23px;"></a>
+                    {% if show_google %}<a href="/auth/login/google"><img src="{{ url_for('static', filename='img/Google.png') }}" style="width:46px; border-radius:23px;"></a>{% endif %}
+                </div>
+                <div id="login-popup-close" style="text-align:center; margin-top:18px; font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase; color:#1a6a8b; cursor:pointer;">Закрыть</div>
+            </div>
+        </div>
+
+        <script>window.IS_AUTHENTICATED = {{ 'true' if is_authenticated else 'false' }};</script>
+        <script type="module" src="/static/js/tracker.js?v=1"></script>
+    </body>
+</html>

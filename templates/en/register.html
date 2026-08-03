@@ -44,5 +44,13 @@
                 
             </form>
         </div>
+
+        <footer class="lang-footer">
+            <select onchange="if(this.value) window.location.href = window.location.pathname + '?lang=' + this.value;">
+                <option value="">Language</option>
+                <option value="en" selected>English</option>
+                <option value="ru">Русский</option>
+            </select>
+        </footer>
     </body>
 </html>

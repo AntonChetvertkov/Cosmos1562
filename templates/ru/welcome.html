@@ -104,6 +104,14 @@
 
         <h2 style="font-size:1.05rem;letter-spacing:0.2em;text-transform:uppercase;color:#00c8ff;margin-bottom:14px;">Бесплатно</h2>
         <p style="font-size:0.85rem;line-height:1.8;max-width:720px;">Учётная запись не требуется для просмотра глобуса. Создайте бесплатный аккаунт, чтобы разблокировать все спутниковые созвездия, фильтры, поиск, маркеры городов и ИИ-ассистент.</p>
+
+        <div class="lang-footer">
+            <select onchange="if(this.value) window.location.href = window.location.pathname + '?lang=' + this.value;">
+                <option value="">Язык</option>
+                <option value="en">English</option>
+                <option value="ru" selected>Русский</option>
+            </select>
+        </div>
     </footer>
 
     <div id="cookie-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#0a1628;border-top:1px solid #1a4a6b;padding:14px 24px;z-index:9999;font-family:'Orbitron',sans-serif;font-size:0.55rem;letter-spacing:0.08em;color:#a8d4e8;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">

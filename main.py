@@ -5,21 +5,33 @@ load_dotenv()
 from flask import Flask, render_template, request, redirect, jsonify, session, url_for, send_from_directory, send_file, Response
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
-from flask_compress import Compress
 from werkzeug.security import check_password_hash
 from dbFuncs import (init_db, add_user, get_user_by_email, get_or_create_user_oauth,
                      get_ai_usage, increment_ai_count, update_user_name, update_user_email,
-                     update_user_password, delete_user, get_admin_stats, set_user_tier)
+                     update_user_password, delete_user, get_admin_stats, set_user_tier,
+                     get_user_station, set_user_station, list_favorite_satellites,
+                     add_favorite_satellite, remove_favorite_satellite, set_favorite_notify,
+                     add_push_subscription, get_users_with_alerts, get_favorites_for_user_id,
+                     get_push_subscriptions_for_user_id, remove_push_subscription)
 from datetime import datetime, timedelta
 from ipTools import getCountryCode, getLanguage, getUserIp
 from functools import wraps
 import requests
 import json
 import time
+import math
 from authlib.integrations.flask_client import OAuth
 from aiFuncs import aiInteract
+from sgp4.api import Satrec, jday as sgp4_jday
+from sgp4 import omm as sgp4_omm
+from pywebpush import webpush, WebPushException
+from apscheduler.schedulers.background import BackgroundScheduler
 
 DEBUG_MODE = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
+
+VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY')
+VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY')
+VAPID_CLAIMS_EMAIL = os.getenv('VAPID_CLAIMS_EMAIL', 'mailto:admin@example.com')
 
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
@@ -27,7 +39,6 @@ YANDEX_CLIENT_ID = os.getenv('YANDEX_CLIENT_ID')
 YANDEX_CLIENT_SECRET = os.getenv('YANDEX_CLIENT_SECRET')
 
 app = Flask(__name__)
-Compress(app)
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 if not SECRET_KEY or SECRET_KEY == 'dev-key-change-in-production':
@@ -92,6 +103,8 @@ yandex = oauth.register(
 
 ACTIVE_PATH = "dynamic/sats/active.json"
 ACTIVE_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=json"
+AMATEUR_TLE_URL = "http://r4uab.ru/satonline.txt"
+AMATEUR_TLE_PATH = "dynamic/sats/amateur.json"
 CACHE_MAX_AGE = 72 * 3600
 
 _CATEGORIES = {
@@ -186,6 +199,49 @@ def get_satellite_data(PATH, URL):
                 pass
         return []
 
+def _parse_tle_text(text):
+    lines = [l.strip() for l in text.strip().splitlines() if l.strip()]
+    sats = []
+    i = 0
+    while i + 2 < len(lines):
+        name, line1, line2 = lines[i], lines[i+1], lines[i+2]
+        if line1.startswith('1 ') and line2.startswith('2 '):
+            sats.append({'name': name, 'line1': line1, 'line2': line2})
+        i += 3
+    return sats
+
+def get_amateur_tle_data():
+    if os.path.exists(AMATEUR_TLE_PATH) and os.path.getsize(AMATEUR_TLE_PATH) > 0:
+        age = time.time() - os.path.getmtime(AMATEUR_TLE_PATH)
+        if age < CACHE_MAX_AGE:
+            try:
+                with open(AMATEUR_TLE_PATH, "r") as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                print(f"file corrupted: {AMATEUR_TLE_PATH}")
+
+    try:
+        print(f"Fetching {AMATEUR_TLE_URL}")
+        response = requests.get(AMATEUR_TLE_URL, headers={'User-Agent': 'Mozilla/5.0'}, timeout=30)
+        response.raise_for_status()
+        sats = _parse_tle_text(response.text)
+
+        os.makedirs(os.path.dirname(AMATEUR_TLE_PATH), exist_ok=True)
+        with open(AMATEUR_TLE_PATH, "w") as f:
+            json.dump(sats, f)
+        return sats
+    except Exception as e:
+        print(f"Error fetching {AMATEUR_TLE_URL}: {type(e).__name__}: {e}")
+        if os.path.exists(AMATEUR_TLE_PATH) and os.path.getsize(AMATEUR_TLE_PATH) > 0:
+            try:
+                with open(AMATEUR_TLE_PATH, "r") as f:
+                    cached = json.load(f)
+                    print(f"Using cached data ({len(cached)} sats)")
+                    return cached
+            except Exception:
+                pass
+        return []
+
 def get_template(name, lang):
     return f"{lang}/{name}"
 
@@ -219,16 +275,22 @@ def index():
             return render_template(get_template('welcome.html', lang), error="Invalid email or password",
                                    lang=lang, show_google=show_google, next_url=next_url)
     if 'authenticated' in session:
-        return redirect('/home')
+        return redirect('/tracker')
     return render_template(get_template('welcome.html', lang), lang=lang, show_google=show_google, next_url=next_url)
 
 FREE_AI_LIMIT = 15
 
 @app.route('/home')
-def home():
+def home_redirect():
+    return redirect('/globe')
+
+@app.route('/globe')
+def globe_view():
     IP = getUserIp()
     country_code = getCountryCode(IP)
-    lang = getLanguage(country_code)
+    lang = request.args.get('lang', getLanguage(country_code))
+    if lang not in ['en', 'ru']:
+        lang = getLanguage(country_code)
     show_google = country_code != 'RU'
 
     if 'authenticated' not in session:
@@ -266,6 +328,29 @@ def home():
         google_linked=bool(user and user['google_id']),
         yandex_linked=bool(user and user['yandex_id']),
         show_google=show_google,
+    )
+
+def _resolve_tier():
+    if 'authenticated' not in session:
+        return 'anon'
+    _, acc_type = get_ai_usage(session.get('user_email'))
+    return 'pro' if acc_type == 'PAID' else 'free'
+
+@app.route('/tracker')
+def tracker():
+    IP = getUserIp()
+    country_code = getCountryCode(IP)
+    lang = request.args.get('lang', getLanguage(country_code))
+    if lang not in ['en', 'ru']:
+        lang = getLanguage(country_code)
+    show_google = country_code != 'RU'
+    tier = _resolve_tier()
+    return render_template(
+        get_template('tracker.html', lang),
+        is_authenticated='authenticated' in session,
+        show_google=show_google,
+        tier=tier,
+        vapid_public_key=VAPID_PUBLIC_KEY or '',
     )
 
 @app.route('/ai/chat', methods=['POST'])
@@ -352,11 +437,86 @@ def account_export():
         headers={'Content-Disposition': 'attachment; filename=cosmos1562_data.json'}
     )
 
+@app.route('/account/station', methods=['GET', 'POST'])
+@login_required
+def account_station():
+    email = session['user_email']
+    if request.method == 'GET':
+        return jsonify(get_user_station(email) or {})
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or 'My Station').strip()
+    try:
+        lat = float(data['lat'])
+        lon = float(data['lon'])
+        alt = float(data.get('alt') or 0)
+    except (KeyError, TypeError, ValueError):
+        return jsonify({'error': 'Invalid station data'}), 400
+    if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
+        return jsonify({'error': 'Latitude/longitude out of range'}), 400
+    set_user_station(email, name, lat, lon, alt)
+    return jsonify({'status': 'ok'})
+
+@app.route('/account/favorites', methods=['GET', 'POST'])
+@login_required
+def account_favorites():
+    email = session['user_email']
+    if request.method == 'GET':
+        return jsonify(list_favorite_satellites(email))
+    data = request.get_json(silent=True) or {}
+    sat_name = (data.get('sat_name') or '').strip()
+    sat_source = data.get('sat_source')
+    if not sat_name or sat_source not in ('tle', 'omm'):
+        return jsonify({'error': 'Invalid favorite data'}), 400
+    try:
+        min_elevation = float(data.get('min_elevation') or 10)
+    except (TypeError, ValueError):
+        min_elevation = 10
+    ok = add_favorite_satellite(
+        email, sat_name, sat_source,
+        line1=data.get('line1'), line2=data.get('line2'),
+        norad_id=str(data.get('norad_id')) if data.get('norad_id') else None,
+        min_elevation=min_elevation,
+    )
+    if not ok:
+        return jsonify({'error': 'Could not add favorite'}), 400
+    return jsonify({'status': 'ok'})
+
+@app.route('/account/favorites/<int:favorite_id>', methods=['DELETE'])
+@login_required
+def account_favorite_delete(favorite_id):
+    remove_favorite_satellite(session['user_email'], favorite_id)
+    return jsonify({'status': 'ok'})
+
+@app.route('/account/favorites/<int:favorite_id>/notify', methods=['POST'])
+@login_required
+def account_favorite_notify(favorite_id):
+    data = request.get_json(silent=True) or {}
+    set_favorite_notify(session['user_email'], favorite_id, bool(data.get('notify_push')))
+    return jsonify({'status': 'ok'})
+
+@app.route('/push/vapid-public-key')
+def push_vapid_public_key():
+    return jsonify({'key': VAPID_PUBLIC_KEY or ''})
+
+@app.route('/api/push/subscribe', methods=['POST'])
+@login_required
+def push_subscribe():
+    data = request.get_json(silent=True) or {}
+    sub = data.get('subscription') or {}
+    endpoint = sub.get('endpoint')
+    keys = sub.get('keys') or {}
+    if not endpoint or not keys.get('p256dh') or not keys.get('auth'):
+        return jsonify({'error': 'Invalid subscription'}), 400
+    add_push_subscription(session['user_email'], endpoint, keys['p256dh'], keys['auth'])
+    return jsonify({'status': 'ok'})
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     IP = getUserIp()
     country_code = getCountryCode(IP)
-    lang = getLanguage(country_code)
+    lang = request.args.get('lang', getLanguage(country_code))
+    if lang not in ['en', 'ru']:
+        lang = getLanguage(country_code)
     show_google = country_code != 'RU'
     if request.method == 'POST':
         email = request.form.get('email')
@@ -400,8 +560,11 @@ def active():
     return jsonify(get_satellite_data(ACTIVE_PATH, ACTIVE_URL))
 
 @app.route('/dynamic/sats/<category>')
+@app.route('/dynamic/sats/<category>.json')
 @limiter.limit(SAT_DATA_LIMIT)
 def sats_category(category):
+    if category == 'amateur':
+        return jsonify(get_amateur_tle_data())
     if category not in _CATEGORIES and category != 'other':
         return jsonify([])
     cached = _load_category(category)
@@ -492,7 +655,7 @@ def auth_callback_google():
         session['authenticated'] = True
         session['user_email'] = email
         session['user_name'] = name
-        return redirect('/home')
+        return redirect('/tracker')
     else:
         return redirect('/?error=Failed to create user account')
 
@@ -516,7 +679,7 @@ def auth_callback_yandex():
         session['authenticated'] = True
         session['user_email'] = email
         session['user_name'] = name
-        return redirect('/home')
+        return redirect('/tracker')
     else:
         return redirect('/?error=Failed to create user account')
 
@@ -532,7 +695,129 @@ def _warm_category_cache():
             except Exception as e:
                 print(f"Cache warm failed: {e}")
 
+def _warm_amateur_cache():
+    try:
+        sats = get_amateur_tle_data()
+        print(f"Amateur TLE cache warmed ({len(sats)} sats)")
+    except Exception as e:
+        print(f"Amateur TLE warm failed: {e}")
+
 _warm_category_cache()
+_warm_amateur_cache()
+
+_EARTH_A = 6378.137
+_EARTH_B = 6356.7523142
+_notified_passes = {}
+
+def _gmst(jd_ut1):
+    tut1 = (jd_ut1 - 2451545.0) / 36525.0
+    temp = (-6.2e-6 * tut1 ** 3 + 0.093104 * tut1 ** 2 +
+            (876600.0 * 3600 + 8640184.812866) * tut1 + 67310.54841)
+    temp = math.radians(temp / 240.0) % (2 * math.pi)
+    if temp < 0:
+        temp += 2 * math.pi
+    return temp
+
+def _geodetic_to_ecf(lat, lon, height):
+    f = (_EARTH_A - _EARTH_B) / _EARTH_A
+    e2 = 2 * f - f * f
+    normal = _EARTH_A / math.sqrt(1 - e2 * math.sin(lat) ** 2)
+    x = (normal + height) * math.cos(lat) * math.cos(lon)
+    y = (normal + height) * math.cos(lat) * math.sin(lon)
+    z = (normal * (1 - e2) + height) * math.sin(lat)
+    return x, y, z
+
+def _elevation_at(satrec, dt, lat_deg, lon_deg, alt_m):
+    jd, fr = sgp4_jday(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second + dt.microsecond / 1e6)
+    error, position, _velocity = satrec.sgp4(jd, fr)
+    if error != 0 or position is None:
+        return None
+    gmst = _gmst(jd + fr)
+    x = position[0] * math.cos(gmst) + position[1] * math.sin(gmst)
+    y = -position[0] * math.sin(gmst) + position[1] * math.cos(gmst)
+    z = position[2]
+    lat = math.radians(lat_deg)
+    lon = math.radians(lon_deg)
+    height = (alt_m or 0) / 1000
+    ox, oy, oz = _geodetic_to_ecf(lat, lon, height)
+    rx, ry, rz = x - ox, y - oy, z - oz
+    top_s = math.sin(lat) * math.cos(lon) * rx + math.sin(lat) * math.sin(lon) * ry - math.cos(lat) * rz
+    top_e = -math.sin(lon) * rx + math.cos(lon) * ry
+    top_z = math.cos(lat) * math.cos(lon) * rx + math.cos(lat) * math.sin(lon) * ry + math.sin(lat) * rz
+    rng = math.sqrt(top_s ** 2 + top_e ** 2 + top_z ** 2)
+    if rng == 0:
+        return None
+    return math.degrees(math.asin(top_z / rng))
+
+def _build_satrec_from_favorite(fav):
+    if fav['sat_source'] == 'tle' and fav['line1'] and fav['line2']:
+        try:
+            return Satrec.twoline2rv(fav['line1'], fav['line2'])
+        except Exception:
+            return None
+    if fav['sat_source'] == 'omm' and fav['norad_id']:
+        data = get_satellite_data(ACTIVE_PATH, ACTIVE_URL)
+        record = next((s for s in data if str(s.get('NORAD_CAT_ID')) == str(fav['norad_id'])), None)
+        if not record:
+            return None
+        sat = Satrec()
+        try:
+            sgp4_omm.initialize(sat, record)
+        except Exception:
+            return None
+        return sat
+    return None
+
+def _send_push(subs, title, body):
+    for sub in subs:
+        try:
+            webpush(
+                subscription_info={
+                    'endpoint': sub['endpoint'],
+                    'keys': {'p256dh': sub['p256dh'], 'auth': sub['auth']},
+                },
+                data=json.dumps({'title': title, 'body': body}),
+                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_claims={'sub': VAPID_CLAIMS_EMAIL},
+            )
+        except WebPushException as e:
+            if '410' in str(e) or '404' in str(e):
+                remove_push_subscription(sub['endpoint'])
+            print(f"Push failed: {e}")
+
+def _check_pass_alerts():
+    now = datetime.utcnow()
+    soon = now + timedelta(minutes=8)
+    for user in get_users_with_alerts():
+        favorites = get_favorites_for_user_id(user['id'])
+        if not favorites:
+            continue
+        subs = get_push_subscriptions_for_user_id(user['id'])
+        if not subs:
+            continue
+        for fav in favorites:
+            satrec = _build_satrec_from_favorite(fav)
+            if not satrec:
+                continue
+            min_el = fav['min_elevation'] or 10
+            el_now = _elevation_at(satrec, now, user['station_lat'], user['station_lon'], user['station_alt'])
+            el_soon = _elevation_at(satrec, soon, user['station_lat'], user['station_lon'], user['station_alt'])
+            if el_now is None or el_soon is None:
+                continue
+            about_to_rise = el_now < min_el <= el_soon
+            key = fav['id']
+            slot = now.strftime('%Y-%m-%d %H')
+            if about_to_rise and _notified_passes.get(key) != slot:
+                _notified_passes[key] = slot
+                _send_push(subs, f"{fav['sat_name']} pass starting soon",
+                           "Elevation will exceed your alert threshold within ~8 minutes.")
+
+if VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY:
+    _scheduler = BackgroundScheduler()
+    _scheduler.add_job(_check_pass_alerts, 'interval', minutes=5, id='pass_alerts')
+    _scheduler.start()
+else:
+    print("VAPID keys not configured; pass alerts disabled")
 
 if __name__ == '__main__':
     init_db()

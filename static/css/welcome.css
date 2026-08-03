@@ -548,3 +548,23 @@ a.register-btn:hover {
         max-width: 50px !important;
     }
 }
+
+.lang-footer {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    padding: 4px 0 0 0;
+}
+
+.lang-footer select {
+    background: #0a1628;
+    border: 1px solid var(--cyan-dim);
+    color: var(--cyan);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    padding: 7px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}

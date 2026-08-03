@@ -29,11 +29,39 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    for col, defn in [('daily_ai_count', 'INTEGER DEFAULT 0'), ('last_ai_date', 'TEXT')]:
+    for col, defn in [
+        ('daily_ai_count', 'INTEGER DEFAULT 0'), ('last_ai_date', 'TEXT'),
+        ('station_name', 'TEXT'), ('station_lat', 'REAL'), ('station_lon', 'REAL'), ('station_alt', 'REAL'),
+    ]:
         try:
             cursor.execute(f'ALTER TABLE users ADD COLUMN {col} {defn}')
         except sqlite3.OperationalError:
             pass
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS favorite_satellites (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL REFERENCES users(id),
+            sat_name TEXT NOT NULL,
+            sat_source TEXT NOT NULL,
+            line1 TEXT,
+            line2 TEXT,
+            norad_id TEXT,
+            min_elevation REAL DEFAULT 10,
+            notify_push INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL REFERENCES users(id),
+            endpoint TEXT NOT NULL UNIQUE,
+            p256dh TEXT NOT NULL,
+            auth TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     conn.commit()
     conn.close()
 
@@ -197,6 +225,122 @@ def get_admin_stats():
         'ai_today': ai_today, 'at_limit': at_limit,
         'users': [dict(u) for u in users],
     }
+
+def get_user_station(email):
+    conn = db_connect()
+    row = conn.execute(
+        'SELECT station_name, station_lat, station_lon, station_alt FROM users WHERE email = ?', (email,)
+    ).fetchone()
+    conn.close()
+    if not row or row['station_lat'] is None or row['station_lon'] is None:
+        return None
+    return {
+        'name': row['station_name'] or 'My Station',
+        'lat': row['station_lat'],
+        'lon': row['station_lon'],
+        'alt': row['station_alt'] or 0,
+    }
+
+def set_user_station(email, name, lat, lon, alt):
+    conn = db_connect()
+    conn.execute(
+        'UPDATE users SET station_name = ?, station_lat = ?, station_lon = ?, station_alt = ? WHERE email = ?',
+        (name, lat, lon, alt, email)
+    )
+    conn.commit()
+    conn.close()
+
+def get_user_id_by_email(email):
+    conn = db_connect()
+    row = conn.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone()
+    conn.close()
+    return row['id'] if row else None
+
+def list_favorite_satellites(email):
+    conn = db_connect()
+    rows = conn.execute('''
+        SELECT f.* FROM favorite_satellites f
+        JOIN users u ON u.id = f.user_id
+        WHERE u.email = ?
+        ORDER BY f.created_at DESC
+    ''', (email,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def add_favorite_satellite(email, sat_name, sat_source, line1=None, line2=None, norad_id=None, min_elevation=10):
+    user_id = get_user_id_by_email(email)
+    if not user_id:
+        return False
+    conn = db_connect()
+    conn.execute('''
+        INSERT INTO favorite_satellites (user_id, sat_name, sat_source, line1, line2, norad_id, min_elevation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (user_id, sat_name, sat_source, line1, line2, norad_id, min_elevation))
+    conn.commit()
+    conn.close()
+    return True
+
+def remove_favorite_satellite(email, favorite_id):
+    conn = db_connect()
+    conn.execute('''
+        DELETE FROM favorite_satellites
+        WHERE id = ? AND user_id = (SELECT id FROM users WHERE email = ?)
+    ''', (favorite_id, email))
+    conn.commit()
+    conn.close()
+
+def set_favorite_notify(email, favorite_id, notify_push):
+    conn = db_connect()
+    conn.execute('''
+        UPDATE favorite_satellites SET notify_push = ?
+        WHERE id = ? AND user_id = (SELECT id FROM users WHERE email = ?)
+    ''', (1 if notify_push else 0, favorite_id, email))
+    conn.commit()
+    conn.close()
+
+def add_push_subscription(email, endpoint, p256dh, auth):
+    user_id = get_user_id_by_email(email)
+    if not user_id:
+        return False
+    conn = db_connect()
+    conn.execute('''
+        INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth) VALUES (?, ?, ?, ?)
+        ON CONFLICT(endpoint) DO UPDATE SET user_id = excluded.user_id, p256dh = excluded.p256dh, auth = excluded.auth
+    ''', (user_id, endpoint, p256dh, auth))
+    conn.commit()
+    conn.close()
+    return True
+
+def get_users_with_alerts():
+    conn = db_connect()
+    rows = conn.execute('''
+        SELECT DISTINCT u.id, u.email, u.station_lat, u.station_lon, u.station_alt
+        FROM users u
+        JOIN favorite_satellites f ON f.user_id = u.id AND f.notify_push = 1
+        WHERE u.station_lat IS NOT NULL AND u.station_lon IS NOT NULL
+    ''').fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_favorites_for_user_id(user_id):
+    conn = db_connect()
+    rows = conn.execute(
+        'SELECT * FROM favorite_satellites WHERE user_id = ? AND notify_push = 1', (user_id,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_push_subscriptions_for_user_id(user_id):
+    conn = db_connect()
+    rows = conn.execute('SELECT * FROM push_subscriptions WHERE user_id = ?', (user_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def remove_push_subscription(endpoint):
+    conn = db_connect()
+    conn.execute('DELETE FROM push_subscriptions WHERE endpoint = ?', (endpoint,))
+    conn.commit()
+    conn.close()
 
 if __name__ == "__main__":
     init_db()

@@ -294,3 +294,21 @@ input[type="text"] {
     transition: border-color 0.25s var(--ease), background 0.25s var(--ease), box-shadow 0.25s var(--ease);
     margin-bottom: 1rem;
 }
+.lang-footer {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 100;
+}
+
+.lang-footer select {
+    background: var(--sidebar-bg);
+    border: 1px solid var(--cyan-dim);
+    color: var(--cyan);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    padding: 6px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
