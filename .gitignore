@@ -1,65 +1,24 @@
-# -----------------------------
-# Python
-# -----------------------------
-__pycache__/
 *.py[cod]
 *.pyo
 *.pyd
 *.so
 
-# Virtual environments
 venv/
 env/
 .venv/
-
-# -----------------------------
-# Environment variables
-# -----------------------------
 .env
-
-# -----------------------------
-# Database files (IMPORTANT)
-# -----------------------------
 DBs/
 *.db
 *.sqlite3
 userTable.db
-
-# -----------------------------
-# Logs
-# -----------------------------
 *.log
-
-# -----------------------------
-# VS Code
-# -----------------------------
 .vscode/
-
-# -----------------------------
-# OS files
-# -----------------------------
+.claude/
 .DS_Store
 Thumbs.db
-
-# -----------------------------
-# GeoLite2 database (MaxMind license prohibits redistribution)
-# -----------------------------
 static/geolite/
-
-# -----------------------------
-# Chat uploaded files (ephemeral)
-# -----------------------------
 chat_files/
-
-# -----------------------------
-# Satellite data cache (regenerated on server start)
-# -----------------------------
 dynamic/sats/*.json
-
-# -----------------------------
-# Misc
-# -----------------------------
 *.tmp
 *.swp
-
 .env
