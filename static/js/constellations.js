@@ -111,7 +111,6 @@ export const DEFAULT_OFF_CONSTELLATIONS = new Set(
 export function getConstellationName(satName) {
     const n = satName.toUpperCase();
 
-    // GNSS — check specific names first
     if (n.includes('GLONASS')) return 'GLONASS';
     if (n.includes('BEIDOU'))  return 'BEIDOU';
     if (n.includes('GALILEO')) return 'GALILEO';
@@ -119,18 +118,15 @@ export function getConstellationName(satName) {
     if (n.includes('QZSS'))    return 'QZSS';
     if (n.includes('GPS'))     return 'GPS';
 
-    // Stations
     if (n.startsWith('ISS'))   return 'ISS';
     if (n.startsWith('CSS'))   return 'CSS';
 
-    // Commercial constellations
     if (n.includes('STARLINK')) return 'STARLINK';
     if (n.includes('ONEWEB'))   return 'ONEWEB';
     if (n.includes('IRIDIUM'))  return 'IRIDIUM';
     if (n.includes('KUIPER'))   return 'KUIPER';
     if (n.includes('QIANFAN'))  return 'QIANFAN';
 
-    // Weather — longer patterns before shorter to avoid prefix collisions
     if (n.includes('METEOSAT')) return 'METEOSAT';
     if (n.includes('METOP'))    return 'METOP';
     if (n.includes('METEOR'))   return 'METEOR';
@@ -148,7 +144,6 @@ export function getConstellationName(satName) {
     if (n.includes('INSAT'))    return 'INSAT';
     if (n.includes('COMS') && !n.includes('COSMOS')) return 'COMS';
 
-    // Earth Observation — longer/more-specific before shorter
     if (n.includes('TERRASAR'))    return 'TERRASAR';
     if (n.includes('TANDEM-X'))    return 'TANDEM-X';
     if (n.includes('COSMO-SKYMED'))return 'COSMO-SKYMED';
@@ -218,7 +213,6 @@ export function createConstellationPanel(isAuth = true) {
         max-height:420px; overflow-y:auto;
     `;
 
-    // Toggle-all row
     const toggleAllRow = document.createElement('div');
     toggleAllRow.style.cssText = 'display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid #1a4a6b;';
     const toggleAllLabel = document.createElement('span');

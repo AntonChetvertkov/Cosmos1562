@@ -206,15 +206,6 @@ body::before {
     margin: 4px 2px;
 }
 
-/* #map-placeholder {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1;
-} */
-
 .cosmos-title {
     font-size: 0.65rem;
     letter-spacing: 0.4em;

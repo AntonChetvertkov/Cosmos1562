@@ -41,23 +41,7 @@ export const capitals = [
     { name: "London",         lat: 51.5074,  lon: -0.1278  },
 ];
 
-// Colour palette by country/operator
-// Russia   → red       (red)
-// USA      → blue      (blue)
-// China    → yellow    (yellow)
-// EU       → cyan      (cyan)
-// India    → orange    (orange)
-// Japan    → purple    (purple)
-// UK       → cyan (shares EU/cyan – closest ally, distinct from US blue)
-// S.Korea  → #00ff99  (teal-green)
-// Brazil   → #33dd55  (green)
-// Israel   → #ff99cc  (pink)
-// Canada   → #ffaa33  (amber)
-// Intl/ISS → #00ff88
-// Unknown  → #ffffff
-
 export function getSatColour(name) {
-    // ── Russia ──────────────────────────────────────────────────────────────
     if (name.includes('COSMOS'))     return 'red';
     if (name.includes('LUCH'))       return 'red';
     if (name.includes('GLONASS'))    return 'red';
@@ -74,7 +58,6 @@ export function getSatColour(name) {
     if (name.includes('PERSEUS'))    return 'red';
     if (name.includes('SITRO'))      return 'red';
 
-    // ── USA ─────────────────────────────────────────────────────────────────
     if (name.includes('GPS'))        return 'blue';
     if (name.includes('STARLINK'))   return 'blue';
     if (name.includes('DMSP'))       return 'blue';
@@ -109,7 +92,6 @@ export function getSatColour(name) {
     if (name.includes('LMRST'))      return 'blue';
     if (name.includes('GRBBETA'))    return 'blue';
 
-    // ── China ────────────────────────────────────────────────────────────────
     if (name.includes('BEIDOU'))     return 'yellow';
     if (name.includes('FENGYUN'))    return 'yellow';
     if (name.includes('TIANMU'))     return 'yellow';
@@ -125,7 +107,6 @@ export function getSatColour(name) {
     if (name.includes('FORMOSAT'))   return 'yellow';
     if (name.includes('CSS'))        return 'yellow';
 
-    // ── EU (Europe) ─────────────────────────────────────────────────────────
     if (name.includes('GALILEO'))    return 'cyan';
     if (name.includes('METEOSAT'))   return 'cyan';
     if (name.includes('METOP'))      return 'cyan';
@@ -161,13 +142,11 @@ export function getSatColour(name) {
     if (name.includes('EGNOS'))   return 'cyan';
     if (name.includes('EUTELSAT '))   return 'cyan';
 
-    // ── UK ───────────────────────────────────────────────────────────────────
     if (name.includes('STRAND'))     return 'cyan';
     if (name.includes('UKUBE'))      return 'cyan';
     if (name.includes('FUNCUBE'))    return 'cyan';
     if (name.includes('CARBONITE'))  return 'cyan';
 
-    // ── India ────────────────────────────────────────────────────────────────
     if (name.includes('NAVIC'))      return 'orange';
     if (name.includes('IRNSS'))      return 'orange';
     if (name.includes('INSAT'))      return 'orange';
@@ -180,7 +159,6 @@ export function getSatColour(name) {
     if (name.includes('SRMSAT'))     return 'orange';
     if (name.includes('HYSIS'))      return 'orange';
 
-    // ── Japan ────────────────────────────────────────────────────────────────
     if (name.includes('QZSS'))       return 'purple';
     if (name.includes('HIMAWARI'))   return 'purple';
     if (name.includes('ALOS'))       return 'purple';
@@ -195,35 +173,28 @@ export function getSatColour(name) {
     if (name.includes('HORYU'))      return 'purple';
     if (name.includes('OPTICUBE'))   return 'purple';
 
-    // ── South Korea ──────────────────────────────────────────────────────────
     if (name.includes('KOMPSAT'))    return '#00ff99';
     if (name.includes('ARIRANG'))    return '#00ff99';
     if (name.includes('COMS'))       return '#00ff99';
     if (name.includes('GEO-KOMPSAT'))return '#00ff99';
     if (name.includes('CAS500'))     return '#00ff99';
 
-    // ── Canada ───────────────────────────────────────────────────────────────
     if (name.includes('RADARSAT'))   return '#633154';
     if (name.includes('EXACTVIEW'))  return '#633154';
 
-    // ── Brazil ───────────────────────────────────────────────────────────────
     if (name.includes('SCD'))        return '#33dd55';
 
-    // ── Israel ───────────────────────────────────────────────────────────────
     if (name.includes('TECHSAT'))    return '#ff99cc';
     if (name.includes('DUCHIFAT'))   return '#ff99cc';
     if (name.includes('PALMACHIM'))  return '#ff99cc';
 
-    // ── Türkiye ──────────────────────────────────────────────────────────────
     if (name.includes('RASAT'))      return '#ff6644';
     if (name.includes('GOKTURK'))    return '#ff6644';
     if (name.includes('ITUPSAT'))    return '#ff6644';
 
-    // ── Thailand ─────────────────────────────────────────────────────────────
     if (name.includes('KNACKSAT'))   return '#fadc8a';
     if (name.includes('THEOS'))      return '#fadc8a';
 
-    // ── Commercial constellations ─────────────────────────────────────────────
     if (name.includes('IRIDIUM'))    return 'blue';
     if (name.includes('KUIPER'))     return 'blue';
     if (name.includes('ONEWEB'))     return 'cyan';
@@ -238,7 +209,6 @@ export function getSatColour(name) {
     if (name.includes('REAKTOR'))    return 'cyan';
     if (name.includes('ESAIL'))      return 'cyan';
 
-    // ── Russia misc ───────────────────────────────────────────────────────────
     if (name.includes('STRELA'))     return 'red';
     if (name.includes('MOLNIYA'))    return 'red';
     if (name.includes('MERIDIAN'))   return 'red';
@@ -250,7 +220,6 @@ export function getSatColour(name) {
     if (name.includes('MUSSON'))     return 'red';
     if (name.includes('PARUS'))      return 'red';
 
-    // ── China misc ────────────────────────────────────────────────────────────
     if (name.includes('CHINASAT'))   return 'yellow';
     if (name.includes('APSTAR'))     return 'yellow';
     if (name.includes('SHIJIAN'))    return 'yellow';
@@ -259,7 +228,6 @@ export function getSatColour(name) {
     if (name.includes('QUEQIAO'))    return 'yellow';
     if (name.includes('TIANHUI'))    return 'yellow';
 
-    // ── USA misc ──────────────────────────────────────────────────────────────
     if (name.includes('INTELSAT'))   return 'blue';
     if (name.includes('SES-'))       return 'blue';
     if (name.includes('VIASAT'))     return 'blue';
@@ -269,10 +237,8 @@ export function getSatColour(name) {
     if (name.includes('GALAXY'))     return 'blue';
     if (name.includes('ECHOSTAR'))   return 'blue';
 
-    // ── International / ISS ──────────────────────────────────────────────────
     if (name.includes('ISS'))        return '#00ff88';
 
-    // dim teal for genuinely unidentified objects (debris, classified, amateur)
     return '#2a5a6a';
 }
 

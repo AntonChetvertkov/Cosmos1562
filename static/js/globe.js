@@ -3,8 +3,8 @@ var twoPi = pi * 2;
 var deg2rad = pi / 180.0;
 var rad2deg = 180 / pi;
 var minutesPerDay = 1440.0;
-var mu = 398600.8; // in km3 / s2
-var earthRadius = 6378.135; // in km
+var mu = 398600.8;
+var earthRadius = 6378.135;
 var xke = 60.0 / Math.sqrt(earthRadius * earthRadius * earthRadius / mu);
 var vkmpersec = earthRadius * xke / 60.0;
 var tumin = 1.0 / xke;
@@ -13,9 +13,9 @@ var j3 = -0.00000253881;
 var j4 = -0.00000165597;
 var j3oj2 = j3 / j2;
 var x2o3 = 2.0 / 3.0;
-var xpdotp = 1440.0 / (2.0 * pi); // 229.1831180523293;
+var xpdotp = 1440.0 / (2.0 * pi);
 
-var constants = /*#__PURE__*/Object.freeze({
+var constants = Object.freeze({
     __proto__: null,
     deg2rad: deg2rad,
     earthRadius: earthRadius,
@@ -35,56 +35,17 @@ var constants = /*#__PURE__*/Object.freeze({
     xpdotp: xpdotp
 });
 
-/* -----------------------------------------------------------------------------
- *
- *                           procedure days2mdhms
- *
- *  this procedure converts the day of the year, days, to the equivalent month
- *    day, hour, minute and second.
- *
- *  algorithm     : set up array for the number of days per month
- *                  find leap year - use 1900 because 2000 is a leap year
- *                  loop through a temp value while the value is < the days
- *                  perform int conversions to the correct day and month
- *                  convert remainder into h m s using type conversions
- *
- *  author        : david vallado                  719-573-2600    1 mar 2001
- *
- *  inputs          description                    range / units
- *    year        - year                           1900 .. 2100
- *    days        - julian day of the year         0.0  .. 366.0
- *
- *  outputs       :
- *    mon         - month                          1 .. 12
- *    day         - day                            1 .. 28,29,30,31
- *    hr          - hour                           0 .. 23
- *    min         - minute                         0 .. 59
- *    sec         - second                         0.0 .. 59.999
- *
- *  locals        :
- *    dayofyr     - day of year
- *    temp        - temporary extended values
- *    inttemp     - temporary int value
- *    i           - index
- *    lmonth[12]  - int array containing the number of days per month
- *
- *  coupling      :
- *    none.
- * --------------------------------------------------------------------------- */
 function days2mdhms(year, days) {
   var lmonth = [31, year % 4 === 0 ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   var dayofyr = Math.floor(days);
-  //  ----------------- find month and day of month ----------------
   var i = 1;
   var inttemp = 0;
-  // i starts from 1 so no null check is needed
   while (dayofyr > inttemp + lmonth[i - 1] && i < 12) {
     inttemp += lmonth[i - 1];
     i += 1;
   }
   var mon = i;
   var day = dayofyr - inttemp;
-  //  ----------------- find hours minutes and seconds -------------
   var temp = (days - dayofyr) * 24.0;
   var hr = Math.floor(temp);
   temp = (temp - hr) * 60.0;
@@ -98,42 +59,9 @@ function days2mdhms(year, days) {
     sec: sec
   };
 }
-/* -----------------------------------------------------------------------------
- *
- *                           procedure jday
- *
- *  this procedure finds the julian date given the year, month, day, and time.
- *    the julian date is defined by each elapsed day since noon, jan 1, 4713 bc.
- *
- *  algorithm     : calculate the answer in one step for efficiency
- *
- *  author        : david vallado                  719-573-2600    1 mar 2001
- *
- *  inputs          description                    range / units
- *    year        - year                           1900 .. 2100
- *    mon         - month                          1 .. 12
- *    day         - day                            1 .. 28,29,30,31
- *    hr          - universal time hour            0 .. 23
- *    min         - universal time min             0 .. 59
- *    sec         - universal time sec             0.0 .. 59.999
- *
- *  outputs       :
- *    jd          - julian date                    days from 4713 bc
- *
- *  locals        :
- *    none.
- *
- *  coupling      :
- *    none.
- *
- *  references    :
- *    vallado       2007, 189, alg 14, ex 3-14
- *
- * --------------------------------------------------------------------------- */
 function jdayInternal(year, mon, day, hr, minute, sec) {
   var msec = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 0;
-  return 367.0 * year - Math.floor(7 * (year + Math.floor((mon + 9) / 12.0)) * 0.25) + Math.floor(275 * mon / 9.0) + day + 1721013.5 + ((msec / 60000 + sec / 60.0 + minute) / 60.0 + hr) / 24.0 // ut in days
-  // # - 0.5*sgn(100.0*year + mon - 190002.5) + 0.5;
+  return 367.0 * year - Math.floor(7 * (year + Math.floor((mon + 9) / 12.0)) * 0.25) + Math.floor(275 * mon / 9.0) + day + 1721013.5 + ((msec / 60000 + sec / 60.0 + minute) / 60.0 + hr) / 24.0
   ;
 }
 function jday(yearOrDate, mon, day, hr, minute, sec) {
@@ -141,26 +69,21 @@ function jday(yearOrDate, mon, day, hr, minute, sec) {
   if (yearOrDate instanceof Date) {
     var date = yearOrDate;
     return jdayInternal(date.getUTCFullYear(), date.getUTCMonth() + 1,
-    // Note, this function requires months in range 1-12.
     date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds(), date.getUTCMilliseconds());
   }
   return jdayInternal(yearOrDate, mon, day, hr, minute, sec, msec);
 }
 function invjday(jd, asArray) {
-  // --------------- find year and days of the year -
   var temp = jd - 2415019.5;
   var tu = temp / 365.25;
   var year = 1900 + Math.floor(tu);
   var leapyrs = Math.floor((year - 1901) * 0.25);
-  // optional nudge by 8.64x10-7 sec to get even outputs
   var days = temp - ((year - 1900) * 365.0 + leapyrs) + 0.00000000001;
-  // ------------ check for case of beginning of a year -----------
   if (days < 1.0) {
     year -= 1;
     leapyrs = Math.floor((year - 1901) * 0.25);
     days = temp - ((year - 1900) * 365.0 + leapyrs);
   }
-  // ----------------- find remaing data  -------------------------
   var mdhms = days2mdhms(year, days);
   var mon = mdhms.mon,
     day = mdhms.day,
@@ -172,73 +95,6 @@ function invjday(jd, asArray) {
   }
   return new Date(Date.UTC(year, mon - 1, day, hr, minute, Math.floor(sec)));
 }
-
-/* -----------------------------------------------------------------------------
- *
- *                           procedure dpper
- *
- *  this procedure provides deep space long period periodic contributions
- *    to the mean elements.  by design, these periodics are zero at epoch.
- *    this used to be dscom which included initialization, but it's really a
- *    recurring function.
- *
- *  author        : david vallado                  719-573-2600   28 jun 2005
- *
- *  inputs        :
- *    e3          -
- *    ee2         -
- *    peo         -
- *    pgho        -
- *    pho         -
- *    pinco       -
- *    plo         -
- *    se2 , se3 , sgh2, sgh3, sgh4, sh2, sh3, si2, si3, sl2, sl3, sl4 -
- *    t           -
- *    xh2, xh3, xi2, xi3, xl2, xl3, xl4 -
- *    zmol        -
- *    zmos        -
- *    ep          - eccentricity                           0.0 - 1.0
- *    inclo       - inclination - needed for lyddane modification
- *    nodep       - right ascension of ascending node
- *    argpp       - argument of perigee
- *    mp          - mean anomaly
- *
- *  outputs       :
- *    ep          - eccentricity                           0.0 - 1.0
- *    inclp       - inclination
- *    nodep        - right ascension of ascending node
- *    argpp       - argument of perigee
- *    mp          - mean anomaly
- *
- *  locals        :
- *    alfdp       -
- *    betdp       -
- *    cosip  , sinip  , cosop  , sinop  ,
- *    dalf        -
- *    dbet        -
- *    dls         -
- *    f2, f3      -
- *    pe          -
- *    pgh         -
- *    ph          -
- *    pinc        -
- *    pl          -
- *    sel   , ses   , sghl  , sghs  , shl   , shs   , sil   , sinzf , sis   ,
- *    sll   , sls
- *    xls         -
- *    xnoh        -
- *    zf          -
- *    zm          -
- *
- *  coupling      :
- *    none.
- *
- *  references    :
- *    hoots, roehrich, norad spacetrack report #3 1980
- *    hoots, norad spacetrack report #6 1986
- *    hoots, schumacher and glover 2004
- *    vallado, crawford, hujsak, kelso  2006
- ----------------------------------------------------------------------------*/
 function dpper(satrec, options) {
   var e3 = satrec.e3,
     ee2 = satrec.ee2,
@@ -279,8 +135,6 @@ function dpper(satrec, options) {
     nodep = options.nodep,
     argpp = options.argpp,
     mp = options.mp;
-  // Copy satellite attributes into local variables for convenience
-  // and symmetry in writing formulae.
   var alfdp;
   var betdp;
   var cosip;
@@ -302,14 +156,11 @@ function dpper(satrec, options) {
   var xnoh;
   var zf;
   var zm;
-  //  ---------------------- constants -----------------------------
   var zns = 1.19459e-5;
   var zes = 0.01675;
   var znl = 1.5835218e-4;
   var zel = 0.05490;
-  //  --------------- calculate time varying periodics -----------
   zm = zmos + zns * t;
-  // be sure that the initial call has time set to zero
   if (init === 'y') {
     zm = zmos;
   }
@@ -350,15 +201,6 @@ function dpper(satrec, options) {
     ep += pe;
     sinip = Math.sin(inclp);
     cosip = Math.cos(inclp);
-    /* ----------------- apply periodics directly ------------ */
-    // sgp4fix for lyddane choice
-    // strn3 used original inclination - this is technically feasible
-    // gsfc used perturbed inclination - also technically feasible
-    // probably best to readjust the 0.2 limit value and limit discontinuity
-    // 0.2 rad = 11.45916 deg
-    // use next line for original strn3 approach and original inclination
-    // if (inclo >= 0.2)
-    // use next line for gsfc version and perturbed inclination
     if (inclp >= 0.2) {
       ph /= sinip;
       pgh -= cosip * ph;
@@ -366,7 +208,6 @@ function dpper(satrec, options) {
       nodep += ph;
       mp += pl;
     } else {
-      //  ---- apply periodics with lyddane modification ----
       sinop = Math.sin(nodep);
       cosop = Math.cos(nodep);
       alfdp = sinip * sinop;
@@ -376,8 +217,6 @@ function dpper(satrec, options) {
       alfdp += dalf;
       betdp += dbet;
       nodep %= twoPi;
-      //  sgp4fix for afspc written intrinsic functions
-      //  nodep used without a trigonometric function ahead
       if (nodep < 0.0 && opsmode === 'a') {
         nodep += twoPi;
       }
@@ -386,8 +225,6 @@ function dpper(satrec, options) {
       xls += dls;
       xnoh = nodep;
       nodep = Math.atan2(alfdp, betdp);
-      //  sgp4fix for afspc written intrinsic functions
-      //  nodep used without a trigonometric function ahead
       if (nodep < 0.0 && opsmode === 'a') {
         nodep += twoPi;
       }
@@ -411,73 +248,6 @@ function dpper(satrec, options) {
   };
 }
 
-/*-----------------------------------------------------------------------------
- *
- *                           procedure dscom
- *
- *  this procedure provides deep space common items used by both the secular
- *    and periodics subroutines.  input is provided as shown. this routine
- *    used to be called dpper, but the functions inside weren't well organized.
- *
- *  author        : david vallado                  719-573-2600   28 jun 2005
- *
- *  inputs        :
- *    epoch       -
- *    ep          - eccentricity
- *    argpp       - argument of perigee
- *    tc          -
- *    inclp       - inclination
- *    nodep       - right ascension of ascending node
- *    np          - mean motion
- *
- *  outputs       :
- *    sinim  , cosim  , sinomm , cosomm , snodm  , cnodm
- *    day         -
- *    e3          -
- *    ee2         -
- *    em          - eccentricity
- *    emsq        - eccentricity squared
- *    gam         -
- *    peo         -
- *    pgho        -
- *    pho         -
- *    pinco       -
- *    plo         -
- *    rtemsq      -
- *    se2, se3         -
- *    sgh2, sgh3, sgh4        -
- *    sh2, sh3, si2, si3, sl2, sl3, sl4         -
- *    s1, s2, s3, s4, s5, s6, s7          -
- *    ss1, ss2, ss3, ss4, ss5, ss6, ss7, sz1, sz2, sz3         -
- *    sz11, sz12, sz13, sz21, sz22, sz23, sz31, sz32, sz33        -
- *    xgh2, xgh3, xgh4, xh2, xh3, xi2, xi3, xl2, xl3, xl4         -
- *    nm          - mean motion
- *    z1, z2, z3, z11, z12, z13, z21, z22, z23, z31, z32, z33         -
- *    zmol        -
- *    zmos        -
- *
- *  locals        :
- *    a1, a2, a3, a4, a5, a6, a7, a8, a9, a10         -
- *    betasq      -
- *    cc          -
- *    ctem, stem        -
- *    x1, x2, x3, x4, x5, x6, x7, x8          -
- *    xnodce      -
- *    xnoi        -
- *    zcosg  , zsing  , zcosgl , zsingl , zcosh  , zsinh  , zcoshl , zsinhl ,
- *    zcosi  , zsini  , zcosil , zsinil ,
- *    zx          -
- *    zy          -
- *
- *  coupling      :
- *    none.
- *
- *  references    :
- *    hoots, roehrich, norad spacetrack report #3 1980
- *    hoots, norad spacetrack report #6 1986
- *    hoots, schumacher and glover 2004
- *    vallado, crawford, hujsak, kelso  2006
- ----------------------------------------------------------------------------*/
 function dscom(options) {
   var epoch = options.epoch,
     ep = options.ep,
@@ -549,7 +319,6 @@ function dscom(options) {
   var z31;
   var z32;
   var z33;
-  // -------------------------- constants -------------------------
   var zes = 0.01675;
   var zel = 0.05490;
   var c1ss = 2.9864797e-6;
@@ -558,7 +327,6 @@ function dscom(options) {
   var zcosis = 0.91744867;
   var zcosgs = 0.1945905;
   var zsings = -0.98088458;
-  //  --------------------- local variables ------------------------
   var nm = np;
   var em = ep;
   var snodm = Math.sin(nodep);
@@ -570,7 +338,6 @@ function dscom(options) {
   var emsq = em * em;
   var betasq = 1.0 - emsq;
   var rtemsq = Math.sqrt(betasq);
-  //  ----------------- initialize lunar solar terms ---------------
   var peo = 0.0;
   var pinco = 0.0;
   var plo = 0.0;
@@ -591,7 +358,6 @@ function dscom(options) {
   zx += gam - xnodce;
   var zcosgl = Math.cos(zx);
   var zsingl = Math.sin(zx);
-  //  ------------------------- do solar terms ---------------------
   zcosg = zcosgs;
   zsing = zsings;
   zcosi = zcosis;
@@ -643,7 +409,6 @@ function dscom(options) {
     s5 = x1 * x3 + x2 * x4;
     s6 = x2 * x3 + x1 * x4;
     s7 = x2 * x4 - x1 * x3;
-    //  ----------------------- do lunar terms -------------------
     if (lsflg === 1) {
       ss1 = s1;
       ss2 = s2;
@@ -675,7 +440,6 @@ function dscom(options) {
   }
   var zmol = (4.7199672 + (0.22997150 * day - gam)) % twoPi;
   var zmos = (6.2565837 + 0.017201977 * day) % twoPi;
-  //  ------------------------ do solar terms ----------------------
   var se2 = 2.0 * ss1 * ss6;
   var se3 = 2.0 * ss1 * ss7;
   var si2 = 2.0 * ss2 * sz12;
@@ -688,7 +452,6 @@ function dscom(options) {
   var sgh4 = -18.0 * ss4 * zes;
   var sh2 = -2.0 * ss2 * sz22;
   var sh3 = -2.0 * ss2 * (sz23 - sz21);
-  //  ------------------------ do lunar terms ----------------------
   var ee2 = 2.0 * s1 * s6;
   var e3 = 2.0 * s1 * s7;
   var xi2 = 2.0 * s2 * z12;
@@ -785,86 +548,6 @@ function dscom(options) {
     zmos: zmos
   };
 }
-
-/*-----------------------------------------------------------------------------
- *
- *                           procedure dsinit
- *
- *  this procedure provides deep space contributions to mean motion dot due
- *    to geopotential resonance with half day and one day orbits.
- *
- *  author        : david vallado                  719-573-2600   28 jun 2005
- *
- *  inputs        :
- *    cosim, sinim-
- *    emsq        - eccentricity squared
- *    argpo       - argument of perigee
- *    s1, s2, s3, s4, s5      -
- *    ss1, ss2, ss3, ss4, ss5 -
- *    sz1, sz3, sz11, sz13, sz21, sz23, sz31, sz33 -
- *    t           - time
- *    tc          -
- *    gsto        - greenwich sidereal time                   rad
- *    mo          - mean anomaly
- *    mdot        - mean anomaly dot (rate)
- *    no          - mean motion
- *    nodeo       - right ascension of ascending node
- *    nodedot     - right ascension of ascending node dot (rate)
- *    xpidot      -
- *    z1, z3, z11, z13, z21, z23, z31, z33 -
- *    eccm        - eccentricity
- *    argpm       - argument of perigee
- *    inclm       - inclination
- *    mm          - mean anomaly
- *    xn          - mean motion
- *    nodem       - right ascension of ascending node
- *
- *  outputs       :
- *    em          - eccentricity
- *    argpm       - argument of perigee
- *    inclm       - inclination
- *    mm          - mean anomaly
- *    nm          - mean motion
- *    nodem       - right ascension of ascending node
- *    irez        - flag for resonance           0-none, 1-one day, 2-half day
- *    atime       -
- *    d2201, d2211, d3210, d3222, d4410, d4422, d5220, d5232, d5421, d5433    -
- *    dedt        -
- *    didt        -
- *    dmdt        -
- *    dndt        -
- *    dnodt       -
- *    domdt       -
- *    del1, del2, del3        -
- *    ses  , sghl , sghs , sgs  , shl  , shs  , sis  , sls
- *    theta       -
- *    xfact       -
- *    xlamo       -
- *    xli         -
- *    xni
- *
- *  locals        :
- *    ainv2       -
- *    aonv        -
- *    cosisq      -
- *    eoc         -
- *    f220, f221, f311, f321, f322, f330, f441, f442, f522, f523, f542, f543  -
- *    g200, g201, g211, g300, g310, g322, g410, g422, g520, g521, g532, g533  -
- *    sini2       -
- *    temp        -
- *    temp1       -
- *    theta       -
- *    xno2        -
- *
- *  coupling      :
- *    getgravconst
- *
- *  references    :
- *    hoots, roehrich, norad spacetrack report #3 1980
- *    hoots, norad spacetrack report #6 1986
- *    hoots, schumacher and glover 2004
- *    vallado, crawford, hujsak, kelso  2006
- ----------------------------------------------------------------------------*/
 function dsinit(options) {
   var cosim = options.cosim,
     argpo = options.argpo,
@@ -975,13 +658,11 @@ function dsinit(options) {
   var root22 = 1.7891679e-6;
   var root44 = 7.3636953e-9;
   var root54 = 2.1765803e-9;
-  // eslint-disable-next-line no-loss-of-precision
-  var rptim = 4.37526908801129966e-3; // equates to 7.29211514668855e-5 rad/sec
+  var rptim = 4.37526908801129966e-3;
   var root32 = 3.7393792e-7;
   var root52 = 1.1428639e-7;
   var znl = 1.5835218e-4;
   var zns = 1.19459e-5;
-  // -------------------- deep space initialization ------------
   irez = 0;
   if (nm < 0.0052359877 && nm > 0.0034906585) {
     irez = 1;
@@ -989,13 +670,11 @@ function dsinit(options) {
   if (nm >= 8.26e-3 && nm <= 9.24e-3 && em >= 0.5) {
     irez = 2;
   }
-  // ------------------------ do solar terms -------------------
   var ses = ss1 * zns * ss5;
   var sis = ss2 * zns * (sz11 + sz13);
   var sls = -zns * ss3 * (sz1 + sz3 - 14.0 - 6.0 * emsq);
   var sghs = ss4 * zns * (sz31 + sz33 - 6.0);
   var shs = -zns * ss2 * (sz21 + sz23);
-  // sgp4fix for 180 deg incl
   if (inclm < 5.2359877e-2 || inclm > pi - 5.2359877e-2) {
     shs = 0.0;
   }
@@ -1003,13 +682,11 @@ function dsinit(options) {
     shs /= sinim;
   }
   var sgs = sghs - cosim * shs;
-  // ------------------------- do lunar terms ------------------
   dedt = ses + s1 * znl * s5;
   didt = sis + s2 * znl * (z11 + z13);
   dmdt = sls - znl * s3 * (z1 + z3 - 14.0 - 6.0 * emsq);
   var sghl = s4 * znl * (z31 + z33 - 6.0);
   var shll = -znl * s2 * (z21 + z23);
-  // sgp4fix for 180 deg incl
   if (inclm < 5.2359877e-2 || inclm > pi - 5.2359877e-2) {
     shll = 0.0;
   }
@@ -1019,7 +696,6 @@ function dsinit(options) {
     domdt -= cosim / sinim * shll;
     dnodt += shll / sinim;
   }
-  // ----------- calculate deep space resonance effects --------
   var dndt = 0.0;
   var theta = (gsto + tc * rptim) % twoPi;
   em += dedt * t;
@@ -1027,18 +703,8 @@ function dsinit(options) {
   argpm += domdt * t;
   nodem += dnodt * t;
   mm += dmdt * t;
-  // sgp4fix for negative inclinations
-  // the following if statement should be commented out
-  // if (inclm < 0.0)
-  // {
-  //   inclm  = -inclm;
-  //   argpm  = argpm - pi;
-  //   nodem = nodem + pi;
-  // }
-  // -------------- initialize the resonance terms -------------
   if (irez !== 0) {
     aonv = Math.pow(nm / xke, x2o3);
-    // ---------- geopotential resonance for 12 hour orbits ------
     if (irez === 2) {
       cosisq = cosim * cosim;
       var emo = em;
@@ -1112,7 +778,6 @@ function dsinit(options) {
       em = emo;
       emsq = emsqo;
     }
-    //  ---------------- synchronous resonance terms --------------
     if (irez === 1) {
       g200 = 1.0 + emsq * (-2.5 + 0.8125 * emsq);
       g310 = 1.0 + 2.0 * emsq;
@@ -1128,7 +793,6 @@ function dsinit(options) {
       xlamo = (mo + nodeo + argpo - theta) % twoPi;
       xfact = mdot + xpidot + dmdt + domdt + dnodt - (no + rptim);
     }
-    //  ------------ for sgp4, initialize the integrator ----------
     xli = xlamo;
     xni = no;
     atime = 0.0;
@@ -1169,36 +833,10 @@ function dsinit(options) {
   };
 }
 
-/* -----------------------------------------------------------------------------
- *
- *                           function gstime
- *
- *  this function finds the greenwich sidereal time.
- *
- *  author        : david vallado                  719-573-2600    1 mar 2001
- *
- *  inputs          description                    range / units
- *    jdut1       - julian date in ut1             days from 4713 bc
- *
- *  outputs       :
- *    gstime      - greenwich sidereal time        0 to 2pi rad
- *
- *  locals        :
- *    temp        - temporary variable for doubles   rad
- *    tut1        - julian centuries from the
- *                  jan 1, 2000 12 h epoch (ut1)
- *
- *  coupling      :
- *    none
- *
- *  references    :
- *    vallado       2004, 191, eq 3-45
- * --------------------------------------------------------------------------- */
 function gstimeInternal(jdut1) {
   var tut1 = (jdut1 - 2451545.0) / 36525.0;
-  var temp = -6.2e-6 * tut1 * tut1 * tut1 + 0.093104 * tut1 * tut1 + (876600.0 * 3600 + 8640184.812866) * tut1 + 67310.54841; // # sec
-  temp = temp * deg2rad / 240.0 % twoPi; // 360/86400 = 1/240, to deg, to rad
-  //  ------------------------ check quadrants ---------------------
+  var temp = -6.2e-6 * tut1 * tut1 * tut1 + 0.093104 * tut1 * tut1 + (876600.0 * 3600 + 8640184.812866) * tut1 + 67310.54841;
+  temp = temp * deg2rad / 240.0 % twoPi;
   if (temp < 0.0) {
     temp += twoPi;
   }
@@ -1214,72 +852,17 @@ function gstime(first, month, day, hour, minute, second, millisecond) {
   }
 }
 
-/*-----------------------------------------------------------------------------
- *
- *                           procedure initl
- *
- *  this procedure initializes the sgp4 propagator. all the initialization is
- *    consolidated here instead of having multiple loops inside other routines.
- *
- *  author        : david vallado                  719-573-2600   28 jun 2005
- *
- *  inputs        :
- *    ecco        - eccentricity                           0.0 - 1.0
- *    epoch       - epoch time in days from jan 0, 1950. 0 hr
- *    inclo       - inclination of satellite
- *    no          - mean motion of satellite
- *    satn        - satellite number
- *
- *  outputs       :
- *    ainv        - 1.0 / a
- *    ao          - semi major axis
- *    con41       -
- *    con42       - 1.0 - 5.0 cos(i)
- *    cosio       - cosine of inclination
- *    cosio2      - cosio squared
- *    eccsq       - eccentricity squared
- *    method      - flag for deep space                    'd', 'n'
- *    omeosq      - 1.0 - ecco * ecco
- *    posq        - semi-parameter squared
- *    rp          - radius of perigee
- *    rteosq      - square root of (1.0 - ecco*ecco)
- *    sinio       - sine of inclination
- *    gsto        - gst at time of observation               rad
- *    no          - mean motion of satellite
- *
- *  locals        :
- *    ak          -
- *    d1          -
- *    del         -
- *    adel        -
- *    po          -
- *
- *  coupling      :
- *    getgravconst
- *    gstime      - find greenwich sidereal time from the julian date
- *
- *  references    :
- *    hoots, roehrich, norad spacetrack report #3 1980
- *    hoots, norad spacetrack report #6 1986
- *    hoots, schumacher and glover 2004
- *    vallado, crawford, hujsak, kelso  2006
- ----------------------------------------------------------------------------*/
 function initl(options) {
   var ecco = options.ecco,
     epoch = options.epoch,
     inclo = options.inclo,
     opsmode = options.opsmode;
   var no = options.no;
-  // sgp4fix use old way of finding gst
-  // ----------------------- earth constants ---------------------
-  // sgp4fix identify constants and allow alternate values
-  // ------------- calculate auxillary epoch quantities ----------
   var eccsq = ecco * ecco;
   var omeosq = 1.0 - eccsq;
   var rteosq = Math.sqrt(omeosq);
   var cosio = Math.cos(inclo);
   var cosio2 = cosio * cosio;
-  // ------------------ un-kozai the mean motion -----------------
   var ak = Math.pow(xke / no, x2o3);
   var d1 = 0.75 * j2 * (3.0 * cosio2 - 1.0) / (rteosq * omeosq);
   var delPrime = d1 / (ak * ak);
@@ -1295,18 +878,14 @@ function initl(options) {
   var posq = po * po;
   var rp = ao * (1.0 - ecco);
   var method = 'n';
-  //  sgp4fix modern approach to finding sidereal time
   var gsto;
   if (opsmode === 'a') {
-    //  sgp4fix use old way of finding gst
-    //  count integer number of days from 0 jan 1970
     var ts70 = epoch - 7305.0;
     var ds70 = Math.floor(ts70 + 1.0e-8);
     var tfrac = ts70 - ds70;
-    //  find greenwich location at epoch
-    var c1 = 1.72027916940703639e-2; // eslint-disable-line no-loss-of-precision
-    var thgr70 = 1.7321343856509374; // eslint-disable-line no-loss-of-precision
-    var fk5r = 5.07551419432269442e-15; // eslint-disable-line no-loss-of-precision
+    var c1 = 1.72027916940703639e-2;
+    var thgr70 = 1.7321343856509374;
+    var fk5r = 5.07551419432269442e-15;
     var c1p2p = c1 + twoPi;
     gsto = (thgr70 + c1 * ds70 + c1p2p * tfrac + ts70 * ts70 * fk5r) % twoPi;
     if (gsto < 0.0) {
@@ -1334,78 +913,6 @@ function initl(options) {
   };
 }
 
-/*-----------------------------------------------------------------------------
- *
- *                           procedure dspace
- *
- *  this procedure provides deep space contributions to mean elements for
- *    perturbing third body.  these effects have been averaged over one
- *    revolution of the sun and moon.  for earth resonance effects, the
- *    effects have been averaged over no revolutions of the satellite.
- *    (mean motion)
- *
- *  author        : david vallado                  719-573-2600   28 jun 2005
- *
- *  inputs        :
- *    d2201, d2211, d3210, d3222, d4410, d4422, d5220, d5232, d5421, d5433 -
- *    dedt        -
- *    del1, del2, del3  -
- *    didt        -
- *    dmdt        -
- *    dnodt       -
- *    domdt       -
- *    irez        - flag for resonance           0-none, 1-one day, 2-half day
- *    argpo       - argument of perigee
- *    argpdot     - argument of perigee dot (rate)
- *    t           - time
- *    tc          -
- *    gsto        - gst
- *    xfact       -
- *    xlamo       -
- *    no          - mean motion
- *    atime       -
- *    em          - eccentricity
- *    ft          -
- *    argpm       - argument of perigee
- *    inclm       - inclination
- *    xli         -
- *    mm          - mean anomaly
- *    xni         - mean motion
- *    nodem       - right ascension of ascending node
- *
- *  outputs       :
- *    atime       -
- *    em          - eccentricity
- *    argpm       - argument of perigee
- *    inclm       - inclination
- *    xli         -
- *    mm          - mean anomaly
- *    xni         -
- *    nodem       - right ascension of ascending node
- *    dndt        -
- *    nm          - mean motion
- *
- *  locals        :
- *    delt        -
- *    ft          -
- *    theta       -
- *    x2li        -
- *    x2omi       -
- *    xl          -
- *    xldot       -
- *    xnddt       -
- *    xndt        -
- *    xomi        -
- *
- *  coupling      :
- *    none        -
- *
- *  references    :
- *    hoots, roehrich, norad spacetrack report #3 1980
- *    hoots, norad spacetrack report #6 1986
- *    hoots, schumacher and glover 2004
- *    vallado, crawford, hujsak, kelso  2006
- ----------------------------------------------------------------------------*/
 function dspace(options) {
   var irez = options.irez,
     d2201 = options.d2201,
@@ -1451,8 +958,7 @@ function dspace(options) {
   var g44 = 1.8014998;
   var g52 = 1.0508330;
   var g54 = 4.4108898;
-  // eslint-disable-next-line no-loss-of-precision
-  var rptim = 4.37526908801129966e-3; // equates to 7.29211514668855e-5 rad/sec
+  var rptim = 4.37526908801129966e-3;
   var stepp = 720.0;
   var stepn = -720.0;
   var step2 = 259200.0;
@@ -1466,51 +972,31 @@ function dspace(options) {
   var xomi;
   var dndt = 0.0;
   var ft = 0.0;
-  //  ----------- calculate deep space resonance effects -----------
   var theta = (gsto + tc * rptim) % twoPi;
   em += dedt * t;
   inclm += didt * t;
   argpm += domdt * t;
   nodem += dnodt * t;
   mm += dmdt * t;
-  // sgp4fix for negative inclinations
-  // the following if statement should be commented out
-  // if (inclm < 0.0)
-  // {
-  //   inclm = -inclm;
-  //   argpm = argpm - pi;
-  //   nodem = nodem + pi;
-  // }
-  /* - update resonances : numerical (euler-maclaurin) integration - */
-  /* ------------------------- epoch restart ----------------------  */
-  //   sgp4fix for propagator problems
-  //   the following integration works for negative time steps and periods
-  //   the specific changes are unknown because the original code was so convoluted
-  // sgp4fix take out atime = 0.0 and fix for faster operation
   if (irez !== 0) {
-    //  sgp4fix streamline check
     if (atime === 0.0 || t * atime <= 0.0 || Math.abs(t) < Math.abs(atime)) {
       atime = 0.0;
       xni = no;
       xli = xlamo;
     }
-    // sgp4fix move check outside loop
     if (t > 0.0) {
       delt = stepp;
     } else {
       delt = stepn;
     }
-    var iretn = 381; // added for do loop
+    var iretn = 381;
     while (iretn === 381) {
-      //  ------------------- dot terms calculated -------------
-      //  ----------- near - synchronous resonance terms -------
       if (irez !== 2) {
         xndt = del1 * Math.sin(xli - fasx2) + del2 * Math.sin(2.0 * (xli - fasx4)) + del3 * Math.sin(3.0 * (xli - fasx6));
         xldot = xni + xfact;
         xnddt = del1 * Math.cos(xli - fasx2) + 2.0 * del2 * Math.cos(2.0 * (xli - fasx4)) + 3.0 * del3 * Math.cos(3.0 * (xli - fasx6));
         xnddt *= xldot;
       } else {
-        // --------- near - half-day resonance terms --------
         xomi = argpo + argpdot * atime;
         x2omi = xomi + xomi;
         x2li = xli + xli;
@@ -1519,8 +1005,6 @@ function dspace(options) {
         xnddt = d2201 * Math.cos(x2omi + xli - g22) + d2211 * Math.cos(xli - g22) + d3210 * Math.cos(xomi + xli - g32) + d3222 * Math.cos(-xomi + xli - g32) + d5220 * Math.cos(xomi + xli - g52) + d5232 * Math.cos(-xomi + xli - g52) + 2.0 * (d4410 * Math.cos(x2omi + x2li - g44) + d4422 * Math.cos(x2li - g44) + d5421 * Math.cos(xomi + x2li - g54) + d5433 * Math.cos(-xomi + x2li - g54));
         xnddt *= xldot;
       }
-      //  ----------------------- integrator -------------------
-      //  sgp4fix move end checks to end of routine
       if (Math.abs(t - atime) >= stepp) {
         iretn = 381;
       } else {
@@ -1560,119 +1044,14 @@ function dspace(options) {
 
 var SatRecError;
 (function (SatRecError) {
-  /**
-   * No error, propagation for the last supplied date is successful
-   */
   SatRecError[SatRecError["None"] = 0] = "None";
-  /**
-   * Mean eccentricity is out of range 0 â‰¤ e < 1
-   */
   SatRecError[SatRecError["MeanEccentricityOutOfRange"] = 1] = "MeanEccentricityOutOfRange";
-  /**
-   * Mean motion has fallen below zero.
-   */
   SatRecError[SatRecError["MeanMotionBelowZero"] = 2] = "MeanMotionBelowZero";
-  /**
-   * Perturbed eccentricity is out of range 0 â‰¤ e < 1
-   */
   SatRecError[SatRecError["PerturbedEccentricityOutOfRange"] = 3] = "PerturbedEccentricityOutOfRange";
-  /**
-   * Length of the orbitâ€™s semi-latus rectum has fallen below zero.
-   */
   SatRecError[SatRecError["SemiLatusRectumBelowZero"] = 4] = "SemiLatusRectumBelowZero";
-  // 5 is not used
-  /**
-   * Orbit has decayed: the computed position is underground.
-   */
   SatRecError[SatRecError["Decayed"] = 6] = "Decayed";
 })(SatRecError || (SatRecError = {}));
 
-/*----------------------------------------------------------------------------
- *
- *                             procedure sgp4
- *
- *  this procedure is the sgp4 prediction model from space command. this is an
- *    updated and combined version of sgp4 and sdp4, which were originally
- *    published separately in spacetrack report //3. this version follows the
- *    methodology from the aiaa paper (2006) describing the history and
- *    development of the code.
- *
- *  author        : david vallado                  719-573-2600   28 jun 2005
- *
- *  inputs        :
- *    satrec  - initialised structure from sgp4init() call.
- *    tsince  - time since epoch (minutes)
- *
- *  outputs       :
- *    r           - position vector                     km
- *    v           - velocity                            km/sec
- *  return code - non-zero on error.
- *                   1 - mean elements, ecc >= 1.0 or ecc < -0.001 or a < 0.95 er
- *                   2 - mean motion less than 0.0
- *                   3 - pert elements, ecc < 0.0  or  ecc > 1.0
- *                   4 - semi-latus rectum < 0.0
- *                   5 - epoch elements are sub-orbital
- *                   6 - satellite has decayed
- *
- *  locals        :
- *    am          -
- *    axnl, aynl        -
- *    betal       -
- *    cosim   , sinim   , cosomm  , sinomm  , cnod    , snod    , cos2u   ,
- *    sin2u   , coseo1  , sineo1  , cosi    , sini    , cosip   , sinip   ,
- *    cosisq  , cossu   , sinsu   , cosu    , sinu
- *    delm        -
- *    delomg      -
- *    dndt        -
- *    eccm        -
- *    emsq        -
- *    ecose       -
- *    el2         -
- *    eo1         -
- *    eccp        -
- *    esine       -
- *    argpm       -
- *    argpp       -
- *    omgadf      -
- *    pl          -
- *    r           -
- *    rtemsq      -
- *    rdotl       -
- *    rl          -
- *    rvdot       -
- *    rvdotl      -
- *    su          -
- *    t2  , t3   , t4    , tc
- *    tem5, temp , temp1 , temp2  , tempa  , tempe  , templ
- *    u   , ux   , uy    , uz     , vx     , vy     , vz
- *    inclm       - inclination
- *    mm          - mean anomaly
- *    nm          - mean motion
- *    nodem       - right asc of ascending node
- *    xinc        -
- *    xincp       -
- *    xl          -
- *    xlm         -
- *    mp          -
- *    xmdf        -
- *    xmx         -
- *    xmy         -
- *    nodedf      -
- *    xnode       -
- *    nodep       -
- *    np          -
- *
- *  coupling      :
- *    getgravconst-
- *    dpper
- *    dspace
- *
- *  references    :
- *    hoots, roehrich, norad spacetrack report //3 1980
- *    hoots, norad spacetrack report //6 1986
- *    hoots, schumacher and glover 2004
- *    vallado, crawford, hujsak, kelso  2006
- ----------------------------------------------------------------------------*/
 function sgp4(satrec, tsince) {
   var coseo1;
   var sineo1;
@@ -1701,15 +1080,9 @@ function sgp4(satrec, tsince) {
   var xlm;
   var mp;
   var nodep;
-  /* ------------------ set mathematical constants --------------- */
-  // sgp4fix divisor for divide by zero check on inclination
-  // the old check used 1.0 + cos(pi-1.0e-9), but then compared it to
-  // 1.5 e-12, so the threshold was changed to 1.5e-12 for consistency
   var temp4 = 1.5e-12;
-  // --------------------- clear sgp4 error flag -----------------
   satrec.t = tsince;
   satrec.error = SatRecError.None;
-  //  ------- update for secular gravity and atmospheric drag -----
   var xmdf = satrec.mo + satrec.mdot * satrec.t;
   var argpdf = satrec.argpo + satrec.argpdot * satrec.t;
   var nodedf = satrec.nodeo + satrec.nodedot * satrec.t;
@@ -1722,7 +1095,6 @@ function sgp4(satrec, tsince) {
   templ = satrec.t2cof * t2;
   if (satrec.isimp !== 1) {
     delomg = satrec.omgcof * satrec.t;
-    //  sgp4fix use mutliply for speed instead of pow
     var delmtemp = 1.0 + satrec.eta * Math.cos(xmdf);
     delm = satrec.xmcof * (delmtemp * delmtemp * delmtemp - satrec.delmo);
     temp = delomg + delm;
@@ -1786,24 +1158,16 @@ function sgp4(satrec, tsince) {
     nm = dspaceResult.nm;
   }
   if (nm <= 0.0) {
-    // printf("// error nm %f\n", nm);
     satrec.error = SatRecError.MeanMotionBelowZero;
-    // sgp4fix add return
     return null;
   }
   var am = Math.pow(xke / nm, x2o3) * tempa * tempa;
   nm = xke / Math.pow(am, 1.5);
   em -= tempe;
-  // fix tolerance for error recognition
-  // sgp4fix am is fixed from the previous nm check
   if (em >= 1.0 || em < -0.001) {
-    // || (am < 0.95)
-    // printf("// error em %f\n", em);
     satrec.error = SatRecError.MeanEccentricityOutOfRange;
-    // sgp4fix to return if there is an error in eccentricity
     return null;
   }
-  //  sgp4fix fix tolerance to avoid a divide by zero
   if (em < 1.0e-6) {
     em = 1.0e-6;
   }
@@ -1822,10 +1186,8 @@ function sgp4(satrec, tsince) {
     mm: mm,
     nm: nm
   };
-  // ----------------- compute extra mean quantities -------------
   var sinim = Math.sin(inclm);
   var cosim = Math.cos(inclm);
-  // -------------------- add lunar-solar periodics --------------
   var ep = em;
   xincp = inclm;
   argpp = argpm;
@@ -1856,18 +1218,14 @@ function sgp4(satrec, tsince) {
       argpp -= pi;
     }
     if (ep < 0.0 || ep > 1.0) {
-      //  printf("// error ep %f\n", ep);
       satrec.error = SatRecError.PerturbedEccentricityOutOfRange;
-      //  sgp4fix add return
       return null;
     }
   }
-  //  -------------------- long period periodics ------------------
   if (satrec.method === 'd') {
     sinip = Math.sin(xincp);
     cosip = Math.cos(xincp);
     satrec.aycof = -0.5 * j3oj2 * sinip;
-    //  sgp4fix for divide by zero for xincp = 180 deg
     if (Math.abs(cosip + 1.0) > 1.5e-12) {
       satrec.xlcof = -0.25 * j3oj2 * sinip * (3.0 + 5.0 * cosip) / (1.0 + cosip);
     } else {
@@ -1878,13 +1236,10 @@ function sgp4(satrec, tsince) {
   temp = 1.0 / (am * (1.0 - ep * ep));
   var aynl = ep * Math.sin(argpp) + temp * satrec.aycof;
   var xl = mp + argpp + nodep + temp * satrec.xlcof * axnl;
-  // --------------------- solve kepler's equation ---------------
   var u = (xl - nodep) % twoPi;
   eo1 = u;
   tem5 = 9999.9;
   var ktr = 1;
-  //    sgp4fix for kepler iteration
-  //    the following iteration needs better limits on corrections
   while (Math.abs(tem5) >= 1.0e-12 && ktr <= 10) {
     sineo1 = Math.sin(eo1);
     coseo1 = Math.cos(eo1);
@@ -1900,15 +1255,12 @@ function sgp4(satrec, tsince) {
     eo1 += tem5;
     ktr += 1;
   }
-  //  ------------- short period preliminary quantities -----------
   var ecose = axnl * coseo1 + aynl * sineo1;
   var esine = axnl * sineo1 - aynl * coseo1;
   var el2 = axnl * axnl + aynl * aynl;
   var pl = am * (1.0 - el2);
   if (pl < 0.0) {
-    //  printf("// error pl %f\n", pl);
     satrec.error = SatRecError.SemiLatusRectumBelowZero;
-    //  sgp4fix add return
     return null;
   }
   var rl = am * (1.0 - ecose);
@@ -1924,7 +1276,6 @@ function sgp4(satrec, tsince) {
   temp = 1.0 / pl;
   var temp1 = 0.5 * j2 * temp;
   var temp2 = temp1 * temp;
-  // -------------- update for short period periodics ------------
   if (satrec.method === 'd') {
     cosisq = cosip * cosip;
     satrec.con41 = 3.0 * cosisq - 1.0;
@@ -1932,9 +1283,7 @@ function sgp4(satrec, tsince) {
     satrec.x7thm1 = 7.0 * cosisq - 1.0;
   }
   var mrt = rl * (1.0 - 1.5 * temp2 * betal * satrec.con41) + 0.5 * temp1 * satrec.x1mth2 * cos2u;
-  // sgp4fix for decaying satellites
   if (mrt < 1.0) {
-    // printf("// decay condition %11.6f \n",mrt);
     satrec.error = SatRecError.Decayed;
     return null;
   }
@@ -1943,7 +1292,6 @@ function sgp4(satrec, tsince) {
   var xinc = xincp + 1.5 * temp2 * cosip * sinip * cos2u;
   var mvt = rdotl - nm * temp1 * satrec.x1mth2 * sin2u / xke;
   var rvdot = rvdotl + nm * temp1 * (satrec.x1mth2 * cos2u + 1.5 * satrec.con41) / xke;
-  // --------------------- orientation vectors -------------------
   var sinsu = Math.sin(su);
   var cossu = Math.cos(su);
   var snod = Math.sin(xnode);
@@ -1958,7 +1306,6 @@ function sgp4(satrec, tsince) {
   var vx = xmx * cossu - cnod * sinsu;
   var vy = xmy * cossu - snod * sinsu;
   var vz = sini * cossu;
-  // --------- position and velocity (in km and km/sec) ----------
   var r = {
     x: mrt * ux * earthRadius,
     y: mrt * uy * earthRadius,
@@ -1976,87 +1323,6 @@ function sgp4(satrec, tsince) {
   };
 }
 
-/*-----------------------------------------------------------------------------
- *
- *                             procedure sgp4init
- *
- *  this procedure initializes variables for sgp4.
- *
- *  author        : david vallado                  719-573-2600   28 jun 2005
- *  author        : david vallado                  719-573-2600   28 jun 2005
- *
- *  inputs        :
- *    opsmode     - mode of operation afspc or improved 'a', 'i'
- *    satn        - satellite number
- *    bstar       - sgp4 type drag coefficient              kg/m2er
- *    ecco        - eccentricity
- *    epoch       - epoch time in days from jan 0, 1950. 0 hr
- *    argpo       - argument of perigee (output if ds)
- *    inclo       - inclination
- *    mo          - mean anomaly (output if ds)
- *    no          - mean motion
- *    nodeo       - right ascension of ascending node
- *
- *  outputs       :
- *    rec      - common values for subsequent calls
- *    return code - non-zero on error.
- *                   1 - mean elements, ecc >= 1.0 or ecc < -0.001 or a < 0.95 er
- *                   2 - mean motion less than 0.0
- *                   3 - pert elements, ecc < 0.0  or  ecc > 1.0
- *                   4 - semi-latus rectum < 0.0
- *                   5 - epoch elements are sub-orbital
- *                   6 - satellite has decayed
- *
- *  locals        :
- *    cnodm  , snodm  , cosim  , sinim  , cosomm , sinomm
- *    cc1sq  , cc2    , cc3
- *    coef   , coef1
- *    cosio4      -
- *    day         -
- *    dndt        -
- *    em          - eccentricity
- *    emsq        - eccentricity squared
- *    eeta        -
- *    etasq       -
- *    gam         -
- *    argpm       - argument of perigee
- *    nodem       -
- *    inclm       - inclination
- *    mm          - mean anomaly
- *    nm          - mean motion
- *    perige      - perigee
- *    pinvsq      -
- *    psisq       -
- *    qzms24      -
- *    rtemsq      -
- *    s1, s2, s3, s4, s5, s6, s7          -
- *    sfour       -
- *    ss1, ss2, ss3, ss4, ss5, ss6, ss7         -
- *    sz1, sz2, sz3
- *    sz11, sz12, sz13, sz21, sz22, sz23, sz31, sz32, sz33        -
- *    tc          -
- *    temp        -
- *    temp1, temp2, temp3       -
- *    tsi         -
- *    xpidot      -
- *    xhdot1      -
- *    z1, z2, z3          -
- *    z11, z12, z13, z21, z22, z23, z31, z32, z33         -
- *
- *  coupling      :
- *    getgravconst-
- *    initl       -
- *    dscom       -
- *    dpper       -
- *    dsinit      -
- *    sgp4        -
- *
- *  references    :
- *    hoots, roehrich, norad spacetrack report #3 1980
- *    hoots, norad spacetrack report #6 1986
- *    hoots, schumacher and glover 2004
- *    vallado, crawford, hujsak, kelso  2006
- ----------------------------------------------------------------------------*/
 function sgp4init(satrecInit, options) {
   var opsmode = options.opsmode,
     satn = options.satn,
@@ -2124,13 +1390,8 @@ function sgp4init(satrecInit, options) {
   var z23;
   var z31;
   var z33;
-  /* ------------------------ initialization --------------------- */
-  // sgp4fix divisor for divide by zero check on inclination
-  // the old check used 1.0 + Math.cos(pi-1.0e-9), but then compared it to
-  // 1.5 e-12, so the threshold was changed to 1.5e-12 for consistency
   var temp4 = 1.5e-12;
   var satrec = satrecInit;
-  // ----------- set all near earth variables to zero ------------
   satrec.isimp = 0;
   satrec.method = 'n';
   satrec.aycof = 0.0;
@@ -2158,7 +1419,6 @@ function sgp4init(satrecInit, options) {
   satrec.xlcof = 0.0;
   satrec.xmcof = 0.0;
   satrec.nodecf = 0.0;
-  // ----------- set all deep space variables to zero ------------
   satrec.irez = 0;
   satrec.d2201 = 0.0;
   satrec.d2211 = 0.0;
@@ -2215,10 +1475,6 @@ function sgp4init(satrecInit, options) {
   satrec.atime = 0.0;
   satrec.xli = 0.0;
   satrec.xni = 0.0;
-  // sgp4fix - note the following variables are also passed directly via satrec.
-  // it is possible to streamline the sgp4init call by deleting the "x"
-  // variables, but the user would need to set the satrec.* values first. we
-  // include the additional assignments in case twoline2rv is not used.
   satrec.bstar = xbstar;
   satrec.ecco = xecco;
   satrec.argpo = xargpo;
@@ -2226,12 +1482,8 @@ function sgp4init(satrecInit, options) {
   satrec.mo = xmo;
   satrec.no = xno;
   satrec.nodeo = xnodeo;
-  //  sgp4fix add opsmode
   satrec.operationmode = opsmode;
-  // ------------------------ earth constants -----------------------
-  // sgp4fix identify constants and allow alternate values
   var ss = 78.0 / earthRadius + 1.0;
-  // sgp4fix use multiply for speed instead of pow
   var qzms2ttemp = (120.0 - 78.0) / earthRadius;
   var qzms2t = qzms2ttemp * qzms2ttemp * qzms2ttemp * qzms2ttemp;
   satrec.init = 'y';
@@ -2263,14 +1515,6 @@ function sgp4init(satrecInit, options) {
   satrec.alta = satrec.a * (1.0 + satrec.ecco) - 1.0;
   satrec.altp = satrec.a * (1.0 - satrec.ecco) - 1.0;
   satrec.error = 0;
-  // sgp4fix remove this check as it is unnecessary
-  // the mrt check in sgp4 handles decaying satellite cases even if the starting
-  // condition is below the surface of te earth
-  // if (rp < 1.0)
-  // {
-  //   printf("// *** satn%d epoch elts sub-orbital ***\n", satn);
-  //   satrec.error = 5;
-  // }
   if (omeosq >= 0.0 || satrec.no >= 0.0) {
     satrec.isimp = 0;
     if (rp < 220.0 / earthRadius + 1.0) {
@@ -2279,13 +1523,11 @@ function sgp4init(satrecInit, options) {
     sfour = ss;
     qzms24 = qzms2t;
     perige = (rp - 1.0) * earthRadius;
-    // - for perigees below 156 km, s and qoms2t are altered -
     if (perige < 156.0) {
       sfour = perige - 78.0;
       if (perige < 98.0) {
         sfour = 20.0;
       }
-      // sgp4fix use multiply for speed instead of pow
       var qzms24temp = (120.0 - sfour) / earthRadius;
       qzms24 = qzms24temp * qzms24temp * qzms24temp * qzms24temp;
       sfour = sfour / earthRadius + 1.0;
@@ -2323,19 +1565,16 @@ function sgp4init(satrecInit, options) {
     }
     satrec.nodecf = 3.5 * omeosq * xhdot1 * satrec.cc1;
     satrec.t2cof = 1.5 * satrec.cc1;
-    // sgp4fix for divide by zero with xinco = 180 deg
     if (Math.abs(cosio + 1.0) > 1.5e-12) {
       satrec.xlcof = -0.25 * j3oj2 * sinio * (3.0 + 5.0 * cosio) / (1.0 + cosio);
     } else {
       satrec.xlcof = -0.25 * j3oj2 * sinio * (3.0 + 5.0 * cosio) / temp4;
     }
     satrec.aycof = -0.5 * j3oj2 * sinio;
-    // sgp4fix use multiply for speed instead of pow
     var delmotemp = 1.0 + satrec.eta * Math.cos(satrec.mo);
     satrec.delmo = delmotemp * delmotemp * delmotemp;
     satrec.sinmao = Math.sin(satrec.mo);
     satrec.x7thm1 = 7.0 * cosio2 - 1.0;
-    // --------------- deep space initialization -------------
     if (2 * pi / satrec.no >= 225.0) {
       satrec.method = 'd';
       satrec.isimp = 1;
@@ -2562,7 +1801,6 @@ function sgp4init(satrecInit, options) {
       satrec.xli = dsinitResult.xli;
       satrec.xni = dsinitResult.xni;
     }
-    // ----------- set variables if not deep space -----------
     if (satrec.isimp !== 1) {
       cc1sq = satrec.cc1 * satrec.cc1;
       satrec.d2 = 4.0 * ao * tsi * cc1sq;
@@ -2573,68 +1811,11 @@ function sgp4init(satrecInit, options) {
       satrec.t4cof = 0.25 * (3.0 * satrec.d3 + satrec.cc1 * (12.0 * satrec.d2 + 10.0 * cc1sq));
       satrec.t5cof = 0.2 * (3.0 * satrec.d4 + 12.0 * satrec.cc1 * satrec.d3 + 6.0 * satrec.d2 * satrec.d2 + 15.0 * cc1sq * (2.0 * satrec.d2 + cc1sq));
     }
-    /* finally propogate to zero epoch to initialize all others. */
-    // sgp4fix take out check to let satellites process until they are actually below earth surface
-    // if(satrec.error == 0)
   }
   sgp4(satrec, 0);
   satrec.init = 'n';
 }
 
-/* -----------------------------------------------------------------------------
- *
- *                           function twoline2satrec
- *
- *  this function converts the two line element set character string data to
- *    variables and initializes the sgp4 variables. several intermediate varaibles
- *    and quantities are determined. note that the result is a structure so multiple
- *    satellites can be processed simultaneously without having to reinitialize. the
- *    verification mode is an important option that permits quick checks of any
- *    changes to the underlying technical theory. this option works using a
- *    modified tle file in which the start, stop, and delta time values are
- *    included at the end of the second line of data. this only works with the
- *    verification mode. the catalog mode simply propagates from -1440 to 1440 min
- *    from epoch and is useful when performing entire catalog runs.
- *
- *  author        : david vallado                  719-573-2600    1 mar 2001
- *
- *  inputs        :
- *    longstr1    - first line of the tle
- *    longstr2    - second line of the tle
- *    typerun     - type of run                    verification 'v', catalog 'c',
- *                                                 manual 'm'
- *    typeinput   - type of manual input           mfe 'm', epoch 'e', dayofyr 'd'
- *    opsmode     - mode of operation afspc or improved 'a', 'i'
- *    whichconst  - which set of constants to use  72, 84
- *
- *  outputs       :
- *    satrec      - structure containing all the sgp4 satellite information
- *
- *  coupling      :
- *    getgravconst-
- *    days2mdhms  - conversion of days to month, day, hour, minute, second
- *    jday        - convert day month year hour minute second into julian date
- *    sgp4init    - initialize the sgp4 variables
- *
- *  references    :
- *    norad spacetrack report #3
- *    vallado, crawford, hujsak, kelso  2006
- --------------------------------------------------------------------------- */
-/**
- * Return a Satellite imported from two lines of TLE data.
- *
- * Provide the two TLE lines as strings `tleLine1` and `tleLine2`,
- * and select which standard set of gravitational constants you want
- * by providing `gravity_constants`:
- *
- * `sgp4.propagation.wgs72` - Standard WGS 72 model
- * `sgp4.propagation.wgs84` - More recent WGS 84 model
- * `sgp4.propagation.wgs72old` - Legacy support for old SGP4 behavior
- *
- * Normally, computations are made using letious recent improvements
- * to the algorithm.  If you want to turn some of these off and go
- * back into "afspc" mode, then set `afspc_mode` to `True`.
- */
 function twoline2satrec(longstr1, longstr2) {
   var opsmode = 'i';
   var error = 0;
@@ -2644,27 +1825,12 @@ function twoline2satrec(longstr1, longstr2) {
   var ndot = parseFloat(longstr1.substring(33, 43));
   var nddot = parseFloat("".concat(longstr1.substring(44, 45), ".").concat(longstr1.substring(45, 50), "E").concat(longstr1.substring(50, 52)));
   var bstar = parseFloat("".concat(longstr1.substring(53, 54), ".").concat(longstr1.substring(54, 59), "E").concat(longstr1.substring(59, 61)));
-  // satrec.satnum = longstr2.substring(2, 7);
-  // ---- find standard orbital elements ----
   var inclo = parseFloat(longstr2.substring(8, 16)) * deg2rad;
   var nodeo = parseFloat(longstr2.substring(17, 25)) * deg2rad;
   var ecco = parseFloat(".".concat(longstr2.substring(26, 33)));
   var argpo = parseFloat(longstr2.substring(34, 42)) * deg2rad;
   var mo = parseFloat(longstr2.substring(43, 51)) * deg2rad;
-  // ---- find no, ndot, nddot ----
   var no = parseFloat(longstr2.substring(52, 63)) / xpdotp;
-  // satrec.nddot= satrec.nddot * Math.pow(10.0, nexp);
-  // satrec.bstar= satrec.bstar * Math.pow(10.0, ibexp);
-  // ---- convert to sgp4 units ----
-  // satrec.ndot /= (xpdotp * 1440.0); // ? * minperday
-  // satrec.nddot /= (xpdotp * 1440.0 * 1440);
-  // ----------------------------------------------------------------
-  // find sgp4epoch time of element set
-  // remember that sgp4 uses units of days from 0 jan 1950 (sgp4epoch)
-  // and minutes from the epoch (time)
-  // ----------------------------------------------------------------
-  // ---------------- temp fix for years from 1957-2056 -------------------
-  // --------- correct fix will occur when year is 4-digit in tle ---------
   var year = epochyr < 57 ? epochyr + 2000 : epochyr + 1900;
   var mdhmsResult = days2mdhms(year, epochdays);
   var mon = mdhmsResult.mon,
@@ -2689,7 +1855,6 @@ function twoline2satrec(longstr1, longstr2) {
     no: no,
     jdsatepoch: jdsatepoch
   };
-  //  ---------------- initialize the orbit at sgp4epoch -------------------
   sgp4init(satrec, {
     opsmode: opsmode,
     satn: satrec.satnum,
@@ -2704,45 +1869,6 @@ function twoline2satrec(longstr1, longstr2) {
   });
   return satrec;
 }
-/* -----------------------------------------------------------------------------
- *
- *                           function json2satrec
- *
- *  this function converts the OMM json data to variables and initializes the sgp4
- *    variables. several intermediate varaibles and quantities are determined. note
- *    that the result is a structure so multiple satellites can be processed
- *    simultaneously without having to reinitialize. the verification mode is an
- *    important option that permits quick checks of any changes to the underlying
- *    technical theory. this option works using a modified tle file in which the
- *    start, stop, and delta time values are included at the end of the second line
- *    of data. this only works with the verification mode. the catalog mode simply
- *    propagates from -1440 to 1440 min from epoch and is useful when performing
- *    entire catalog runs.
- *
- *  author        : Hariharan Vitaladevuni                   18 Aug 2023
- *                  Theodore Kruczek                         19 Aug 2023
- *
- *  inputs        :
- *    jsonobj     - OMM json data
- *    opsmode     - mode of operation afspc or improved 'a', 'i'. Default: 'i'.
- *
- *  outputs       :
- *    satrec      - structure containing all the sgp4 satellite information
- *
- *  coupling      :
- *    days2mdhms  - conversion of days to month, day, hour, minute, second
- *    jday        - convert day month year hour minute second into julian date
- *    sgp4init    - initialize the sgp4 variables
- *
- *  warning       : the epoch date in OMM format is more accurate than TLE format!
- *                  this will result in extremely close, but different
- *                  position/velocity values. Depending on your use case, it may
- *                  be better to use twoline2satrec, but for the average user this
- *                  will provide comparable results.
- *
- *  references    :
- *    https://celestrak.org/NORAD/documentation/gp-data-formats.php
- --------------------------------------------------------------------------- */
 function json2satrec(jsonobj) {
   var opsmode = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'i';
   var error = 0;
@@ -2760,11 +1886,6 @@ function json2satrec(jsonobj) {
   var argpo = Number(jsonobj.ARG_OF_PERICENTER) * deg2rad;
   var mo = Number(jsonobj.MEAN_ANOMALY) * deg2rad;
   var no = Number(jsonobj.MEAN_MOTION) / xpdotp;
-  // ----------------------------------------------------------------
-  // find sgp4epoch time of element set
-  // remember that sgp4 uses units of days from 0 jan 1950 (sgp4epoch)
-  // and minutes from the epoch (time)
-  // ----------------------------------------------------------------
   var mdhmsResult = days2mdhms(year, epochdays);
   var mon = mdhmsResult.mon,
     day = mdhmsResult.day,
@@ -2788,7 +1909,6 @@ function json2satrec(jsonobj) {
     no: no,
     jdsatepoch: jdsatepoch
   };
-  //  ---------------- initialize the orbit at sgp4epoch -------------------
   sgp4init(satrec, {
     opsmode: opsmode,
     satn: satrec.satnum,
@@ -2808,20 +1928,13 @@ function propagate(satrec) {
   for (var _len = arguments.length, jdayArgs = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
     jdayArgs[_key - 1] = arguments[_key];
   }
-  // Return a position and velocity vector for a given date and time.
   var j = jday.apply(void 0, jdayArgs);
   var m = (j - satrec.jdsatepoch) * minutesPerDay;
   return sgp4(satrec, m);
 }
 
 var earthRotation = 7.292115E-5;
-var c = 299792.458; // Speed of light in km/s
-/**
- * Negative range rate means the satellite is moving towards the observer and
- * its frequency is shifted higher because 1 minus a negative range rate is
- * positive. If the range rate is positive, the satellite is moving away from
- * the observer and its frequency is shifted lower.
- */
+var c = 299792.458;
 function dopplerFactor(observerCoordsEcf, positionEcf, velocityEcf) {
   var rangeX = positionEcf.x - observerCoordsEcf.x;
   var rangeY = positionEcf.y - observerCoordsEcf.y;
@@ -2885,7 +1998,6 @@ function geodeticToEcf(_ref) {
   };
 }
 function eciToGeodetic(eci, gmst) {
-  // http://www.celestrak.com/columns/v02n03/
   var a = 6378.137;
   var b = 6356.7523142;
   var R = Math.sqrt(eci.x * eci.x + eci.y * eci.y);
@@ -2914,12 +2026,6 @@ function eciToGeodetic(eci, gmst) {
   };
 }
 function ecfToEci(ecf, gmst) {
-  // ccar.colorado.edu/ASEN5070/handouts/coordsys.doc
-  //
-  // [X]     [C -S  0][X]
-  // [Y]  =  [S  C  0][Y]
-  // [Z]eci  [0  0  1][Z]ecf
-  //
   var X = ecf.x * Math.cos(gmst) - ecf.y * Math.sin(gmst);
   var Y = ecf.x * Math.sin(gmst) + ecf.y * Math.cos(gmst);
   var Z = ecf.z;
@@ -2930,17 +2036,6 @@ function ecfToEci(ecf, gmst) {
   };
 }
 function eciToEcf(eci, gmst) {
-  // ccar.colorado.edu/ASEN5070/handouts/coordsys.doc
-  //
-  // [X]     [C -S  0][X]
-  // [Y]  =  [S  C  0][Y]
-  // [Z]eci  [0  0  1][Z]ecf
-  //
-  //
-  // Inverse:
-  // [X]     [C  S  0][X]
-  // [Y]  =  [-S C  0][Y]
-  // [Z]ecf  [0  0  1][Z]eci
   var x = eci.x * Math.cos(gmst) + eci.y * Math.sin(gmst);
   var y = eci.x * -Math.sin(gmst) + eci.y * Math.cos(gmst);
   var z = eci.z;
@@ -2951,9 +2046,6 @@ function eciToEcf(eci, gmst) {
   };
 }
 function topocentric(observerGeodetic, satelliteEcf) {
-  // http://www.celestrak.com/columns/v02n02/
-  // TS Kelso's method, except I'm using ECF frame
-  // and he uses ECI.
   var longitude = observerGeodetic.longitude,
     latitude = observerGeodetic.latitude;
   var observerEcf = geodeticToEcf(observerGeodetic);
@@ -2979,7 +2071,7 @@ function topocentricToLookAngles(tc) {
   return {
     azimuth: Az,
     elevation: El,
-    rangeSat: rangeSat // Range in km
+    rangeSat: rangeSat
   };
 }
 function ecfToLookAngles(observerGeodetic, satelliteEcf) {
@@ -2987,51 +2079,17 @@ function ecfToLookAngles(observerGeodetic, satelliteEcf) {
   return topocentricToLookAngles(topocentricCoords);
 }
 
-////////////////////////////////////////////////////////////////////////////////////
-/* Line by Line MATLAB-to-Javascript conversion of "sun.mat" from Vallado package */
-////////////////////////////////////////////////////////////////////////////////////
-/* -----------------------------------------------------------------------------
- *
- *                              function sunPos
- *
- *  this function calculates the geocentric equatorial position vector
- *      the sun given the julian date.  this is the low precision formula and
- *      is valid for years from 1950 to 2050.  accuaracy of apparent coordinates
- *      is 0.01  degrees.  notice many of the calculations are performed in
- *      degrees, and are not changed until later.  this is due to the fact that
- *      the almanac uses degrees exclusively in their formulations.
- *
- *  author        : david vallado                  719-573-2600    1 mar 2001
- *
- *  inputs          description                       range / units
- *      jd          - julian date                       days from 4713 bc
- *
- *  outputs       :
- *      rsun        - ijk position vector of the sun    au
- *      rtasc       - right ascension                   rad
- *      decl        - declination                       rad
- *
- *  coupling      :
- *      -
- *
- *  references    :
- *      VALLADO, DAVID A. (2022) â€˜Computer software in MATLABâ€™, in Fundamentals of astrodynamics and applications. 5th edn.
- *      Computer software in MATLAB: http://celestrak.org/software/vallado-sw.php
- *  --------------------------------------------------------------------------- */
 function sunPos(jday) {
-  // -------------------------  implementation   -----------------
-  // -------------------  initialize values   --------------------
   var tut1 = (jday - 2451545) / 36525;
-  var meanlong = (280.460 + 36000.77 * tut1) % 360; //deg
-  var ttdb = tut1; // is this declaration required instead of replacing `ttdb` with `tut1`
-  var meananomaly = (357.5277233 + 35999.05034 * ttdb * deg2rad) % twoPi; //rad
+  var meanlong = (280.460 + 36000.77 * tut1) % 360;
+  var ttdb = tut1;
+  var meananomaly = (357.5277233 + 35999.05034 * ttdb * deg2rad) % twoPi;
   if (meananomaly < 0) {
     meananomaly += twoPi;
   }
-  var eclplong_raw = (meanlong + 1.914666471 * Math.sin(meananomaly) + 0.019994643 * Math.sin(2.0 * meananomaly)) % 360.0 * deg2rad; //rad
-  var obliquity = (23.439291 - 0.0130042 * ttdb) * deg2rad; //rad
-  // --------- find magnitude of sun vector, and it's components ------
-  var magr = 1.000140612 - 0.016708617 * Math.cos(meananomaly) - 0.000139589 * Math.cos(2.0 * meananomaly); // in au's
+  var eclplong_raw = (meanlong + 1.914666471 * Math.sin(meananomaly) + 0.019994643 * Math.sin(2.0 * meananomaly)) % 360.0 * deg2rad;
+  var obliquity = (23.439291 - 0.0130042 * ttdb) * deg2rad;
+  var magr = 1.000140612 - 0.016708617 * Math.cos(meananomaly) - 0.000139589 * Math.cos(2.0 * meananomaly);
   var rsun = [magr * Math.cos(eclplong_raw), magr * Math.cos(obliquity) * Math.sin(eclplong_raw), magr * Math.sin(obliquity) * Math.sin(eclplong_raw)];
   var rtasc_raw = Math.atan(Math.cos(obliquity) * Math.tan(eclplong_raw));
   var rtasc = rtasc_raw;
@@ -3045,67 +2103,7 @@ function sunPos(jday) {
     decl: decl
   };
 }
-/* Original MATLAB code for Sun position from Vallado package (sun.mat)  */
-/*
-function [rsun,rtasc,decl] = sun ( jd );
 
-        twopi      =     2.0*pi;
-        deg2rad    =     pi/180.0;
-        show = 'n';
-
-        % -------------------------  implementation   -----------------
-        % -------------------  initialize values   --------------------
-        tut1= ( jd - 2451545.0  )/ 36525.0;
-
-        if show == 'y'
-            fprintf(1,'tut1 %14.9f \n',tut1);
-        end
-
-        meanlong= 280.460  + 36000.77*tut1;
-        meanlong= rem( meanlong,360.0  );  %deg
-
-        ttdb= tut1;
-        meananomaly= 357.5277233  + 35999.05034 *ttdb;
-        meananomaly= rem( meananomaly*deg2rad,twopi );  %rad
-        if ( meananomaly < 0.0  )
-            meananomaly= twopi + meananomaly;
-        end
-
-        eclplong_raw= meanlong + 1.914666471 *sin(meananomaly) ...
-                    + 0.019994643 *sin(2.0 *meananomaly); %deg
-        eclplong_raw= rem( eclplong_raw,360.0  );  %deg
-
-        obliquity= 23.439291  - 0.0130042 *ttdb;  %deg
-
-        eclplong_raw = eclplong_raw *deg2rad;
-        obliquity= obliquity *deg2rad;
-
-        % --------- find magnitude of sun vector, )   components ------
-        magr= 1.000140612  - 0.016708617 *cos( meananomaly ) ...
-                              - 0.000139589 *cos( 2.0 *meananomaly );    % in au's
-
-        rsun(1)= magr*cos( eclplong_raw );
-        rsun(2)= magr*cos(obliquity)*sin(eclplong_raw);
-        rsun(3)= magr*sin(obliquity)*sin(eclplong_raw);
-
-        if show == 'y'
-            fprintf(1,'meanlon %11.6f meanan %11.6f eclplon %11.6f obli %11.6f \n', ...
-                    meanlong,meananomaly/deg2rad,eclplong_raw/deg2rad,obliquity/deg2rad);
-            fprintf(1,'rs %11.9f %11.9f %11.9f \n',rsun);
-            fprintf(1,'magr %14.7f \n',magr);
-        end
-
-        rtasc= atan( cos(obliquity)*tan(eclplong_raw) );
-
-        % --- check that rtasc is in the same quadrant as eclplong_raw ----
-        if ( eclplong_raw < 0.0  )
-            eclplong_raw= eclplong_raw + twopi;    % make sure it's in 0 to 2pi range
-        end
-        if ( abs( eclplong_raw-rtasc ) > pi*0.5  )
-            rtasc= rtasc + 0.5 *pi*round( (eclplong_raw-rtasc)/(0.5 *pi));
-        end
-        decl = asin( sin(obliquity)*sin(eclplong_raw) );
-*/
 const satellite = { gstime, propagate, eciToGeodetic, json2satrec, degreesLat, degreesLong };
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
