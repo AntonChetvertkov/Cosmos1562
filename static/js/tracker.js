@@ -659,6 +659,7 @@ function formatTime(date) {
     return shifted.toLocaleString('en-US', {
         timeZone: 'UTC',
         month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+        hour12: false,
     });
 }
 
