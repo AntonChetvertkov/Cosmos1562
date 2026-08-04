@@ -139,14 +139,13 @@ body.tier-free #tracker-grid {
     height: 100vh;
     z-index: 5;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
     pointer-events: none;
 }
 
 .ad-rail .ad-slot {
     pointer-events: auto;
-    margin-top: 18px;
 }
 
 .panel {
