@@ -118,6 +118,7 @@ _CATEGORIES = {
                    'KOMPSAT', 'ARIRANG', 'DEIMOS', 'CBERS', 'PLEIADES', 'FLOCK', 'PELICAN',
                    'TERRA', 'AQUA', 'AURA'],
     'starlink':   ['STARLINK'],
+    'bureau1440': ['RASSVET'],
     'commercial': ['ONEWEB', 'IRIDIUM', 'KUIPER', 'QIANFAN'],
 }
 _ALL_PATTERNS = [p for pats in _CATEGORIES.values() for p in pats]

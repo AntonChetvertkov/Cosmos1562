@@ -12,7 +12,7 @@ import {
 import { getSatOperator } from '/static/js/data.js';
 
 const STORAGE_KEY = 'cosmos_ground_station';
-const CATEGORIES = ['amateur', 'stations', 'gnss', 'weather', 'resource', 'starlink', 'commercial', 'other'];
+const CATEGORIES = ['amateur', 'stations', 'gnss', 'weather', 'resource', 'starlink', 'bureau1440', 'commercial', 'other'];
 const TIER = window.TRACKER_TIER || 'anon';
 const HAS_EXTRAS = TIER !== 'anon';
 const TIER_LOOKAHEAD_HOURS = { anon: 24, free: 72, pro: 336 };
@@ -29,7 +29,7 @@ let favoriteSatObjs = [];
 let ommLookupPromise = null;
 
 const TRACK_COLORS = ['#00c8ff', '#ff8800', '#00ff88', '#ff4477', '#aa88ff', '#ffee44', '#44ffee', '#ff6644'];
-const OMM_CATEGORIES = ['gnss', 'weather', 'stations', 'resource', 'starlink', 'commercial', 'other'];
+const OMM_CATEGORIES = ['gnss', 'weather', 'stations', 'resource', 'starlink', 'bureau1440', 'commercial', 'other'];
 
 function csrfHeaders() {
     const meta = document.querySelector('meta[name="csrf-token"]');
@@ -167,6 +167,7 @@ function buildSatrec(sat) {
 }
 
 function countryRank(name) {
+    if (favoriteNames.has(name)) return -1;
     const operator = getSatOperator(name);
     if (operator === 'Russia') return 0;
     if (name.includes('ISS')) return 1;
