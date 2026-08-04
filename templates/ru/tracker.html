@@ -8,7 +8,7 @@
         <meta name="description" content="Прогноз пролётов и отслеживание спутников в реальном времени — любительские, МКС, ГНСС, метеоспутники и другие.">
         <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
         {% if show_google %}<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7518808989426617" crossorigin="anonymous"></script>{% endif %}
-        <link rel="stylesheet" href="/static/css/tracker.css?v=7">
+        <link rel="stylesheet" href="/static/css/tracker.css?v=8">
         <link rel="canonical" href="https://cosmos1562.space/tracker">
         <meta name="csrf-token" content="{{ csrf_token() }}">
     </head>
@@ -102,7 +102,10 @@
                     </label>
                     <button id="recompute-passes" class="action-btn">Пересчитать</button>
                 </div>
-                <div class="tz-label">Время показано в <span id="tz-name">—</span></div>
+                <div class="tz-label">
+                    Время показано в <span id="tz-name">—</span>
+                    <select id="tz-select"></select>
+                </div>
                 <table id="passes-table" style="display:none;">
                     <thead>
                         <tr><th>Спутник</th><th>AOS</th><th>Макс. высота</th><th>LOS</th><th>Длительность</th><th>Направление</th></tr>
@@ -120,7 +123,10 @@
                     <input type="range" id="passes-ahead" min="1" max="10" step="1" value="3">
                     <button id="track-map-fullscreen" class="action-btn" style="width:auto;padding:6px 12px;">⛶ Полный экран</button>
                 </div>
-                <canvas id="track-map" width="960" height="480" style="display:none;"></canvas>
+                <div id="track-map-wrapper">
+                    <canvas id="track-map" width="960" height="480" style="display:none;"></canvas>
+                    <button id="track-map-exit-fullscreen" class="action-btn" style="display:none;">✕ Выйти из полноэкранного режима</button>
+                </div>
                 <div id="track-map-empty" class="empty-msg">Выберите спутник и укажите наземную станцию, чтобы увидеть наземную траекторию.</div>
             </section>
 

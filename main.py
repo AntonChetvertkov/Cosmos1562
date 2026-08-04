@@ -20,7 +20,6 @@ import requests
 import json
 import time
 import math
-from zoneinfo import ZoneInfo
 from authlib.integrations.flask_client import OAuth
 from aiFuncs import aiInteract
 from sgp4.api import Satrec, jday as sgp4_jday
@@ -785,14 +784,14 @@ def _build_satrec_from_favorite(fav):
         return sat
     return None
 
-def _format_local_time(dt_utc, tz_name):
-    if tz_name:
-        try:
-            local = dt_utc.replace(tzinfo=ZoneInfo('UTC')).astimezone(ZoneInfo(tz_name))
-            return local.strftime('%H:%M')
-        except Exception:
-            pass
-    return dt_utc.strftime('%H:%M UTC')
+def _format_local_time(dt_utc, tz_offset):
+    try:
+        offset = int(tz_offset)
+        local = dt_utc + timedelta(hours=offset)
+        label = 'UTC' if offset == 0 else f"UTC{'+' if offset > 0 else ''}{offset}"
+        return f"{local.strftime('%H:%M')} {label}"
+    except (TypeError, ValueError):
+        return dt_utc.strftime('%H:%M UTC')
 
 def _find_aos_time(satrec, start, end, min_el, lat, lon, alt, step_seconds=30):
     t = start

@@ -630,13 +630,34 @@ function finalizePass(p) {
     };
 }
 
+const TZ_STORAGE_KEY = 'cosmos_tz_offset';
 const IS_RU = window.TRACKER_LANG === 'ru';
-const DISPLAY_TZ = IS_RU ? 'Europe/Moscow' : 'UTC';
-const DISPLAY_TZ_LABEL = IS_RU ? 'MSK' : 'UTC';
+
+function loadTzOffset() {
+    const raw = localStorage.getItem(TZ_STORAGE_KEY);
+    const parsed = raw !== null ? parseInt(raw, 10) : NaN;
+    if (!Number.isNaN(parsed)) return parsed;
+    return IS_RU ? 3 : 0;
+}
+
+let tzOffsetHours = loadTzOffset();
+
+function tzLabel(offset) {
+    return offset === 0 ? 'UTC' : `UTC${offset > 0 ? '+' : ''}${offset}`;
+}
+
+function setTzOffset(offset) {
+    tzOffsetHours = offset;
+    localStorage.setItem(TZ_STORAGE_KEY, String(offset));
+    const tzNameEl = document.getElementById('tz-name');
+    if (tzNameEl) tzNameEl.textContent = tzLabel(offset);
+    if (currentPasses.length) renderPasses(currentPasses);
+}
 
 function formatTime(date) {
-    return date.toLocaleString(IS_RU ? 'ru-RU' : 'en-US', {
-        timeZone: DISPLAY_TZ,
+    const shifted = new Date(date.getTime() + tzOffsetHours * 3600000);
+    return shifted.toLocaleString('en-US', {
+        timeZone: 'UTC',
         month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
     });
 }
@@ -814,20 +835,26 @@ function recompute() {
 document.getElementById('recompute-passes').addEventListener('click', recompute);
 
 const trackMapFullscreenBtn = document.getElementById('track-map-fullscreen');
+const trackMapExitFullscreenBtn = document.getElementById('track-map-exit-fullscreen');
 if (trackMapFullscreenBtn) {
+    const wrapper = document.getElementById('track-map-wrapper');
     trackMapFullscreenBtn.addEventListener('click', () => {
-        const canvas = document.getElementById('track-map');
-        if (!canvas) return;
+        if (!wrapper) return;
         if (document.fullscreenElement) {
             document.exitFullscreen();
-        } else if (canvas.requestFullscreen) {
-            canvas.requestFullscreen();
+        } else if (wrapper.requestFullscreen) {
+            wrapper.requestFullscreen();
         }
     });
+    if (trackMapExitFullscreenBtn) {
+        trackMapExitFullscreenBtn.addEventListener('click', () => {
+            if (document.fullscreenElement) document.exitFullscreen();
+        });
+    }
     document.addEventListener('fullscreenchange', () => {
         const canvas = document.getElementById('track-map');
         if (!canvas) return;
-        if (document.fullscreenElement === canvas) {
+        if (document.fullscreenElement === wrapper) {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         } else {
@@ -870,7 +897,7 @@ if (alertsBtn) {
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(vapidKey),
             });
-            const timezone = DISPLAY_TZ;
+            const timezone = String(tzOffsetHours);
             const res = await fetch('/api/push/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
@@ -897,7 +924,21 @@ if (loginPopupClose) loginPopupClose.addEventListener('click', () => {
 });
 
 const tzNameEl = document.getElementById('tz-name');
-if (tzNameEl) tzNameEl.textContent = DISPLAY_TZ_LABEL;
+if (tzNameEl) tzNameEl.textContent = tzLabel(tzOffsetHours);
+
+const tzSelect = document.getElementById('tz-select');
+if (tzSelect) {
+    for (let offset = -12; offset <= 14; offset++) {
+        const opt = document.createElement('option');
+        opt.value = String(offset);
+        opt.textContent = tzLabel(offset);
+        if (offset === tzOffsetHours) opt.selected = true;
+        tzSelect.appendChild(opt);
+    }
+    tzSelect.addEventListener('change', e => {
+        setTzOffset(parseInt(e.target.value, 10) || 0);
+    });
+}
 
 updateStationDisplay();
 if (station) syncStationToServer(station);

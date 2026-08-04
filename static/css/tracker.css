@@ -397,6 +397,9 @@ body.tier-free #tracker-grid {
 }
 
 .tz-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 0.62rem;
     letter-spacing: 0.05em;
     color: var(--text-muted);
@@ -405,6 +408,17 @@ body.tier-free #tracker-grid {
 
 .tz-label span {
     color: var(--cyan);
+}
+
+.tz-label select {
+    background: var(--bg);
+    border: 1px solid var(--cyan-dim);
+    color: var(--cyan);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.62rem;
+    padding: 4px 8px;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
 #passes-table {
@@ -451,6 +465,10 @@ body.tier-free #tracker-grid {
     accent-color: var(--cyan);
 }
 
+#track-map-wrapper {
+    position: relative;
+}
+
 #track-map {
     width: 100%;
     height: auto;
@@ -461,10 +479,33 @@ body.tier-free #tracker-grid {
     background: var(--bg);
 }
 
-#track-map:fullscreen {
+#track-map-wrapper:fullscreen {
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#track-map-wrapper:fullscreen #track-map {
     width: 100vw;
     height: 100vh;
-    background: var(--bg);
+    aspect-ratio: auto;
+    border: none;
+    border-radius: 0;
+}
+
+#track-map-exit-fullscreen {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+    width: auto;
+    padding: 8px 16px;
+    background: rgba(6, 13, 24, 0.85);
+}
+
+#track-map-wrapper:fullscreen #track-map-exit-fullscreen {
+    display: block !important;
 }
 
 #radar-canvas {
